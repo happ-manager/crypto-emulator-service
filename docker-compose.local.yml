@@ -1,0 +1,18 @@
+version: "3.8"
+services:
+  happ-crypto-database:
+    image: postgres:latest
+    container_name: happ-crypto-database
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "happ-crypto-database"
+    ports:
+      - "5439:5432"
+    expose:
+      - "5439"
+    volumes:
+      - happ-crypto-database:/var/lib/postgresql/data
+
+volumes:
+  happ-crypto-database:

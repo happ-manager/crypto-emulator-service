@@ -1,0 +1,568 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthTokensDto {
+  accessToken: String!
+  expiresIn: Float!
+  refreshToken: String!
+}
+
+type CandleEntity {
+  closeDate: IDate!
+  closePrice: IPrice!
+  createdAt: DateTime!
+  id: ID!
+  maxPrice: IPrice!
+  minPrice: IPrice!
+  openDate: IDate!
+  openPrice: IPrice!
+  poolAddress: String!
+  transactions: [TransactionEntity!]!
+  updatedAt: DateTime!
+}
+
+type ChannelEntity {
+  createdAt: DateTime!
+  id: ID!
+  telegramId: String
+  updatedAt: DateTime!
+  verificationStatus: verificationStatusEnum!
+}
+
+type ConditionEntity {
+  conditionsGroup: ConditionsGroupEntity!
+  createdAt: DateTime!
+  field: candleFieldEnum!
+  id: ID!
+  operator: operatorEnum!
+  relatedTo: relatedToEnum!
+  updatedAt: DateTime!
+  value: Int!
+}
+
+type ConditionsGroupEntity {
+  conditions: [ConditionEntity!]
+  createdAt: DateTime!
+  duration: Int!
+  groupOperator: groupOperatorEnum!
+  id: ID!
+  milestone: MilestoneEntity!
+  updatedAt: DateTime!
+}
+
+input CreateCandleDto {
+  poolAddress: String!
+}
+
+input CreateChannelDto {
+  telegramId: String!
+}
+
+input CreateConditionDto {
+  id: ID!
+}
+
+input CreateCredentialDto {
+  solscanHeaders: String!
+}
+
+input CreateMilestoneDto {
+  id: ID!
+}
+
+input CreateSignalDto {
+  tokenName: String!
+}
+
+input CreateStrategyDto {
+  name: String!
+}
+
+input CreateTokenDto {
+  name: String!
+}
+
+input CreateTradingDto {
+  price: String!
+}
+
+input CreateTradingTokenDto {
+  id: String!
+}
+
+input CreateTransactionDto {
+  poolAddress: String!
+}
+
+input CreateUserInput {
+  tel: String!
+  verificationCode: String!
+}
+
+input CreateWalletDto {
+  address: String!
+}
+
+type CredentialEntity {
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+  solscanHeaders: String!
+  updatedAt: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type DexToolsCandleEntity {
+  createdAt: DateTime!
+  data: JSON!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+}
+
+type DexToolsPairEntity {
+  createdAt: DateTime!
+  data: JSON!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+}
+
+input EmailAuthDto {
+  email: String!
+  password: String!
+}
+
+"""DateTime custom scalar for Dayjs with DateService"""
+scalar IDate
+
+"""Custom scalar for prices using Big.js"""
+scalar IPrice
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+type MilestoneEntity {
+  actionType: actionTypeEnum!
+  conditionsGroups: [ConditionsGroupEntity!]!
+  createdAt: DateTime!
+  groupOperator: groupOperatorEnum!
+  id: ID!
+  name: String
+  position: Int!
+  strategy: StrategyEntity!
+  updatedAt: DateTime!
+  value: Int!
+}
+
+type Mutation {
+  createCandle(candle: CreateCandleDto!): CandleEntity!
+  createChannel(channel: CreateChannelDto!): ChannelEntity!
+  createCondition(condition: CreateConditionDto!): ConditionEntity!
+  createConditionsGroup(conditionsGroup: CreateConditionDto!): ConditionsGroupEntity!
+  createCredential(credential: CreateCredentialDto!): CredentialEntity!
+  createMilestone(milestone: CreateMilestoneDto!): MilestoneEntity!
+  createSignal(signal: CreateSignalDto!): SignalEntity!
+  createStrategy(strategy: CreateStrategyDto!): StrategyEntity!
+  createToken(token: CreateTokenDto!): TokenEntity!
+  createTrading(trading: CreateTradingDto!): TradingEntity!
+  createTradingToken(tradingToken: CreateTradingTokenDto!): TradingTokenEntity!
+  createTransaction(transaction: CreateTransactionDto!): TransactionEntity!
+  createUser(user: CreateUserInput!): UserEntity!
+  createWallet(wallet: CreateWalletDto!): WalletEntity!
+  deleteCandle(id: String!): Void!
+  deleteChannel(id: String!): Void!
+  deleteCondition(id: String!): Void!
+  deleteConditionsGroup(id: String!): Void!
+  deleteCredential(id: String!): Void!
+  deleteMilestone(id: String!): Void!
+  deleteSignal(id: String!): Void!
+  deleteStrategy(id: String!): Void!
+  deleteToken(id: String!): Void!
+  deleteTrading(id: String!): Void!
+  deleteTradingToken(id: String!): Void!
+  deleteTransaction(id: String!): Void!
+  deleteUser(id: String!): Void!
+  deleteWallet(id: String!): Void!
+  me: AuthTokensDto!
+  refreshTokens(refreshToken: String!): AuthTokensDto!
+  signIn(emailAuth: EmailAuthDto!): AuthTokensDto!
+  signInTelegram(telegramId: String!): AuthTokensDto!
+  signUp(emailAuth: EmailAuthDto!): AuthTokensDto!
+  signUpTelegram(telegramUser: TelegramUserDto!): AuthTokensDto!
+  updateCandle(candle: UpdateCandleDto!): CandleEntity!
+  updateChannel(channel: UpdateChannelDto!): ChannelEntity!
+  updateCondition(condition: UpdateConditionDto!): ConditionEntity!
+  updateConditionsGroup(conditionsGroup: UpdateConditionDto!): ConditionsGroupEntity!
+  updateCredential(credential: UpdateCredentialDto!): CredentialEntity!
+  updateMilestone(milestone: UpdateMilestoneDto!): MilestoneEntity!
+  updateSignal(signal: UpdateSignalDto!): SignalEntity!
+  updateStrategy(strategy: UpdateStrategyDto!): StrategyEntity!
+  updateToken(token: UpdateTokenDto!): TokenEntity!
+  updateTrading(trading: UpdateTradingDto!): TradingEntity!
+  updateTradingToken(tradingToken: UpdateTradingTokenDto!): TradingTokenEntity!
+  updateTransaction(transaction: UpdateTransactionDto!): TransactionEntity!
+  updateUser(user: UpdateUserInput!): UserEntity!
+  updateWallet(wallet: UpdateWalletDto!): WalletEntity!
+  verifyCode(verificationCode: String!): AuthTokensDto!
+}
+
+type PaginatedCandles {
+  data: [CandleEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedChannels {
+  data: [ChannelEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedConditions {
+  data: [ConditionEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedConditionsGroups {
+  data: [ConditionsGroupEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedCredentials {
+  data: [CredentialEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedMilestones {
+  data: [MilestoneEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedSignals {
+  data: [SignalEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedStrategies {
+  data: [StrategyEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedTokens {
+  data: [TokenEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedTradingTokens {
+  data: [TradingTokenEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedTradings {
+  data: [TradingEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedTransactions {
+  data: [TransactionEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedUsers {
+  data: [UserEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedWallets {
+  data: [WalletEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type Query {
+  candle(id: ID!): CandleEntity!
+  candles(poolAddress: String, skip: Int, take: Int): PaginatedCandles!
+  channel(id: ID!): ChannelEntity!
+  channels(skip: Int, take: Int): PaginatedChannels!
+  condition(id: ID!): ConditionEntity!
+  conditions(skip: Int, take: Int): PaginatedConditions!
+  conditionsGroup(id: ID!): ConditionsGroupEntity!
+  conditionsGroups(skip: Int, take: Int): PaginatedConditionsGroups!
+  credential(id: ID!): CredentialEntity!
+  credentials(skip: Int, take: Int): PaginatedCredentials!
+  getActionTypes: [actionTypeEnum!]!
+  getCandleFields: [candleFieldEnum!]!
+  getErrors: [errorsEnum!]!
+  getGroupOperators: [groupOperatorEnum!]!
+  getOperators: [operatorEnum!]!
+  getRelatedTo: [relatedToEnum!]!
+  milestone(id: ID!): MilestoneEntity!
+  milestones(skip: Int, take: Int): PaginatedMilestones!
+  signal(id: ID!): SignalEntity!
+  signals(skip: Int, take: Int): PaginatedSignals!
+  strategies(skip: Int, take: Int): PaginatedStrategies!
+  strategy(id: ID!): StrategyEntity!
+  token(id: ID!): TokenEntity!
+  tokens(skip: Int, take: Int): PaginatedTokens!
+  trading(id: ID!): TradingEntity!
+  tradingToken(id: ID!): TradingTokenEntity!
+  tradingTokens(skip: Int, take: Int, tradingId: String): PaginatedTradingTokens!
+  tradings(skip: Int, take: Int): PaginatedTradings!
+  transaction(id: ID!): TransactionEntity!
+  transactions(candleId: String, skip: Int, take: Int): PaginatedTransactions!
+  user(id: ID!): UserEntity!
+  users(skip: Int, take: Int): PaginatedUsers!
+  wallet(id: ID!): WalletEntity!
+  wallets(skip: Int, take: Int): PaginatedWallets!
+}
+
+type SignalEntity {
+  createdAt: DateTime!
+  id: ID!
+  signaledAt: IDate!
+  source: String!
+  token: TokenEntity
+  tokenAddress: String
+  tokenName: String
+  updatedAt: DateTime!
+}
+
+type StrategyEntity {
+  createdAt: DateTime!
+  id: ID!
+  milestones: [MilestoneEntity!]!
+  name: String!
+  tradings: [TradingEntity!]!
+  updatedAt: DateTime!
+}
+
+input TelegramUserDto {
+  added_to_attachment_menu: Boolean
+  first_name: String!
+  id: Float!
+  is_bot: Boolean
+  is_premium: Boolean
+  language_code: String
+  last_name: String
+  phone: String!
+  username: String
+}
+
+type TokenEntity {
+  address: String
+  chain: String
+  createdAt: DateTime!
+  dexToolsPairId: String
+  disabled: Boolean!
+  id: ID!
+  name: String
+  signal: SignalEntity
+  symbol: String
+  updatedAt: DateTime!
+  verified: Boolean!
+}
+
+type TradingEntity {
+  createdAt: DateTime!
+  disabled: Boolean!
+  id: ID!
+  price: IPrice!
+  sourceWallet: WalletEntity!
+  strategy: StrategyEntity!
+  targetWallet: WalletEntity!
+  tradingTokens: [TradingTokenEntity!]
+  updatedAt: DateTime!
+}
+
+type TradingTokenEntity {
+  createdAt: DateTime!
+  enterAt: IDate
+  enterPrice: IPrice
+  exitAt: IDate
+  exitPrice: IPrice
+  id: ID!
+  initialAt: IDate
+  initialPrice: IPrice
+  poolAddress: String!
+  signaledAt: IDate
+  signaledPrice: IPrice
+  status: tradingTokenStatusEnum!
+  trading: TradingEntity!
+  updatedAt: DateTime!
+  walletAddress: String!
+}
+
+type TransactionEntity {
+  candle: CandleEntity!
+  createdAt: DateTime!
+  date: IDate!
+  id: ID!
+  poolAddress: String!
+  price: IPrice!
+  updatedAt: DateTime!
+}
+
+input UpdateCandleDto {
+  id: ID!
+}
+
+input UpdateChannelDto {
+  id: ID!
+}
+
+input UpdateConditionDto {
+  id: ID!
+}
+
+input UpdateCredentialDto {
+  id: ID!
+}
+
+input UpdateMilestoneDto {
+  id: ID!
+}
+
+input UpdateSignalDto {
+  id: ID!
+}
+
+input UpdateStrategyDto {
+  id: ID!
+}
+
+input UpdateTokenDto {
+  id: ID!
+}
+
+input UpdateTradingDto {
+  id: ID!
+}
+
+input UpdateTradingTokenDto {
+  id: ID!
+}
+
+input UpdateTransactionDto {
+  id: ID!
+}
+
+input UpdateUserInput {
+  id: ID!
+  tel: String!
+  verificationCode: String!
+}
+
+input UpdateWalletDto {
+  id: ID!
+}
+
+type UserEntity {
+  createdAt: DateTime!
+  email: String
+  id: ID!
+  password: String
+  tel: String
+  telegramId: String
+  updatedAt: DateTime!
+  verificationCode: String
+  verificationStatus: verificationStatusEnum!
+}
+
+"""Represents NULL values"""
+scalar Void
+
+type WalletEntity {
+  address: String!
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+  sourceTradings: [TradingEntity!]!
+  targetTradings: [TradingEntity!]!
+  updatedAt: DateTime!
+}
+
+enum actionTypeEnum {
+  ENTER
+  EXIT
+}
+
+enum candleFieldEnum {
+  FIRST_TIMESTAMP
+  HIGH
+  LAST_TIMESTAMP
+  LOW
+}
+
+enum errorsEnum {
+  AuthorizationHeaderIsMissing
+  Forbidden
+  InternalServerError
+  InvalidEncryption
+  InvalidEncryptionLength
+  InvalidEnum
+  InvalidPassword
+  InvalidToken
+  InvalidVerificationCode
+  IsArray
+  IsDate
+  IsEmail
+  IsNotEmpty
+  IsNumber
+  IsObject
+  IsString
+  Max
+  MaxLength
+  Min
+  MinLength
+  NotFound
+  TokenIsMissing
+  UserAlreadyExist
+  UserNotExist
+  UserNotFound
+  UserNotVerified
+}
+
+enum groupOperatorEnum {
+  AND
+  OR
+}
+
+enum operatorEnum {
+  LESS
+  MORE
+}
+
+enum relatedToEnum {
+  ENTER
+  SIGNAL
+}
+
+enum tradingTokenStatusEnum {
+  BOUGHT
+  SELLED
+  SIGNALED
+}
+
+enum verificationStatusEnum {
+  NOT_VERIFIED
+  VERIFIED
+}

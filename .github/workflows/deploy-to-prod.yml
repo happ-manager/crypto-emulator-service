@@ -1,0 +1,60 @@
+name: Build and Deploy Api
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create empty environment file
+        run: echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.ts
+
+      - name: Decode and create prod environment file
+        run: echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.prod.ts
+
+      - name: Decode and create ca-certificate file
+        run: echo "${{ secrets.PROD_CA_CERTIFICATE_BASE64 }}" | base64 -d > ./ca-certificate.crt
+
+      - name: Build Docker image
+        run: docker build -t happ-crypto-api .
+
+      - name: Save Docker image
+        run: docker save -o happ-crypto-api.tar happ-crypto-api
+
+      - name: Set permissions for Docker image file
+        run: chmod 644 happ-crypto-api.tar
+
+      - name: Copy Docker image via SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          overwrite: true
+          source: "happ-crypto-api.tar"
+          target: "/home/happ/docker-images"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            docker load -i /home/happ/docker-images/happ-crypto-api.tar
+            cd /home/happ
+            docker-compose down --remove-orphans
+            docker-compose up -d --force-recreate

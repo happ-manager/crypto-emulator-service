@@ -1,0 +1,1 @@
+export const TROJAN_CONFIG = "TROJAN_CONFIG";

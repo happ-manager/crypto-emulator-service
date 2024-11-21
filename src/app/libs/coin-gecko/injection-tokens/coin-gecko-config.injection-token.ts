@@ -1,0 +1,1 @@
+export const COIN_GECKO_CONFIG = "COIN_GECKO_CONFIG";
