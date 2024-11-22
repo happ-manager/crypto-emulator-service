@@ -1,11 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { In, IsNull, Not } from "typeorm";
 
-import { DexToolsService } from "../../libs/dex-tools";
-import type { IDexToolCandle } from "../../libs/dex-tools/interfaces/dex-tools-candle.interface";
-import { DexToolsUtilsService } from "../../libs/dex-tools/services/dex-tools-utils.service";
+import type { ICandle } from "../../candles/interfaces/candle.interface";
+import { CandlesService } from "../../candles/services/candles.service";
+import { findCandle } from "../../candles/utils/find-candle.util";
 import { LoggerService } from "../../libs/logger";
-import { getPercentDiff } from "../../shared/utils/get-percent-diff.util";
 import { sleep } from "../../shared/utils/sleep.util";
 import type { ISignal } from "../../signals/interfaces/signal.interface";
 import { SignalsService } from "../../signals/services/signals.service";
@@ -14,8 +13,7 @@ import { SignalsService } from "../../signals/services/signals.service";
 export class AnalyticsService {
 	constructor(
 		private readonly _signalsService: SignalsService,
-		private readonly _dexToolsService: DexToolsService,
-		private readonly _dexToolsUtilsService: DexToolsUtilsService,
+		private readonly _candlesService: CandlesService,
 		private readonly _loggerService: LoggerService
 	) {}
 
@@ -32,15 +30,15 @@ export class AnalyticsService {
 
 		for (const [index, signal] of findedSignals.data.entries()) {
 			await sleep(100);
-			this._loggerService.log(`Fetch page #${index + 1} of ${findedSignals.data.length}`);
-			const { dexToolsPairId, chain } = signal.token;
-			const pair = await this._dexToolsService.getPair(dexToolsPairId, chain);
+			this._loggerService.log(`Fetch signal #${index + 1} of ${findedSignals.data.length}`);
 
-			const period = this._dexToolsUtilsService.getPeriod(pair.creationTime);
-			const adjustedDate = this._dexToolsUtilsService.getAdjustedDate(period, signal.signaledAt);
+			const { data } = await this._candlesService.getCandles({
+				where: { poolAddress: signal.tokenAddress }
+			});
 
-			const candles = await this._dexToolsService.getCandles(dexToolsPairId, chain, adjustedDate, period);
-			const entryCandle = this._dexToolsUtilsService.getCandle(candles, signal.signaledAt);
+			const candles = data.filter((candle) => candle.openPrice.gt(0));
+
+			const entryCandle = findCandle(candles, signal.signaledAt);
 			const [firstCandle] = candles;
 			const lastCandle = candles.at(-1);
 
@@ -57,25 +55,28 @@ export class AnalyticsService {
 				continue;
 			}
 
-			const maxCandle = candles.reduce((max, candle) => (candle.high > max.high ? candle : max), entryCandle);
+			const maxCandle = candles.reduce((max, candle) => (max.maxPrice.gt(candle.maxPrice) ? max : candle), entryCandle);
 			const candlesBeforeMax = candles.slice(0, candles.indexOf(maxCandle) + 1);
-			const minCandle = candlesBeforeMax.reduce((min, candle) => (candle.low < min.low ? candle : min), maxCandle);
+			const minCandle = candlesBeforeMax.reduce(
+				(min, candle) => (min.minPrice.lt(candle.minPrice) ? min : candle),
+				maxCandle
+			);
 
-			const minPercent = getPercentDiff(entryCandle.open, minCandle.low);
-			const maxPercent = getPercentDiff(entryCandle.open, maxCandle.high);
+			const minPercent = entryCandle.openPrice.percentDiff(minCandle.minPrice);
+			const maxPercent = entryCandle.openPrice.percentDiff(maxCandle.maxPrice);
 
-			const percentCandles: Record<string, IDexToolCandle | null> = {};
+			const percentCandles: Record<string, ICandle | null> = {};
 
-			const candlesFromMin = [...candlesBeforeMax].sort((a, b) => a.low - b.low);
-			const candlesFromMax = [...candlesBeforeMax].sort((a, b) => b.high - a.high);
+			const candlesFromMin = [...candlesBeforeMax].sort((a, b) => (a.minPrice.lte(b.minPrice) ? 1 : -1));
+			const candlesFromMax = [...candlesBeforeMax].sort((a, b) => (a.maxPrice.gte(b.maxPrice) ? 1 : -1));
 
-			for (let percent = Math.floor(minPercent); percent <= Math.floor(maxPercent); percent++) {
-				const price = (entryCandle.open * percent) / 100;
+			for (let percent = minPercent.toNumber(); percent <= maxPercent.toNumber(); percent++) {
+				const price = entryCandle.openPrice.percentOf(percent);
 
-				percentCandles[`${percent}`] =
+				percentCandles[percent.toString()] =
 					percent > 0
-						? candlesFromMax.find((candle) => price < candle.high)
-						: candlesFromMin.find((candle) => price < candle.low);
+						? candlesFromMax.find((candle) => candle.maxPrice.gte(price))
+						: candlesFromMin.find((candle) => candle.minPrice.lte(price));
 			}
 
 			results.push({

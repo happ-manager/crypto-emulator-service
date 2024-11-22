@@ -8,7 +8,7 @@ import { VERIFICATION_CONTROLLERS } from "./controllers";
 import { VERIFICATION_SERVICES } from "./services";
 
 @Module({
-	imports: [TelegramModule.forChild(), LoggerModule.forChild(), TradingModule, EventsModule],
+	imports: [TelegramModule.forChild(), LoggerModule.forChild(), TradingModule, EventsModule.forChild()],
 	controllers: VERIFICATION_CONTROLLERS,
 	providers: VERIFICATION_SERVICES,
 	exports: VERIFICATION_SERVICES

@@ -6,7 +6,7 @@ import { Subject } from "rxjs";
 import { EventsEnum } from "../../../events/enums/events.enum";
 import { DateService } from "../../date";
 import { LoggerService } from "../../logger";
-import { WSOL } from "../constant/wsol.constant";
+import { PUMFUN_WALLET, RADIUM_WALLET, WSOL_WALLET } from "../constant/wallets.constant";
 import { CommitmentTypeEnum } from "../enums/commitment-type.enum";
 import { SubscribtionTypeEnum } from "../enums/subscribtion-type.enum";
 import { SOLANA_CONFIG } from "../injection-tokens/solana-config.injection-token";
@@ -15,9 +15,8 @@ import { ISolanaMessage } from "../interfaces/solana-message.interface";
 import type { ISolanaTransaction } from "../interfaces/solana-transaction.interface";
 import { checkIsInit } from "../utils/check-is-init.util";
 import { checkIsTransfer } from "../utils/check-is-transfer.util";
-import { HeliusService } from "./helius.service";
-import { SolanaPriceService } from "./utils/solana-price.service";
-import { SwapService } from "./utils/swap.service";
+import { SolanaPriceService } from "./solana-price.service";
+import { SwapService } from "./swap.service";
 
 @Injectable()
 export class SolanaService {
@@ -26,7 +25,6 @@ export class SolanaService {
 
 	constructor(
 		@Inject(SOLANA_CONFIG) private readonly _solanaConfig: ISolanaConfig,
-		private readonly _heliusService: HeliusService,
 		private readonly _solanaPriceService: SolanaPriceService,
 		private readonly _dateService: DateService,
 		private readonly _swapService: SwapService,
@@ -67,7 +65,7 @@ export class SolanaService {
 				authories.push(authority);
 			}
 
-			if (!walletAddress && source === WSOL && parsed) {
+			if (!walletAddress && source === WSOL_WALLET && parsed) {
 				walletAddress = authority;
 			}
 
@@ -123,7 +121,7 @@ export class SolanaService {
 			const { accounts = [], parsed } = instruction;
 			const { amount, authority } = parsed?.info || {};
 
-			if (!isPumpFun && accounts.includes(this._solanaConfig.pumpFunWallet)) {
+			if (!isPumpFun && accounts.includes(PUMFUN_WALLET)) {
 				isPumpFun = true;
 			}
 
@@ -136,7 +134,7 @@ export class SolanaService {
 			}
 
 			if (!walletAddress && isPumpFun) {
-				walletAddress = this._solanaConfig.radiumWallet;
+				walletAddress = RADIUM_WALLET;
 			}
 
 			if (!poolAddress && isPumpFun && accounts[4]) {
@@ -170,10 +168,10 @@ export class SolanaService {
 
 		if (type === SubscribtionTypeEnum.BUY && !this._buySubscribers[account]) {
 			this._buySubscribers[account] = subject;
-			this._heliusService.subscribe([account], CommitmentTypeEnum.PROCESSED);
+			this._solanaConfig.provider.subscribe([account], CommitmentTypeEnum.PROCESSED);
 		} else if (type === SubscribtionTypeEnum.PRICE && !this._priceSubscribers[account]) {
 			this._priceSubscribers[account] = subject;
-			this._heliusService.subscribe([account], CommitmentTypeEnum.CONFIRMED);
+			this._solanaConfig.provider.subscribe([account], CommitmentTypeEnum.CONFIRMED);
 		}
 
 		return subject;
@@ -203,6 +201,6 @@ export class SolanaService {
 	}
 
 	getTransactions(pollAddress: string, signature?: string) {
-		return this._heliusService.getTransactions(pollAddress, signature);
+		return this._solanaConfig.provider.getTransactions(pollAddress, signature);
 	}
 }

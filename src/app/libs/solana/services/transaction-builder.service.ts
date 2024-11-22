@@ -10,7 +10,6 @@ import type {
 } from "@solana/web3.js";
 import {
 	ComputeBudgetProgram,
-	Connection,
 	PublicKey,
 	SystemProgram,
 	Transaction,
@@ -28,12 +27,13 @@ import type {
 import { JITO_API_URLS, JITO_TIP_ACCOUNTS } from "helius-sdk";
 import { firstValueFrom } from "rxjs";
 
-import { CONFIRMED_CONNECTION } from "../../injection-tokens/confirmed-connection.injection-token";
+import { SOLANA_CONFIG } from "../injection-tokens/solana-config.injection-token";
+import { ISolanaConfig } from "../interfaces/solana-config.interface";
 
 @Injectable()
 export class TransactionBuilderService {
 	constructor(
-		@Inject(CONFIRMED_CONNECTION) readonly connection: Connection,
+		@Inject(SOLANA_CONFIG) readonly _solanaConfig: ISolanaConfig,
 		private httpService: HttpService
 	) {}
 
@@ -62,7 +62,7 @@ export class TransactionBuilderService {
 
 			const commitment = sendOptions?.preflightCommitment || "confirmed";
 
-			const currentBlockHeight = await this.connection.getBlockHeight();
+			const currentBlockHeight = await this._solanaConfig.provider.connection.getBlockHeight();
 			const lastValidBlockHeight = Math.min(
 				blockhash.lastValidBlockHeight,
 				currentBlockHeight + lastValidBlockHeightOffset
@@ -79,7 +79,7 @@ export class TransactionBuilderService {
 			do {
 				try {
 					// signature does not change when it resends the same one
-					const signature = await this.connection.sendRawTransaction(transaction.serialize(), {
+					const signature = await this._solanaConfig.provider.connection.sendRawTransaction(transaction.serialize(), {
 						maxRetries: 0,
 						preflightCommitment: "confirmed",
 						skipPreflight: sendOptions.skipPreflight,
@@ -88,7 +88,7 @@ export class TransactionBuilderService {
 					} as any);
 
 					const abortSignal = AbortSignal.timeout(15_000);
-					await this.connection.confirmTransaction(
+					await this._solanaConfig.provider.connection.confirmTransaction(
 						{
 							abortSignal,
 							signature,
@@ -144,7 +144,7 @@ export class TransactionBuilderService {
 		const {
 			context: { slot: minContextSlot },
 			value: blockhash
-		} = await this.connection.getLatestBlockhashAndContext();
+		} = await this._solanaConfig.provider.connection.getLatestBlockhashAndContext();
 		const recentBlockhash = blockhash.blockhash;
 
 		// Determine if we need to use a versioned transaction
@@ -280,7 +280,7 @@ export class TransactionBuilderService {
 
 	async getPriorityFeeEstimate(params: GetPriorityFeeEstimateRequest): Promise<GetPriorityFeeEstimateResponse> {
 		try {
-			const url = `${this.connection.rpcEndpoint}`;
+			const url = `${this._solanaConfig.provider.connection.rpcEndpoint}`;
 			const response = await firstValueFrom(
 				this.httpService.post(
 					url,
@@ -318,7 +318,7 @@ export class TransactionBuilderService {
 			new TransactionMessage({
 				instructions: testInstructions,
 				payerKey: payer,
-				recentBlockhash: (await this.connection.getLatestBlockhash()).blockhash
+				recentBlockhash: (await this._solanaConfig.provider.connection.getLatestBlockhash()).blockhash
 			}).compileToV0Message(lookupTables)
 		);
 
@@ -326,7 +326,7 @@ export class TransactionBuilderService {
 			testTransaction.sign(signers);
 		}
 
-		const rpcResponse = await this.connection.simulateTransaction(testTransaction, {
+		const rpcResponse = await this._solanaConfig.provider.connection.simulateTransaction(testTransaction, {
 			sigVerify: Boolean(signers)
 		});
 
@@ -372,7 +372,7 @@ export class TransactionBuilderService {
 		// Send the transaction as a Jito Bundle
 		const bundleId = await this.sendJitoBundle([serializedTransaction], jitoApiUrl);
 
-		const currentBlockHeight = await this.connection.getBlockHeight();
+		const currentBlockHeight = await this._solanaConfig.provider.connection.getBlockHeight();
 		const lastValidBlockHeight = Math.min(
 			blockhash.lastValidBlockHeight,
 			currentBlockHeight + lastValidBlockHeightOffset
@@ -383,7 +383,10 @@ export class TransactionBuilderService {
 		const interval = 5000; // 5 second interval
 		const startTime = Date.now();
 
-		while (Date.now() - startTime < timeout || (await this.connection.getBlockHeight()) <= lastValidBlockHeight) {
+		while (
+			Date.now() - startTime < timeout ||
+			(await this._solanaConfig.provider.connection.getBlockHeight()) <= lastValidBlockHeight
+		) {
 			const bundleStatuses = await this.getBundleStatuses([bundleId], jitoApiUrl);
 
 			if (bundleStatuses && bundleStatuses.value && bundleStatuses.value.length > 0) {

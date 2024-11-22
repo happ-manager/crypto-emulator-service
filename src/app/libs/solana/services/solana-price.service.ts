@@ -4,16 +4,11 @@ import { Injectable } from "@nestjs/common";
 import Big from "big.js";
 import { firstValueFrom } from "rxjs";
 
-import { LoggerService } from "../../../logger";
-
 @Injectable()
 export class SolanaPriceService implements OnModuleInit {
 	private currentSolanaPrice: number = 0;
 
-	constructor(
-		private readonly _httpService: HttpService,
-		private readonly _loggerService: LoggerService
-	) {}
+	constructor(private readonly _httpService: HttpService) {}
 
 	onModuleInit() {
 		setTimeout(this.startPriceCheck.bind(this));

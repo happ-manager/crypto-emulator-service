@@ -1,5 +1,6 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
+import { Cron } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { In, Repository } from "typeorm";
@@ -12,12 +13,14 @@ import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import { sleep } from "../../shared/utils/sleep.util";
-import { SignalEntity } from "../../signals/entities/signal.entity";
+import { ISignal } from "../../signals/interfaces/signal.interface";
 import { TokenEntity } from "../entities/token.entity";
 import type { IToken } from "../interfaces/token.interface";
 
 @Injectable()
 export class TokensService {
+	private readonly _signals: ISignal[] = [];
+
 	constructor(
 		@InjectRepository(TokenEntity) private readonly _tokensRepository: Repository<TokenEntity>,
 		private readonly _dexToolsService: DexToolsService,
@@ -46,13 +49,23 @@ export class TokensService {
 	}
 
 	@OnEvent(EventsEnum.SIGNAL_CREATED)
-	async onSignalCreate(signal: SignalEntity) {
-		await this.createToken({ name: signal.tokenName, address: signal.tokenAddress, signal });
+	async onSignalCreate(signal: ISignal) {
+		this._signals.push(signal);
 	}
 
 	@OnEvent(EventsEnum.SIGNALS_CREATED)
-	async onSignalsCreate(signals: SignalEntity[]) {
-		const tokensToCreate: Partial<IToken>[] = signals.map((signal) => ({
+	async onSignalsCreate(signals: ISignal[]) {
+		this._signals.push(...signals);
+	}
+
+	@Cron("*/10 * * * * *") // Это выражение cron для запуска каждые 10 секунд
+	async handleSignals() {
+		if (this._signals.length === 0) {
+			return;
+		}
+
+		const signals = this._signals.splice(0, this._signals.length);
+		const tokensToCreate: DeepPartial<IToken>[] = signals.map((signal) => ({
 			name: signal.tokenName,
 			address: signal.tokenAddress,
 			signal
@@ -61,11 +74,11 @@ export class TokensService {
 		await this.createTokens(tokensToCreate);
 	}
 
-	async getToken(options?: FindOneOptions<TokenEntity>) {
+	async getToken(options?: FindOneOptions<IToken>) {
 		return this._tokensRepository.findOne(options);
 	}
 
-	async getTokens(options?: FindManyOptions<TokenEntity>) {
+	async getTokens(options?: FindManyOptions<IToken>) {
 		const [data, count] = await this._tokensRepository.findAndCount(options);
 
 		return { data, totalCount: count, page: getPage(options) };
@@ -89,7 +102,7 @@ export class TokensService {
 
 			const findedToken = await this._tokensRepository.findOne({ where: { id: savedToken.id } });
 
-			this._eventsService.emit(EventsEnum.TOKEN_CREATED, findedToken);
+			this._eventsService.emit(EventsEnum.TOKEN_CREATED, findedToken, true);
 
 			return findedToken;
 		} catch (error) {
@@ -126,7 +139,7 @@ export class TokensService {
 
 			const findedTokens = await this._tokensRepository.find({ where: { id: In(savedIds) } });
 
-			this._eventsService.emit(EventsEnum.TOKEN_CREATED, findedTokens);
+			this._eventsService.emit(EventsEnum.TOKENS_CREATED, findedTokens, true);
 
 			return findedTokens;
 		} catch (error) {
@@ -138,7 +151,11 @@ export class TokensService {
 	async updateToken(id: string, token: DeepPartial<IToken>) {
 		try {
 			await this._tokensRepository.save({ id, ...token });
-			return await this._tokensRepository.findOne({ where: { id } });
+			const findedToken = await this._tokensRepository.findOne({ where: { id } });
+
+			this._eventsService.emit(EventsEnum.TOKEN_UPDATED, findedToken, true);
+
+			return findedToken;
 		} catch (error) {
 			this._loggerService.error(error);
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
@@ -148,6 +165,9 @@ export class TokensService {
 	async deleteToken(id: string) {
 		try {
 			await this._tokensRepository.delete(id);
+
+			this._eventsService.emit(EventsEnum.TOKEN_DELETED, id, true);
+
 			return { deleted: true };
 		} catch (error) {
 			this._loggerService.error(error);

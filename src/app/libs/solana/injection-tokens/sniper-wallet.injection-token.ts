@@ -1,1 +1,0 @@
-export const SNIPER_WALLET = "SNIPER_WALLET";

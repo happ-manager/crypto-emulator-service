@@ -2,23 +2,29 @@ import { HttpService } from "@nestjs/axios";
 import type { OnModuleInit } from "@nestjs/common";
 import { Inject } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
+import { Connection } from "@solana/web3.js";
 import * as WebSocket from "ws";
 
 import { EventsEnum } from "../../../events/enums/events.enum";
 import { EventsService } from "../../../events/services/events.service";
 import { LoggerService } from "../../logger";
-import { CommitmentTypeEnum } from "../enums/commitment-type.enum";
-import { SOLANA_CONFIG } from "../injection-tokens/solana-config.injection-token";
-import type { IApiTransaction } from "../interfaces/api-transactions.interface";
-import { ISolanaConfig } from "../interfaces/solana-config.interface";
+import type { ISolanaProvider } from "../../solana";
+import { CommitmentTypeEnum } from "../../solana/enums/commitment-type.enum";
+import type { IApiTransaction } from "../../solana/interfaces/api-transaction.interface";
+import { HELIUS_CONFIG } from "../injection-tokens/helius-config.injection-token";
+import { IHeliusConfig } from "../interfaces/helius-config.interface";
 
 @Injectable()
-export class HeliusService implements OnModuleInit {
+export class HeliusService implements OnModuleInit, ISolanaProvider {
 	private _ws: WebSocket;
 	private _wsAccounts = {};
 
+	readonly connection = new Connection(this._heliusConfig.stakedRpcUrl, "confirmed");
+
+	reopen = true;
+
 	constructor(
-		@Inject(SOLANA_CONFIG) private readonly _solanaConfig: ISolanaConfig,
+		@Inject(HELIUS_CONFIG) private readonly _heliusConfig: IHeliusConfig,
 		private readonly _httpService: HttpService,
 		private readonly _eventsService: EventsService,
 		private readonly _loggerService: LoggerService
@@ -29,7 +35,7 @@ export class HeliusService implements OnModuleInit {
 	}
 
 	init() {
-		this._ws = new WebSocket(this._solanaConfig.heliusEnhancedWebsocketUrl);
+		this._ws = new WebSocket(this._heliusConfig.enhancedWebsocketUrl);
 
 		this._ws.on("open", () => {
 			this._loggerService.log("WebSocket соединение установлено.");
@@ -62,7 +68,8 @@ export class HeliusService implements OnModuleInit {
 		this._ws.on("message", async (messageBuffer: WebSocket.Data) => {
 			const message = JSON.parse(messageBuffer.toString());
 
-			if (message.params?.error) {
+			if (message.error || message.params?.error) {
+				this.reopen = false;
 				this._ws.close();
 				return;
 			}
@@ -78,6 +85,11 @@ export class HeliusService implements OnModuleInit {
 			this._loggerService.error("WebSocket соединение закрыто.", err.toString());
 
 			this._eventsService.emit(EventsEnum.HELIUS_CLOSE);
+
+			if (!this.reopen) {
+				return;
+			}
+
 			setTimeout(this.init.bind(this), 2000);
 		});
 	}
@@ -111,7 +123,7 @@ export class HeliusService implements OnModuleInit {
 	}
 
 	getTransactions(poolAddress: string, signature?: string) {
-		const baseUrl = `https://api.helius.xyz/v0/addresses/${poolAddress}/transactions?api-key=${this._solanaConfig.heliusApiKey}`;
+		const baseUrl = `https://api.helius.xyz/v0/addresses/${poolAddress}/transactions?api-key=${this._heliusConfig.apiKey}`;
 		const query = signature ? `&before=${signature}` : "";
 
 		return this._httpService.get<IApiTransaction[]>(baseUrl + query);

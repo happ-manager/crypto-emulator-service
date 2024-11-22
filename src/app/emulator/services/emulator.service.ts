@@ -1,12 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { In, IsNull, Not } from "typeorm";
 
-import { DexToolsService } from "../../libs/dex-tools";
-import type { IDexToolCandle } from "../../libs/dex-tools/interfaces/dex-tools-candle.interface";
-import { DexToolsUtilsService } from "../../libs/dex-tools/services/dex-tools-utils.service";
+import type { ICandle } from "../../candles/interfaces/candle.interface";
+import { CandlesService } from "../../candles/services/candles.service";
+import { findCandle } from "../../candles/utils/find-candle.util";
 import { LoggerService } from "../../libs/logger";
 import { getPercentChange } from "../../shared/utils/get-percent-change.util";
-import { getPercentDiff } from "../../shared/utils/get-percent-diff.util";
 import { getPercentOf } from "../../shared/utils/get-percent-of.util";
 import { sleep } from "../../shared/utils/sleep.util";
 import type { ISignal } from "../../signals/interfaces/signal.interface";
@@ -34,23 +33,9 @@ export class EmulatorService {
 	constructor(
 		private readonly _signalsService: SignalsService,
 		private readonly _strategiesService: StrategiesService,
-		private readonly _dexToolsService: DexToolsService,
-		private readonly _dexToolsUtilsService: DexToolsUtilsService,
-		private readonly _loggerService: LoggerService
+		private readonly _loggerService: LoggerService,
+		private readonly _candlesService: CandlesService
 	) {}
-
-	async onModuleInit() {
-		return;
-		const body: any = {
-			signals: [{ id: "97905c2c-d256-434a-ae60-187a3ea96aab" }],
-			strategies: [{ id: "d727441b-fbbf-42ff-a52f-2528147ec6c5" }],
-			sources: []
-		};
-
-		setTimeout(async () => {
-			const result = await this.emulate(body.signals, body.sources, body.strategies);
-		}, 0);
-	}
 
 	async emulate(signals: ISignal[], sources: string[], strategies: IStrategy[], investment = 100) {
 		const signalsWhere = signals.length > 0 ? { id: In(signals.map((signal) => signal.id)) } : { source: In(sources) };
@@ -72,15 +57,14 @@ export class EmulatorService {
 
 		for (const [index, signal] of findedSignals.data.entries()) {
 			await sleep(100);
-			this._loggerService.log(`Fetch page #${index + 1} of ${findedSignals.data.length}`);
-			const { dexToolsPairId, chain } = signal.token;
-			const pair = await this._dexToolsService.getPair(dexToolsPairId, chain);
+			this._loggerService.log(`Fetch signal #${index + 1} of ${findedSignals.data.length}`);
 
-			const period = this._dexToolsUtilsService.getPeriod(pair.creationTime);
-			const adjustedDate = this._dexToolsUtilsService.getAdjustedDate(period, signal.signaledAt);
-			const candles = await this._dexToolsService.getCandles(dexToolsPairId, chain, adjustedDate, period);
-			const signalCandle = this._dexToolsUtilsService.getCandle(candles, signal.signaledAt);
+			const { data } = await this._candlesService.getCandles({
+				where: { poolAddress: signal.tokenAddress }
+			});
 
+			const candles = data.filter((candle) => candle.openPrice.gt(0));
+			const signalCandle = findCandle(candles, signal.signaledAt);
 			const strategiesResults = {};
 
 			for (const strategy of findedStrategies.data) {
@@ -89,7 +73,7 @@ export class EmulatorService {
 				const exitMilestones = sortedMilestones.filter((milestone) => milestone.actionType === ActionTypeEnum.EXIT);
 
 				let tokenBalance = 0;
-				let enterCandle: IDexToolCandle = signalCandle;
+				let enterCandle: ICandle = signalCandle;
 
 				strategiesResults[strategy.name] = { enterPrice: 0, exitPrice: 0, milestones: {} };
 
@@ -112,9 +96,7 @@ export class EmulatorService {
 					};
 				}
 
-				const candlesAfterEnter = candles.filter((candle) =>
-					candle.firstTimestamp.isSameOrAfter(enterCandle.firstTimestamp)
-				);
+				const candlesAfterEnter = candles.filter((candle) => candle.openDate.isSameOrAfter(enterCandle.openDate));
 
 				for (const milestone of exitMilestones) {
 					const checkedMilestone = this.checkMilestone(candlesAfterEnter, milestone, signalCandle, enterCandle);
@@ -131,7 +113,7 @@ export class EmulatorService {
 					const exitTokens = getPercentOf(tokenBalance, milestone.value);
 					const priceDiff = priceCondition
 						? getConditionValue(priceCondition)
-						: getPercentDiff(enterCandle.open, exitCandle.high);
+						: enterCandle.openPrice.percentDiff(exitCandle.maxPrice).toNumber();
 					const exitTokenPrice = getPercentChange(1, priceDiff);
 					const exitPrice = exitTokens * exitTokenPrice;
 
@@ -152,12 +134,7 @@ export class EmulatorService {
 		return results;
 	}
 
-	checkMilestone(
-		candles: IDexToolCandle[],
-		milestone: IMilestone,
-		signalCandle: IDexToolCandle,
-		enterCandle: IDexToolCandle
-	) {
+	checkMilestone(candles: ICandle[], milestone: IMilestone, signalCandle: ICandle, enterCandle: ICandle) {
 		for (const candle of candles) {
 			const conditionsGroups = milestone.conditionsGroups.map((group) =>
 				this.checkConditionsGroup(group, candle, signalCandle, enterCandle)
@@ -173,12 +150,7 @@ export class EmulatorService {
 		}
 	}
 
-	checkConditionsGroup(
-		group: IConditionsGroup,
-		candle: IDexToolCandle,
-		signalCandle: IDexToolCandle,
-		enterCandle: IDexToolCandle
-	) {
+	checkConditionsGroup(group: IConditionsGroup, candle: ICandle, signalCandle: ICandle, enterCandle: ICandle) {
 		const conditions = group.conditions.map((condition) =>
 			this.checkCondition(condition, candle, signalCandle, enterCandle)
 		);
@@ -188,19 +160,14 @@ export class EmulatorService {
 		return checkedConditions.length > 0 ? { ...group, conditions: checkedConditions } : null;
 	}
 
-	checkCondition(
-		condition: ICondition,
-		candle: IDexToolCandle,
-		signalCandle: IDexToolCandle,
-		enterCandle: IDexToolCandle
-	) {
+	checkCondition(condition: ICondition, candle: ICandle, signalCandle: ICandle, enterCandle: ICandle) {
 		const releatedCandle = condition.relatedTo === RelatedToEnum.SIGNAL ? signalCandle : enterCandle;
 
 		const candleValue = {
-			[CandleFieldEnum.FIRST_TIMESTAMP]: candle.firstTimestamp.unix() - releatedCandle.firstTimestamp.unix(),
-			[CandleFieldEnum.LAST_TIMESTAMP]: candle.lastTimestamp.unix() - releatedCandle.lastTimestamp.unix(),
-			[CandleFieldEnum.HIGH]: getPercentDiff(releatedCandle.open, candle.high),
-			[CandleFieldEnum.LOW]: getPercentDiff(releatedCandle.open, candle.low)
+			[CandleFieldEnum.FIRST_TIMESTAMP]: candle.openDate.unix() - releatedCandle.openDate.unix(),
+			[CandleFieldEnum.LAST_TIMESTAMP]: candle.closeDate.unix() - releatedCandle.closeDate.unix(),
+			[CandleFieldEnum.HIGH]: releatedCandle.openPrice.percentDiff(candle.maxPrice).toNumber(),
+			[CandleFieldEnum.LOW]: releatedCandle.openPrice.percentDiff(candle.minPrice).toNumber()
 		}[condition.field];
 
 		const isCondition = checkOperator(candleValue, condition.value, condition.operator);

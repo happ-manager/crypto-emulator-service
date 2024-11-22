@@ -19,17 +19,18 @@ import {
 	getAssociatedTokenAddressSync
 } from "@solana/spl-token";
 import type { TransactionInstruction } from "@solana/web3.js";
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram } from "@solana/web3.js";
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram } from "@solana/web3.js";
 import bs58 from "bs58";
 
-import { LoggerService } from "../../../logger";
-import { CONFIRMED_CONNECTION } from "../../injection-tokens/confirmed-connection.injection-token";
+import { LoggerService } from "../../logger";
+import { SOLANA_CONFIG } from "../injection-tokens/solana-config.injection-token";
+import { ISolanaConfig } from "../interfaces/solana-config.interface";
 import { TransactionBuilderService } from "./transaction-builder.service";
 
 @Injectable()
 export class SwapService implements OnModuleInit {
 	constructor(
-		@Inject(CONFIRMED_CONNECTION) private readonly _connection: Connection,
+		@Inject(SOLANA_CONFIG) private readonly _solanaConfig: ISolanaConfig,
 		private readonly _transactionBuilderService: TransactionBuilderService,
 		private readonly _loggerService: LoggerService
 	) {}
@@ -90,7 +91,8 @@ export class SwapService implements OnModuleInit {
 			);
 
 			// Get balance of output token account
-			const outputTokenAccountInfo = await this._connection.getTokenAccountBalance(outputTokenAccountAddress);
+			const outputTokenAccountInfo =
+				await this._solanaConfig.provider.connection.getTokenAccountBalance(outputTokenAccountAddress);
 			const outputTokenAmount = new TokenAmount(outputToken, outputTokenAccountInfo.value.amount);
 
 			if (outputTokenAmount.raw.isZero()) {
@@ -226,7 +228,7 @@ export class SwapService implements OnModuleInit {
 		let marketAccount;
 
 		while (true) {
-			poolAccount = await this._connection.getAccountInfo(poolId);
+			poolAccount = await this._solanaConfig.provider.connection.getAccountInfo(poolId);
 			if (poolAccount) {
 				break;
 			}
@@ -235,7 +237,7 @@ export class SwapService implements OnModuleInit {
 		const poolInfo = LIQUIDITY_STATE_LAYOUT_V4.decode(poolAccount.data);
 
 		while (true) {
-			marketAccount = await this._connection.getAccountInfo(poolInfo.marketId);
+			marketAccount = await this._solanaConfig.provider.connection.getAccountInfo(poolInfo.marketId);
 			if (marketAccount) {
 				break;
 			}

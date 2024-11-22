@@ -5,24 +5,24 @@ import Big from "big.js";
 declare module "big.js" {
 	interface Big {
 		percentDiff(other: Big): Big;
-		getPercentOf(percent: number): Big;
-		getPercentChange(percent: number): Big;
+		percentOf(percent: number): Big;
+		percentChange(percent: number): Big;
 	}
 }
 
 // Добавляем методы в прототип Big
 (Big as any).prototype.percentDiff = function (this: Big, other: Big): Big {
 	if (other.eq(0)) {
-		throw new Error("Cannot calculate percentage difference with base value 0.");
+		return Big(0);
 	}
-	return this.minus(other).div(other).times(100);
+	return other.minus(this).div(this).times(100);
 };
 
-(Big as any).prototype.getPercentOf = function (this: Big, percent: number): Big {
+(Big as any).prototype.percentOf = function (this: Big, percent: number): Big {
 	return this.times(percent).div(100);
 };
 
-(Big as any).prototype.getPercentChange = function (this: Big, percent: number): Big {
+(Big as any).prototype.percentChange = function (this: Big, percent: number): Big {
 	return this.times(new Big(1).plus(new Big(percent).div(100)));
 };
 

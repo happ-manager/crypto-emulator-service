@@ -47,6 +47,7 @@ export const environment = {
 		botId: 0
 	},
 	solana: {},
+	helius: {},
 	aggregator: {
 		apiUrl: ""
 	}

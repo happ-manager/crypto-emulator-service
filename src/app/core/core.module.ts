@@ -84,7 +84,7 @@ import { TYPEORM_CONFIG } from "./configs/typeorm.config";
 		NomicsModule.forRoot(NOMICS_CONFIG),
 		SantimentModule.forRoot(SANTIMENT_CONFIG),
 		SolscanModule.forRoot(SOLSCAN_CONFIG),
-		SolanaModule.forRoot(SOLANA_CONFIG),
+		SolanaModule.forRootAsync(SOLANA_CONFIG),
 		TelegramModule.forRoot(TELEGRAM_CONFIG),
 		LoggerModule.forRoot(LOGGER_CONFIG),
 		FilesModule.forRoot(FILES_CONFIG),

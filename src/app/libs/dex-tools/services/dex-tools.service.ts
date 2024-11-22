@@ -79,7 +79,9 @@ export class DexToolsService {
 			const response = await firstValueFrom(this._httpService.get(url, { headers: FAKE_HEADERS }));
 
 			const pairs = response.data?.results || [];
-			const filteredPairs = tokenAddress ? pairs.filter((pair) => pair.id.token === tokenAddress) : pairs;
+			const filteredPairs = tokenAddress
+				? pairs.filter((pair) => tokenAddress === pair.id.token || tokenAddress === pair.id.pair)
+				: pairs;
 			const sortedPairs = filteredPairs.sort((a, b) => b.metrics.liquidity - a.metrics.liquidity);
 			const [bestPair] = sortedPairs;
 

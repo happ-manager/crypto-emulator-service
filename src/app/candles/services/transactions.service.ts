@@ -36,7 +36,7 @@ export class TransactionsService {
 		}
 
 		const solanaTransactions = this._solanaTransactions.splice(0, this._solanaTransactions.length);
-		const transactionsToCreate = solanaTransactions.map((solanaTransaction) => ({
+		const transactionsToCreate: DeepPartial<ITransaction>[] = solanaTransactions.map((solanaTransaction) => ({
 			price: solanaTransaction.price?.toString(),
 			date: solanaTransaction.date,
 			poolAddress: solanaTransaction.poolAddress

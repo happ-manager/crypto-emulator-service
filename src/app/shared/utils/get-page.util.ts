@@ -1,7 +1,7 @@
 import type { FindManyOptions } from "typeorm";
 
 export function getPage(options: FindManyOptions) {
-	if (!options.skip || !options.take) {
+	if (!options?.skip || !options?.take) {
 		return 1;
 	}
 

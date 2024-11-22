@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { CandlesModule } from "../candles/candles.module";
 import { DateModule } from "../libs/date";
 import { DexToolsModule } from "../libs/dex-tools";
 import { ExcelModule } from "../libs/excel";
@@ -14,6 +15,7 @@ import { EMULATOR_SERVICES } from "./services";
 	imports: [
 		SignalsModule,
 		StrategiesModule,
+		CandlesModule,
 		DateModule.forChild(),
 		DexToolsModule.forChild(),
 		ExcelModule.forChild(),
