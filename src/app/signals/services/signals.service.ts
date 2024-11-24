@@ -44,7 +44,7 @@ export class SignalsService {
 		const signalsToCreate: DeepPartial<ISignal>[] = tradingTokens.map((tradingToken) => ({
 			source: tradingToken.walletAddress,
 			signaledAt: tradingToken.signaledAt,
-			tokenAddress: tradingToken.poolAddress
+			poolAddress: tradingToken.poolAddress
 		}));
 
 		await this.createSignals(signalsToCreate);

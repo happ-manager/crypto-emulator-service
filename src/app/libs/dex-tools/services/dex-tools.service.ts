@@ -1,17 +1,14 @@
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { firstValueFrom } from "rxjs";
-import { Repository } from "typeorm";
 
 import { DateService } from "../../date";
 import type { IDate } from "../../date/interfaces/date.interface";
 import { LoggerService } from "../../logger";
 import { DEX_TOOLS_PERIODS } from "../constant/dex-tools-periods.constant";
 import { FAKE_HEADERS } from "../constant/fake-headers";
-import { DexToolsCandleEntity } from "../entities/dex-tools-candle.entity";
-import { DexToolsPairEntity } from "../entities/dex-tools-pair.entity";
 import type { IDexToolCandle } from "../interfaces/dex-tools-candle.interface";
+import type { IDexToolPair } from "../interfaces/dex-tools-pair.interface";
 import type { IDexToolsPeriod } from "../interfaces/dex-tools-period.interface";
 import { DexToolsUtilsService } from "./dex-tools-utils.service";
 
@@ -27,23 +24,12 @@ export class DexToolsService {
 
 	constructor(
 		private readonly _httpService: HttpService,
-		@InjectRepository(DexToolsCandleEntity)
-		private readonly _dexToolsCandlesRepository: Repository<DexToolsCandleEntity>,
-		@InjectRepository(DexToolsPairEntity)
-		private readonly _dexToolsPairsRepository: Repository<DexToolsPairEntity>,
 		private readonly _dexToolsUtilsService: DexToolsUtilsService,
 		private readonly _dateService: DateService,
 		private readonly _loggerService: LoggerService
 	) {}
 
 	async getCandles(pairId: string, chain: string, date: IDate, period: IDexToolsPeriod = this._defaultPeriod) {
-		const cacheKey = [pairId, chain, date.unix().toString(), period].filter(Boolean).join("-");
-		const cachedData = await this._dexToolsCandlesRepository.findOneBy({ name: cacheKey });
-
-		if (cachedData) {
-			return cachedData.data.map((candle) => this._dexToolsUtilsService.convertCandle(candle));
-		}
-
 		try {
 			const baseUrl = chain === "avalanche" ? this._apiUrls.old : this._apiUrls.core;
 			const url = `${baseUrl}/pool/candles/${chain}/${pairId}/${period}?ts=${date.unix()}&tz=0`;
@@ -55,10 +41,6 @@ export class DexToolsService {
 				return [];
 			}
 
-			if (this._dateService.isPast(date)) {
-				await this._dexToolsCandlesRepository.save({ name: cacheKey, data: candles });
-			}
-
 			return candles.map((candle) => this._dexToolsUtilsService.convertCandle(candle));
 		} catch (error) {
 			this._loggerService.error("getCandles failed:", error?.response?.data);
@@ -66,32 +48,14 @@ export class DexToolsService {
 		}
 	}
 
-	async searchPair(query: string, tokenAddress?: string) {
-		const cacheKey = [query, tokenAddress || ""].filter(Boolean).join("-");
-		const cachedData = await this._dexToolsPairsRepository.findOneBy({ name: cacheKey });
-
-		if (cachedData) {
-			return this._dexToolsUtilsService.convertPair(cachedData.data);
-		}
-
+	async searchPair(query: string) {
 		try {
 			const url = `${this._apiUrls.shared}/search/pair?query=${query.toLowerCase()}`;
 			const response = await firstValueFrom(this._httpService.get(url, { headers: FAKE_HEADERS }));
 
-			const pairs = response.data?.results || [];
-			const filteredPairs = tokenAddress
-				? pairs.filter((pair) => tokenAddress === pair.id.token || tokenAddress === pair.id.pair)
-				: pairs;
-			const sortedPairs = filteredPairs.sort((a, b) => b.metrics.liquidity - a.metrics.liquidity);
-			const [bestPair] = sortedPairs;
+			const pairs: IDexToolPair[] = response?.data?.results || [];
 
-			if (!bestPair) {
-				return;
-			}
-
-			await this._dexToolsPairsRepository.save({ name: cacheKey, data: bestPair });
-
-			return this._dexToolsUtilsService.convertPair(bestPair);
+			return pairs.map((pair) => this._dexToolsUtilsService.convertPair(pair));
 		} catch (error) {
 			this._loggerService.error("searchPair failed:", error?.response?.data);
 			return null;
@@ -99,13 +63,6 @@ export class DexToolsService {
 	}
 
 	async getPair(pairId: string, chain: string) {
-		const cacheKey = [pairId, chain].join("-");
-		const cachedData = await this._dexToolsPairsRepository.findOneBy({ name: cacheKey });
-
-		if (cachedData) {
-			return this._dexToolsUtilsService.convertPair(cachedData.data);
-		}
-
 		const url = `${this._apiUrls.shared}/data/pair?address=${pairId}&chain=${chain}`;
 
 		try {
@@ -115,8 +72,6 @@ export class DexToolsService {
 			if (!pair) {
 				return;
 			}
-
-			await this._dexToolsPairsRepository.save({ name: cacheKey, data: pair });
 
 			return this._dexToolsUtilsService.convertPair(pair);
 		} catch (error) {

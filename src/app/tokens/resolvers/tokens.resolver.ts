@@ -13,8 +13,16 @@ export class TokensResolver {
 	constructor(private readonly _tokensService: TokensService) {}
 
 	@Query(() => PaginatedTokens)
-	async tokens(@Args() args: PaginationArgs) {
-		return this._tokensService.getTokens(args);
+	async tokens(@Args() args: PaginationArgs, @Args("signalId", { nullable: true }) signalId?: string) {
+		return this._tokensService.getTokens({
+			...args,
+			where: {
+				...(signalId ? { signal: { id: signalId } } : {})
+			},
+			order: {
+				createdAt: "desc"
+			}
+		});
 	}
 
 	@Query(() => TokenEntity)

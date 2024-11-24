@@ -26,6 +26,10 @@ export class SignalEntity extends BaseEntity implements ISignal {
 	@Column({ nullable: true })
 	tokenAddress?: string;
 
+	@Field({ nullable: true })
+	@Column({ nullable: true })
+	poolAddress?: string;
+
 	@Field(() => DateScalar)
 	@DateColumn()
 	signaledAt: IDate;

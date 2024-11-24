@@ -1,7 +1,7 @@
 import { Query, Resolver } from "@nestjs/graphql";
 
 import { ActionTypeEnum } from "../../strategies/enums/action-type.enum";
-import { CandleFieldEnum } from "../../strategies/enums/candle-field.enum";
+import { ConditionFieldEnum } from "../../strategies/enums/condition-field.enum";
 import { GroupOperatorEnum } from "../../strategies/enums/group-operator.enum";
 import { OperatorEnum } from "../../strategies/enums/operator.enum";
 import { RelatedToEnum } from "../../strategies/enums/related-to.enum";
@@ -19,9 +19,9 @@ export class EnumsResolver {
 		return Object.values(ActionTypeEnum);
 	}
 
-	@Query(() => [CandleFieldEnum])
-	getCandleFields() {
-		return Object.values(CandleFieldEnum);
+	@Query(() => [ConditionFieldEnum])
+	getConditionField() {
+		return Object.values(ConditionFieldEnum);
 	}
 
 	@Query(() => [OperatorEnum])

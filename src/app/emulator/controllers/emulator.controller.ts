@@ -18,8 +18,8 @@ export class EmulatorController {
 
 	@Post("emulate")
 	async emulate(@Body() body: IEmulateBody) {
-		const { signals, sources, strategies } = body;
-		return this._emulatorService.emulate(signals, sources, strategies);
+		const { signals, sources, strategies, investment, delay } = body;
+		return this._emulatorService.emulate(signals, sources, strategies, investment, delay);
 	}
 
 	@Post("emulate/excel")

@@ -33,7 +33,7 @@ type ChannelEntity {
 type ConditionEntity {
   conditionsGroup: ConditionsGroupEntity!
   createdAt: DateTime!
-  field: candleFieldEnum!
+  field: conditionFieldEnum!
   id: ID!
   operator: operatorEnum!
   relatedTo: relatedToEnum!
@@ -117,22 +117,6 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
-type DexToolsCandleEntity {
-  createdAt: DateTime!
-  data: JSON!
-  id: ID!
-  name: String!
-  updatedAt: DateTime!
-}
-
-type DexToolsPairEntity {
-  createdAt: DateTime!
-  data: JSON!
-  id: ID!
-  name: String!
-  updatedAt: DateTime!
-}
-
 input EmailAuthDto {
   email: String!
   password: String!
@@ -143,11 +127,6 @@ scalar IDate
 
 """Custom scalar for prices using Big.js"""
 scalar IPrice
-
-"""
-The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
-"""
-scalar JSON
 
 type MilestoneEntity {
   actionType: actionTypeEnum!
@@ -310,7 +289,7 @@ type Query {
   credential(id: ID!): CredentialEntity!
   credentials(skip: Int, take: Int): PaginatedCredentials!
   getActionTypes: [actionTypeEnum!]!
-  getCandleFields: [candleFieldEnum!]!
+  getConditionField: [conditionFieldEnum!]!
   getErrors: [errorsEnum!]!
   getGroupOperators: [groupOperatorEnum!]!
   getOperators: [operatorEnum!]!
@@ -322,13 +301,13 @@ type Query {
   strategies(skip: Int, take: Int): PaginatedStrategies!
   strategy(id: ID!): StrategyEntity!
   token(id: ID!): TokenEntity!
-  tokens(skip: Int, take: Int): PaginatedTokens!
+  tokens(signalId: String, skip: Int, take: Int): PaginatedTokens!
   trading(id: ID!): TradingEntity!
   tradingToken(id: ID!): TradingTokenEntity!
   tradingTokens(skip: Int, take: Int, tradingId: String): PaginatedTradingTokens!
   tradings(skip: Int, take: Int): PaginatedTradings!
   transaction(id: ID!): TransactionEntity!
-  transactions(candleId: String, skip: Int, take: Int): PaginatedTransactions!
+  transactions(candleId: String, poolAddress: String, skip: Int, take: Int): PaginatedTransactions!
   user(id: ID!): UserEntity!
   users(skip: Int, take: Int): PaginatedUsers!
   wallet(id: ID!): WalletEntity!
@@ -338,6 +317,7 @@ type Query {
 type SignalEntity {
   createdAt: DateTime!
   id: ID!
+  poolAddress: String
   signaledAt: IDate!
   source: String!
   token: TokenEntity
@@ -368,15 +348,16 @@ input TelegramUserDto {
 }
 
 type TokenEntity {
-  address: String
   chain: String
   createdAt: DateTime!
   dexToolsPairId: String
   disabled: Boolean!
   id: ID!
   name: String
+  poolAddress: String
   signal: SignalEntity
   symbol: String
+  tokenAddress: String
   updatedAt: DateTime!
   verified: Boolean!
 }
@@ -505,11 +486,9 @@ enum actionTypeEnum {
   EXIT
 }
 
-enum candleFieldEnum {
-  FIRST_TIMESTAMP
-  HIGH
-  LAST_TIMESTAMP
-  LOW
+enum conditionFieldEnum {
+  DATE
+  PRICE
 }
 
 enum errorsEnum {

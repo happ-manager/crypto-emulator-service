@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { In, IsNull, Not } from "typeorm";
 
-import type { ICandle } from "../../candles/interfaces/candle.interface";
-import { CandlesService } from "../../candles/services/candles.service";
-import { findCandle } from "../../candles/utils/find-candle.util";
+import type { ITransaction } from "../../candles/interfaces/transaction.interface";
+import { TransactionsService } from "../../candles/services/transactions.service";
+import { findTransaction } from "../../candles/utils/find-transaction.util";
 import { LoggerService } from "../../libs/logger";
 import { getPercentChange } from "../../shared/utils/get-percent-change.util";
 import { getPercentOf } from "../../shared/utils/get-percent-of.util";
@@ -11,8 +11,7 @@ import { sleep } from "../../shared/utils/sleep.util";
 import type { ISignal } from "../../signals/interfaces/signal.interface";
 import { SignalsService } from "../../signals/services/signals.service";
 import { ActionTypeEnum } from "../../strategies/enums/action-type.enum";
-import { CandleFieldEnum } from "../../strategies/enums/candle-field.enum";
-import { OperatorEnum } from "../../strategies/enums/operator.enum";
+import { ConditionFieldEnum } from "../../strategies/enums/condition-field.enum";
 import { RelatedToEnum } from "../../strategies/enums/related-to.enum";
 import type { ICondition } from "../../strategies/interfaces/condition.interface";
 import type { IConditionsGroup } from "../../strategies/interfaces/conditions-group.interface";
@@ -21,12 +20,7 @@ import type { IStrategy } from "../../strategies/interfaces/strategy.interface";
 import { StrategiesService } from "../../strategies/services/strategies.service";
 import { checkGroupOperator } from "../utils/check-group-operator.util";
 import { checkOperator } from "../utils/check-operator.util";
-
-const PRICE_FIELDS = new Set([CandleFieldEnum.LOW, CandleFieldEnum.HIGH]);
-
-function getConditionValue(condition: ICondition) {
-	return condition.value * (condition.operator === OperatorEnum.MORE ? 1 : -1);
-}
+import { getDelayedTransaction } from "../utils/get-delayed-transaction.util";
 
 @Injectable()
 export class EmulatorService {
@@ -34,10 +28,10 @@ export class EmulatorService {
 		private readonly _signalsService: SignalsService,
 		private readonly _strategiesService: StrategiesService,
 		private readonly _loggerService: LoggerService,
-		private readonly _candlesService: CandlesService
+		private readonly _transactionsService: TransactionsService
 	) {}
 
-	async emulate(signals: ISignal[], sources: string[], strategies: IStrategy[], investment = 100) {
+	async emulate(signals: ISignal[], sources: string[], strategies: IStrategy[], investment = 100, delay = 1000) {
 		const signalsWhere = signals.length > 0 ? { id: In(signals.map((signal) => signal.id)) } : { source: In(sources) };
 
 		const findedSignals = await this._signalsService.getSignals({
@@ -59,12 +53,13 @@ export class EmulatorService {
 			await sleep(100);
 			this._loggerService.log(`Fetch signal #${index + 1} of ${findedSignals.data.length}`);
 
-			const { data } = await this._candlesService.getCandles({
-				where: { poolAddress: signal.tokenAddress }
+			const { data } = await this._transactionsService.getTransactions({
+				where: { poolAddress: signal.poolAddress },
+				order: { date: "asc" }
 			});
 
-			const candles = data.filter((candle) => candle.openPrice.gt(0));
-			const signalCandle = findCandle(candles, signal.signaledAt);
+			const transactions = data.filter((transaction) => transaction.price.gt(0));
+			const signalTransaction = findTransaction(transactions, signal.signaledAt);
 			const strategiesResults = {};
 
 			for (const strategy of findedStrategies.data) {
@@ -73,12 +68,17 @@ export class EmulatorService {
 				const exitMilestones = sortedMilestones.filter((milestone) => milestone.actionType === ActionTypeEnum.EXIT);
 
 				let tokenBalance = 0;
-				let enterCandle: ICandle = signalCandle;
+				let enterTransaction: ITransaction = signalTransaction;
 
 				strategiesResults[strategy.name] = { enterPrice: 0, exitPrice: 0, milestones: {} };
 
 				if (enterMilesone) {
-					const checkedMilestone = this.checkMilestone(candles, enterMilesone, signalCandle, enterCandle);
+					const checkedMilestone = this.checkMilestone(
+						transactions,
+						enterMilesone,
+						signalTransaction,
+						enterTransaction
+					);
 
 					if (!checkedMilestone) {
 						continue;
@@ -86,47 +86,64 @@ export class EmulatorService {
 
 					const enterTokens = getPercentOf(investment, enterMilesone.value);
 
-					enterCandle = checkedMilestone.candle;
+					enterTransaction = getDelayedTransaction(transactions, checkedMilestone.transaction, delay);
+
+					if (!enterTransaction) {
+						continue;
+					}
+
 					tokenBalance += enterTokens;
 
 					strategiesResults[strategy.name].enterPrice = tokenBalance;
 					strategiesResults[strategy.name].milestones[enterMilesone.name] = {
-						candle: enterCandle,
+						checkedMilestone,
+						transaction: enterTransaction,
 						enterPrice: tokenBalance
 					};
 				}
 
-				const candlesAfterEnter = candles.filter((candle) => candle.openDate.isSameOrAfter(enterCandle.openDate));
+				const transactionsAfterEnter = transactions.filter((transaction) =>
+					transaction.date.isSameOrAfter(enterTransaction.date)
+				);
 
 				for (const milestone of exitMilestones) {
-					const checkedMilestone = this.checkMilestone(candlesAfterEnter, milestone, signalCandle, enterCandle);
+					const checkedMilestone = this.checkMilestone(
+						transactionsAfterEnter,
+						milestone,
+						signalTransaction,
+						enterTransaction
+					);
 
 					if (!checkedMilestone) {
 						continue;
 					}
 
-					const priceCondition: ICondition = checkedMilestone.milestone.conditionsGroups
-						.reduce((pre, cur) => [...pre, ...cur.conditions], [])
-						.find((condition: ICondition) => PRICE_FIELDS.has(condition.field));
+					const exitTransaction = getDelayedTransaction(transactionsAfterEnter, checkedMilestone.transaction, delay);
 
-					const exitCandle = checkedMilestone.candle;
+					if (!exitTransaction) {
+						continue;
+					}
+
 					const exitTokens = getPercentOf(tokenBalance, milestone.value);
-					const priceDiff = priceCondition
-						? getConditionValue(priceCondition)
-						: enterCandle.openPrice.percentDiff(exitCandle.maxPrice).toNumber();
-					const exitTokenPrice = getPercentChange(1, priceDiff);
-					const exitPrice = exitTokens * exitTokenPrice;
+					const priceDiff = enterTransaction.price.percentDiff(exitTransaction.price).toNumber();
+
+					const exitPrice = getPercentChange(exitTokens, priceDiff);
 
 					tokenBalance -= exitTokens;
 
 					strategiesResults[strategy.name].exitPrice += exitPrice;
-					strategiesResults[strategy.name].milestones[milestone.name] = { candle: exitCandle, exitPrice, priceDiff };
+					strategiesResults[strategy.name].milestones[milestone.name] = {
+						transaction: exitTransaction,
+						checkedMilestone,
+						exitPrice,
+						priceDiff
+					};
 				}
 			}
 
 			results.push({
 				signal,
-				signalCandle,
+				signalTransaction,
 				strategies: strategiesResults
 			});
 		}
@@ -134,10 +151,15 @@ export class EmulatorService {
 		return results;
 	}
 
-	checkMilestone(candles: ICandle[], milestone: IMilestone, signalCandle: ICandle, enterCandle: ICandle) {
-		for (const candle of candles) {
+	checkMilestone(
+		transactions: ITransaction[],
+		milestone: IMilestone,
+		signalTransaction: ITransaction,
+		enterTransaction: ITransaction
+	) {
+		for (const transaction of transactions) {
 			const conditionsGroups = milestone.conditionsGroups.map((group) =>
-				this.checkConditionsGroup(group, candle, signalCandle, enterCandle)
+				this.checkConditionsGroup(group, transaction, signalTransaction, enterTransaction)
 			);
 
 			const checkedConditionsGroups = checkGroupOperator(conditionsGroups, milestone.groupOperator);
@@ -146,13 +168,18 @@ export class EmulatorService {
 				continue;
 			}
 
-			return { candle, milestone: { ...milestone, conditionsGroups: checkedConditionsGroups } };
+			return { transaction, milestone: { ...milestone, conditionsGroups: checkedConditionsGroups } };
 		}
 	}
 
-	checkConditionsGroup(group: IConditionsGroup, candle: ICandle, signalCandle: ICandle, enterCandle: ICandle) {
+	checkConditionsGroup(
+		group: IConditionsGroup,
+		transaction: ITransaction,
+		signalTransaction: ITransaction,
+		enterTransaction: ITransaction
+	) {
 		const conditions = group.conditions.map((condition) =>
-			this.checkCondition(condition, candle, signalCandle, enterCandle)
+			this.checkCondition(condition, transaction, signalTransaction, enterTransaction)
 		);
 
 		const checkedConditions = checkGroupOperator(conditions, group.groupOperator);
@@ -160,17 +187,20 @@ export class EmulatorService {
 		return checkedConditions.length > 0 ? { ...group, conditions: checkedConditions } : null;
 	}
 
-	checkCondition(condition: ICondition, candle: ICandle, signalCandle: ICandle, enterCandle: ICandle) {
-		const releatedCandle = condition.relatedTo === RelatedToEnum.SIGNAL ? signalCandle : enterCandle;
+	checkCondition(
+		condition: ICondition,
+		transaction: ITransaction,
+		signalTransaction: ITransaction,
+		enterTransaction: ITransaction
+	) {
+		const releatedTransaction = condition.relatedTo === RelatedToEnum.SIGNAL ? signalTransaction : enterTransaction;
 
-		const candleValue = {
-			[CandleFieldEnum.FIRST_TIMESTAMP]: candle.openDate.unix() - releatedCandle.openDate.unix(),
-			[CandleFieldEnum.LAST_TIMESTAMP]: candle.closeDate.unix() - releatedCandle.closeDate.unix(),
-			[CandleFieldEnum.HIGH]: releatedCandle.openPrice.percentDiff(candle.maxPrice).toNumber(),
-			[CandleFieldEnum.LOW]: releatedCandle.openPrice.percentDiff(candle.minPrice).toNumber()
+		const transactionValue = {
+			[ConditionFieldEnum.DATE]: transaction.date.unix() - releatedTransaction.date.unix(),
+			[ConditionFieldEnum.PRICE]: releatedTransaction.price.percentDiff(transaction.price).toNumber()
 		}[condition.field];
 
-		const isCondition = checkOperator(candleValue, condition.value, condition.operator);
+		const isCondition = checkOperator(transactionValue, condition.value, condition.operator);
 
 		return isCondition ? condition : null;
 	}

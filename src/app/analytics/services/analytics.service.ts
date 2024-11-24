@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { In, IsNull, Not } from "typeorm";
 
-import type { ICandle } from "../../candles/interfaces/candle.interface";
-import { CandlesService } from "../../candles/services/candles.service";
-import { findCandle } from "../../candles/utils/find-candle.util";
+import type { ITransaction } from "../../candles/interfaces/transaction.interface";
+import { TransactionsService } from "../../candles/services/transactions.service";
+import { findTransaction } from "../../candles/utils/find-transaction.util";
 import { LoggerService } from "../../libs/logger";
 import { sleep } from "../../shared/utils/sleep.util";
 import type { ISignal } from "../../signals/interfaces/signal.interface";
@@ -13,7 +13,7 @@ import { SignalsService } from "../../signals/services/signals.service";
 export class AnalyticsService {
 	constructor(
 		private readonly _signalsService: SignalsService,
-		private readonly _candlesService: CandlesService,
+		private readonly _transactionsService: TransactionsService,
 		private readonly _loggerService: LoggerService
 	) {}
 
@@ -32,61 +32,65 @@ export class AnalyticsService {
 			await sleep(100);
 			this._loggerService.log(`Fetch signal #${index + 1} of ${findedSignals.data.length}`);
 
-			const { data } = await this._candlesService.getCandles({
-				where: { poolAddress: signal.tokenAddress }
+			const { data } = await this._transactionsService.getTransactions({
+				where: { poolAddress: signal.poolAddress },
+				order: { date: "asc" }
 			});
 
-			const candles = data.filter((candle) => candle.openPrice.gt(0));
+			const transactions = data.filter((transaction) => transaction.price.gt(0));
 
-			const entryCandle = findCandle(candles, signal.signaledAt);
-			const [firstCandle] = candles;
-			const lastCandle = candles.at(-1);
+			const entryTransaction = findTransaction(transactions, signal.signaledAt);
+			const [firstTransaction] = transactions;
+			const lastTransaction = transactions.at(-1);
 
-			if (!entryCandle) {
+			if (!entryTransaction) {
 				results.push({
 					signal,
-					entryCandle: {},
-					firstCandle: {},
-					lastCandle: {},
-					percentCandles: {},
-					minCandle: {},
-					maxCandle: {}
+					entryTransaction: {},
+					firstTransaction: {},
+					lastTransaction: {},
+					percentTransactions: {},
+					minTransaction: {},
+					maxTransaction: {}
 				});
 				continue;
 			}
 
-			const maxCandle = candles.reduce((max, candle) => (max.maxPrice.gt(candle.maxPrice) ? max : candle), entryCandle);
-			const candlesBeforeMax = candles.slice(0, candles.indexOf(maxCandle) + 1);
-			const minCandle = candlesBeforeMax.reduce(
-				(min, candle) => (min.minPrice.lt(candle.minPrice) ? min : candle),
-				maxCandle
+			const maxTransaction = transactions.reduce(
+				(max, transaction) => (max.price.gt(transaction.price) ? max : transaction),
+				entryTransaction
+			);
+			const transactionsBeforeMax = transactions.slice(0, transactions.indexOf(maxTransaction) + 1);
+			const minTransaction = transactionsBeforeMax.reduce(
+				(min, transaction) => (min.price.lt(transaction.price) ? min : transaction),
+				maxTransaction
 			);
 
-			const minPercent = entryCandle.openPrice.percentDiff(minCandle.minPrice);
-			const maxPercent = entryCandle.openPrice.percentDiff(maxCandle.maxPrice);
+			const minPercent = entryTransaction.price.percentDiff(minTransaction.price);
+			const maxPercent = entryTransaction.price.percentDiff(maxTransaction.price);
 
-			const percentCandles: Record<string, ICandle | null> = {};
+			const percentTransactions: Record<string, ITransaction | null> = {};
 
-			const candlesFromMin = [...candlesBeforeMax].sort((a, b) => (a.minPrice.lte(b.minPrice) ? 1 : -1));
-			const candlesFromMax = [...candlesBeforeMax].sort((a, b) => (a.maxPrice.gte(b.maxPrice) ? 1 : -1));
+			const transactionsFromMin = [...transactionsBeforeMax].sort((a, b) => (a.price.lte(b.price) ? 1 : -1));
+			const transactionsFromMax = [...transactionsBeforeMax].sort((a, b) => (a.price.gte(b.price) ? 1 : -1));
 
 			for (let percent = minPercent.toNumber(); percent <= maxPercent.toNumber(); percent++) {
-				const price = entryCandle.openPrice.percentOf(percent);
+				const price = entryTransaction.price.percentOf(percent);
 
-				percentCandles[percent.toString()] =
+				percentTransactions[percent.toString()] =
 					percent > 0
-						? candlesFromMax.find((candle) => candle.maxPrice.gte(price))
-						: candlesFromMin.find((candle) => candle.minPrice.lte(price));
+						? transactionsFromMax.find((transaction) => transaction.price.gte(price))
+						: transactionsFromMin.find((transaction) => transaction.price.lte(price));
 			}
 
 			results.push({
 				signal,
-				entryCandle,
-				maxCandle,
-				minCandle,
-				firstCandle,
-				lastCandle,
-				percentCandles
+				entryTransaction,
+				maxTransaction,
+				minTransaction,
+				firstTransaction,
+				lastTransaction,
+				percentTransactions
 			});
 		}
 

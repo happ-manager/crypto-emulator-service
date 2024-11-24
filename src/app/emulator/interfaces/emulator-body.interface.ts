@@ -5,4 +5,6 @@ export interface IEmulateBody {
 	signals: ISignal[];
 	sources: string[];
 	strategies: IStrategy[];
+	investment: number;
+	delay: number;
 }

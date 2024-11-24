@@ -25,7 +25,11 @@ export class TokenEntity extends BaseEntity implements IToken {
 
 	@Field({ nullable: true })
 	@Column({ nullable: true })
-	address?: string;
+	tokenAddress?: string;
+
+	@Field({ nullable: true })
+	@Column({ nullable: true })
+	poolAddress?: string;
 
 	@Field({ nullable: true })
 	@Column({ nullable: true })

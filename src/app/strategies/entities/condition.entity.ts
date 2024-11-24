@@ -4,7 +4,7 @@ import { Column, Entity, ManyToOne } from "typeorm";
 import { BaseEntity } from "../../shared/entities/base.entity";
 import { Paginated } from "../../shared/models/paginated.model";
 import { CONDITIONS } from "../constants/conditions/conditions.constant";
-import { CandleFieldEnum } from "../enums/candle-field.enum";
+import { ConditionFieldEnum } from "../enums/condition-field.enum";
 import { OperatorEnum } from "../enums/operator.enum";
 import { RelatedToEnum } from "../enums/related-to.enum";
 import type { ICondition } from "../interfaces/condition.interface";
@@ -17,9 +17,9 @@ export class ConditionEntity extends BaseEntity implements ICondition {
 	@ManyToOne(() => ConditionsGroupEntity, (group) => group.conditions)
 	conditionsGroup: ConditionsGroupEntity;
 
-	@Field(() => CandleFieldEnum)
-	@Column({ type: "enum", enum: CandleFieldEnum })
-	field: CandleFieldEnum;
+	@Field(() => ConditionFieldEnum)
+	@Column({ type: "enum", enum: ConditionFieldEnum })
+	field: ConditionFieldEnum;
 
 	@Field(() => OperatorEnum)
 	@Column({ type: "enum", enum: OperatorEnum })

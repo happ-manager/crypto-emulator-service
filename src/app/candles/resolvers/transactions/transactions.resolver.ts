@@ -13,11 +13,16 @@ export class TransactionsResolver {
 	constructor(private readonly _transactionsService: TransactionsService) {}
 
 	@Query(() => PaginatedTransactions)
-	async transactions(@Args() args: PaginationArgs, @Args("candleId", { nullable: true }) candleId?: string) {
+	async transactions(
+		@Args() args: PaginationArgs,
+		@Args("poolAddress", { nullable: true }) poolAddress?: string,
+		@Args("candleId", { nullable: true }) candleId?: string
+	) {
 		return this._transactionsService.getTransactions({
 			...args,
 			where: {
-				...(candleId ? { candle: { id: candleId } } : {})
+				...(candleId ? { candle: { id: candleId } } : {}),
+				...(poolAddress ? { poolAddress } : {})
 			},
 			order: {
 				date: "desc"

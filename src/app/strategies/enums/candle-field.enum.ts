@@ -1,6 +1,0 @@
-export enum CandleFieldEnum {
-	FIRST_TIMESTAMP = "FIRST_TIMESTAMP",
-	LAST_TIMESTAMP = "LAST_TIMESTAMP",
-	HIGH = "HIGH",
-	LOW = "LOW"
-}

@@ -115,7 +115,9 @@ export class ConditionsGroupsService {
 		});
 		const conditionIds = conditions.data.map((condition) => condition.id);
 
-		await this._conditionsService.deleteConditions(conditionIds);
+		if (conditionIds.length > 0) {
+			await this._conditionsService.deleteConditions(conditionIds);
+		}
 
 		try {
 			await this._conditionsGroupsRepository.delete(ids);

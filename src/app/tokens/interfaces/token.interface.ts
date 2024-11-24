@@ -6,7 +6,8 @@ export interface IToken extends IBase {
 	name?: string;
 	symbol?: string;
 	chain?: string;
-	address?: string;
+	tokenAddress?: string;
+	poolAddress?: string;
 	dexToolsPairId?: string;
 	verified: boolean;
 	disabled: boolean;

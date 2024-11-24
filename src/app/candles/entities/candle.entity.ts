@@ -1,5 +1,5 @@
 import { Field, ObjectType } from "@nestjs/graphql";
-import { Column, Entity, OneToMany } from "typeorm";
+import { Column, Entity, Index, OneToMany } from "typeorm";
 
 import { DateColumn } from "../../libs/date/decorators/date-column.decorator";
 import { IDate } from "../../libs/date/interfaces/date.interface";
@@ -19,6 +19,7 @@ import { TransactionEntity } from "./transaction.entity";
 export class CandleEntity extends BaseEntity implements ICandle {
 	@Field()
 	@Column()
+	@Index()
 	poolAddress: string;
 
 	@Field(() => DateScalar)

@@ -110,7 +110,9 @@ export class MilestonesService {
 		});
 		const conditionsGroupsIds = conditionsGroups.data.map((conditionGroup) => conditionGroup.id);
 
-		await this._conditionsGroupsService.deleteConditionsGroups(conditionsGroupsIds);
+		if (conditionsGroupsIds.length > 0) {
+			await this._conditionsGroupsService.deleteConditionsGroups(conditionsGroupsIds);
+		}
 
 		try {
 			await this._milestonesRepository.delete(ids);

@@ -1,19 +1,17 @@
 import { HttpModule } from "@nestjs/axios";
 import type { DynamicModule } from "@nestjs/common";
 import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
 import type { Observable } from "rxjs";
 import { first, interval, lastValueFrom, map, race, Subject } from "rxjs";
 
 import { DateModule } from "../date";
 import { LoggerModule } from "../logger";
-import { DEX_TOOLS_ENTITIES } from "./entities";
 import { DEX_TOOLS_CONFIG } from "./injection-tokens/dex-tools-config.injection-token";
 import type { IDexToolsConfig } from "./interfaces/dex-tools-config.interface";
 import { DEX_TOOLS_SERVICES } from "./services";
 
 @Module({
-	imports: [TypeOrmModule.forFeature(DEX_TOOLS_ENTITIES), DateModule.forChild(), LoggerModule.forChild(), HttpModule],
+	imports: [DateModule.forChild(), LoggerModule.forChild(), HttpModule],
 	providers: DEX_TOOLS_SERVICES,
 	exports: DEX_TOOLS_SERVICES
 })

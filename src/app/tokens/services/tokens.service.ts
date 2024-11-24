@@ -7,7 +7,6 @@ import { In, Repository } from "typeorm";
 
 import { EventsEnum } from "../../events/enums/events.enum";
 import { EventsService } from "../../events/services/events.service";
-import { DateService } from "../../libs/date";
 import { DexToolsService } from "../../libs/dex-tools";
 import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
@@ -25,24 +24,30 @@ export class TokensService {
 		@InjectRepository(TokenEntity) private readonly _tokensRepository: Repository<TokenEntity>,
 		private readonly _dexToolsService: DexToolsService,
 		private readonly _eventsService: EventsService,
-		private readonly _dateService: DateService,
 		private readonly _loggerService: LoggerService
 	) {}
 
 	private async _getTokenInfo(token: DeepPartial<IToken>) {
-		const pair = await this._dexToolsService.searchPair(token.address || token.name, token.address);
+		const { tokenAddress, poolAddress, name } = token;
+
+		const pairs = await this._dexToolsService.searchPair(tokenAddress || poolAddress || name);
+
+		const filteredPairs = pairs.filter((pair) =>
+			tokenAddress ? tokenAddress === pair.id.token : poolAddress ? poolAddress === pair.id.pair : true
+		);
+		const [pair] = filteredPairs.sort((a, b) => b.metrics.liquidity - a.metrics.liquidity);
 
 		if (!pair) {
-			this._loggerService.error(`Cannot find pair for: ${token.name}, ${token.address}`);
+			this._loggerService.error(`Cannot find pair for: ${token.name}, ${token.tokenAddress}, ${token.poolAddress}`);
 			return;
 		}
 
 		return {
 			name: pair.name,
 			symbol: pair.symbol,
-			address: pair.id.token,
+			tokenAddress: pair.id.token,
+			poolAddress: pair.id.pair,
 			chain: pair.id.chain,
-			dexToolsPairCreatedAt: this._dateService.date(pair.creationTime).toDate(),
 			dexToolsPairId: pair.redirectToPool || pair.id.pair,
 			signal: token.signal
 		} as Partial<IToken>;
@@ -85,9 +90,11 @@ export class TokensService {
 	}
 
 	async createToken(token: DeepPartial<IToken>) {
-		const existToken = await this._tokensRepository.findOneBy([{ name: token.name }, { address: token.address }]);
+		const { name, tokenAddress, poolAddress } = token;
 
-		if (existToken && existToken.name && existToken.address && existToken.dexToolsPairId) {
+		const existToken = await this._tokensRepository.findOneBy([{ name }, { tokenAddress }, { poolAddress }]);
+
+		if (existToken.dexToolsPairId) {
 			return existToken;
 		}
 
@@ -115,9 +122,10 @@ export class TokensService {
 		const tokensToCreate: DeepPartial<IToken>[] = [];
 
 		for (const token of tokens) {
-			const existToken = await this._tokensRepository.findOneBy([{ name: token.name }, { address: token.address }]);
+			const { name, tokenAddress, poolAddress } = token;
+			const existToken = await this._tokensRepository.findOneBy([{ name }, { tokenAddress }, { poolAddress }]);
 
-			if (existToken && existToken.name && existToken.address && existToken.dexToolsPairId) {
+			if (existToken.dexToolsPairId) {
 				tokensToCreate.push(existToken);
 				continue;
 			}

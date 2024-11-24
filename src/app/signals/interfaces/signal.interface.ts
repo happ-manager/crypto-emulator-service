@@ -8,5 +8,6 @@ export interface ISignal extends IBase {
 	signaledAt: IDate;
 	tokenName?: string;
 	tokenAddress?: string;
+	poolAddress?: string;
 	token?: IToken;
 }
