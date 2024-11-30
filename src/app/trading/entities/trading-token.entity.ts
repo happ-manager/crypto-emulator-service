@@ -63,7 +63,7 @@ export class TradingTokenEntity extends BaseEntity implements ITradingToken {
 	initialAt?: IDate;
 
 	@Field(() => TradingEntity)
-	@ManyToOne(() => TradingEntity, (trading) => trading.tradingTokens)
+	@ManyToOne(() => TradingEntity, (trading) => trading.tradingTokens, { onDelete: "CASCADE" })
 	trading: ITrading;
 }
 

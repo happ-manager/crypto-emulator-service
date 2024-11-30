@@ -1,6 +1,6 @@
-import { GroupOperatorEnum } from "../../strategies/enums/group-operator.enum";
+import { GroupOperatorEnum } from "../enums/group-operator.enum";
 
-export function checkGroupOperator<T>(options: T[], groupOperator: GroupOperatorEnum) {
+export function getGroupOperatorValue<T>(options: T[], groupOperator: GroupOperatorEnum) {
 	if (groupOperator === GroupOperatorEnum.AND) {
 		return options.every(Boolean) ? options : [];
 	} else if (groupOperator === GroupOperatorEnum.OR) {

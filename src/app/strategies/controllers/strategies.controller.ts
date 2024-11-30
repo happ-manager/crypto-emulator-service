@@ -16,7 +16,7 @@ export class StrategiesController {
 	async getStrategy(@Param("id") id: string) {
 		return this.strategiesService.getStrategy({
 			where: { id },
-			relations: ["milestones", "milestones.conditionsGroups", "milestones.conditionsGroups.conditions"]
+			relations: this.strategiesService.relations
 		});
 	}
 
@@ -41,5 +41,11 @@ export class StrategiesController {
 	@UseGuards(AccessStrategyGuard)
 	async deleteStrategy(@Param("id") strategyId: string) {
 		return this.strategiesService.deleteStrategy(strategyId);
+	}
+
+	@Patch(STRATEGIES_ENDPOINTS.RECREATE_STRATEGY)
+	@UseGuards(AccessStrategyGuard)
+	async recreateStrategy(@Param("id") strategyId: string, @Body() strategy: Partial<IStrategy>) {
+		return this.strategiesService.recreateStrategy({ id: strategyId, ...strategy });
 	}
 }

@@ -14,21 +14,37 @@ import { MilestoneEntity } from "./milestone.entity";
 @ObjectType()
 @Entity({ name: CONDITIONS_GROUPS })
 export class ConditionsGroupEntity extends BaseEntity implements IConditionsGroup {
+	@Field({ nullable: true })
+	@Column({ nullable: true })
+	name?: string;
+
+	@Field({ nullable: true })
+	@Column({ nullable: true })
+	description?: string;
+
 	@Field(() => GroupOperatorEnum)
 	@Column({ type: "enum", enum: GroupOperatorEnum })
 	groupOperator: GroupOperatorEnum;
+
+	@Field(() => Int)
+	@Column("integer", { default: 0 })
+	duration: number;
+
+	@Field(() => MilestoneEntity, { nullable: true })
+	@ManyToOne(() => MilestoneEntity, { nullable: true, onDelete: "SET NULL" })
+	refMilestone?: MilestoneEntity;
+
+	@Field(() => ConditionsGroupEntity, { nullable: true })
+	@ManyToOne(() => ConditionsGroupEntity, { nullable: true, onDelete: "SET NULL" })
+	refConditionsGroup?: ConditionsGroupEntity;
 
 	@Field(() => [ConditionEntity], { nullable: true })
 	@OneToMany(() => ConditionEntity, (condition) => condition.conditionsGroup)
 	conditions: ICondition[];
 
 	@Field(() => MilestoneEntity)
-	@ManyToOne(() => MilestoneEntity, (milestone) => milestone.conditionsGroups)
+	@ManyToOne(() => MilestoneEntity, (milestone) => milestone.conditionsGroups, { onDelete: "CASCADE" })
 	milestone: IMilestone;
-
-	@Field(() => Int)
-	@Column("integer", { default: 0 })
-	duration: number;
 }
 
 @ObjectType()

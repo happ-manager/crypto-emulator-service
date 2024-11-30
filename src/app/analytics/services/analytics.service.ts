@@ -1,51 +1,47 @@
 import { Injectable } from "@nestjs/common";
-import { In, IsNull, Not } from "typeorm";
+import { In } from "typeorm";
 
 import type { ITransaction } from "../../candles/interfaces/transaction.interface";
 import { TransactionsService } from "../../candles/services/transactions.service";
 import { findTransaction } from "../../candles/utils/find-transaction.util";
-import { LoggerService } from "../../libs/logger";
-import { sleep } from "../../shared/utils/sleep.util";
-import type { ISignal } from "../../signals/interfaces/signal.interface";
-import { SignalsService } from "../../signals/services/signals.service";
+import { TokensService } from "../../tokens/services/tokens.service";
+import type { IAnalyticsBody } from "../interfaces/analytics-body.interface";
 
 @Injectable()
 export class AnalyticsService {
 	constructor(
-		private readonly _signalsService: SignalsService,
-		private readonly _transactionsService: TransactionsService,
-		private readonly _loggerService: LoggerService
+		private readonly _tokensService: TokensService,
+		private readonly _transactionsService: TransactionsService
 	) {}
 
-	async analyse(signals: ISignal[], sources: string[]) {
-		const signalsWhere = signals.length > 0 ? { id: In(signals.map((signal) => signal.id)) } : { source: In(sources) };
-
-		const findedSignals = await this._signalsService.getSignals({
-			where: { ...signalsWhere, token: { dexToolsPairId: Not(IsNull()) } },
+	async analyse(body: IAnalyticsBody) {
+		const { tokens, wallets } = body;
+		const { data: findedTokens } = await this._tokensService.getTokens({
+			where: {
+				// ...(wallets.length > 0 ? { wallet: In(wallets.map((wallet) => wallet.id)) } : {}),
+				...(tokens.length > 0 ? { id: In(tokens.map((token) => token.id)) } : {})
+			},
 			take: 1000,
-			relations: ["token"]
+			relations: ["signal"]
 		});
 
 		const results = [];
 
-		for (const [index, signal] of findedSignals.data.entries()) {
-			await sleep(100);
-			this._loggerService.log(`Fetch signal #${index + 1} of ${findedSignals.data.length}`);
-
+		for (const token of findedTokens) {
 			const { data } = await this._transactionsService.getTransactions({
-				where: { poolAddress: signal.poolAddress },
+				where: { poolAddress: token.poolAddress },
 				order: { date: "asc" }
 			});
 
 			const transactions = data.filter((transaction) => transaction.price.gt(0));
 
-			const entryTransaction = findTransaction(transactions, signal.signaledAt);
+			const entryTransaction = findTransaction(transactions, token.signal.signaledAt);
 			const [firstTransaction] = transactions;
 			const lastTransaction = transactions.at(-1);
 
 			if (!entryTransaction) {
 				results.push({
-					signal,
+					token,
 					entryTransaction: {},
 					firstTransaction: {},
 					lastTransaction: {},
@@ -66,8 +62,8 @@ export class AnalyticsService {
 				maxTransaction
 			);
 
-			const minPercent = entryTransaction.price.percentDiff(minTransaction.price);
-			const maxPercent = entryTransaction.price.percentDiff(maxTransaction.price);
+			const minPercent = minTransaction.price.percentDiff(entryTransaction.price);
+			const maxPercent = maxTransaction.price.percentDiff(entryTransaction.price);
 
 			const percentTransactions: Record<string, ITransaction | null> = {};
 
@@ -84,7 +80,7 @@ export class AnalyticsService {
 			}
 
 			results.push({
-				signal,
+				token,
 				entryTransaction,
 				maxTransaction,
 				minTransaction,

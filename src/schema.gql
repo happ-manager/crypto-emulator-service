@@ -36,18 +36,23 @@ type ConditionEntity {
   field: conditionFieldEnum!
   id: ID!
   operator: operatorEnum!
-  relatedTo: relatedToEnum!
+  refConditionsGroup: ConditionsGroupEntity
+  refMilestone: MilestoneEntity
   updatedAt: DateTime!
-  value: Int!
+  value: String!
 }
 
 type ConditionsGroupEntity {
   conditions: [ConditionEntity!]
   createdAt: DateTime!
+  description: String
   duration: Int!
   groupOperator: groupOperatorEnum!
   id: ID!
   milestone: MilestoneEntity!
+  name: String
+  refConditionsGroup: ConditionsGroupEntity
+  refMilestone: MilestoneEntity
   updatedAt: DateTime!
 }
 
@@ -129,16 +134,18 @@ scalar IDate
 scalar IPrice
 
 type MilestoneEntity {
-  actionType: actionTypeEnum!
   conditionsGroups: [ConditionsGroupEntity!]!
   createdAt: DateTime!
+  description: String
   groupOperator: groupOperatorEnum!
   id: ID!
   name: String
   position: Int!
+  refMilestone: MilestoneEntity
   strategy: StrategyEntity!
+  type: milestoneTypeEnum!
   updatedAt: DateTime!
-  value: Int!
+  value: String
 }
 
 type Mutation {
@@ -288,12 +295,11 @@ type Query {
   conditionsGroups(skip: Int, take: Int): PaginatedConditionsGroups!
   credential(id: ID!): CredentialEntity!
   credentials(skip: Int, take: Int): PaginatedCredentials!
-  getActionTypes: [actionTypeEnum!]!
   getConditionField: [conditionFieldEnum!]!
   getErrors: [errorsEnum!]!
   getGroupOperators: [groupOperatorEnum!]!
+  getMilestoneTypes: [milestoneTypeEnum!]!
   getOperators: [operatorEnum!]!
-  getRelatedTo: [relatedToEnum!]!
   milestone(id: ID!): MilestoneEntity!
   milestones(skip: Int, take: Int): PaginatedMilestones!
   signal(id: ID!): SignalEntity!
@@ -328,6 +334,7 @@ type SignalEntity {
 
 type StrategyEntity {
   createdAt: DateTime!
+  description: String
   id: ID!
   milestones: [MilestoneEntity!]!
   name: String!
@@ -481,11 +488,6 @@ type WalletEntity {
   updatedAt: DateTime!
 }
 
-enum actionTypeEnum {
-  ENTER
-  EXIT
-}
-
 enum conditionFieldEnum {
   DATE
   PRICE
@@ -525,14 +527,15 @@ enum groupOperatorEnum {
   OR
 }
 
+enum milestoneTypeEnum {
+  ENTER
+  EXIT
+  SIGNAL
+}
+
 enum operatorEnum {
   LESS
   MORE
-}
-
-enum relatedToEnum {
-  ENTER
-  SIGNAL
 }
 
 enum tradingTokenStatusEnum {

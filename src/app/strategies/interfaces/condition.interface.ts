@@ -1,13 +1,15 @@
-import type { ConditionsGroupEntity } from "../entities/conditions-group.entity";
+import type { IBase } from "../../shared/interfaces/base.interface";
 import type { ConditionFieldEnum } from "../enums/condition-field.enum";
 import type { OperatorEnum } from "../enums/operator.enum";
-import type { RelatedToEnum } from "../enums/related-to.enum";
+import type { IConditionsGroup } from "./conditions-group.interface";
+import type { IMilestone } from "./milestone.interface";
 
-export interface ICondition {
+export interface ICondition extends IBase {
 	id: string;
-	conditionsGroup: ConditionsGroupEntity;
 	field: ConditionFieldEnum;
 	operator: OperatorEnum;
-	relatedTo: RelatedToEnum;
-	value: number;
+	value: string;
+	conditionsGroup: IConditionsGroup;
+	refMilestone?: IMilestone;
+	refConditionsGroup?: IConditionsGroup;
 }

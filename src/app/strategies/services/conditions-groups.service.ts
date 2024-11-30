@@ -24,14 +24,23 @@ export class ConditionsGroupsService {
 		private readonly _loggerService: LoggerService
 	) {}
 
-	private async getConditionsGroupWithConditions(conditionsGroup: DeepPartial<IConditionsGroup>) {
-		const conditionsToCreate: any[] = (conditionsGroup.conditions || []).map((condition: ICondition) => ({
-			...condition,
-			conditionsGroup: { id: conditionsGroup.id }
-		}));
+	async recreateConditionsGroups(conditionsGroups: DeepPartial<IConditionsGroup>[]) {
+		const savedConditionsGroups = await this._conditionsGroupsRepository.save(conditionsGroups);
+
+		const conditionsToCreate = conditionsGroups.reduce(
+			(conditions, conditionsGroup) => [
+				...conditions,
+				...conditionsGroup.conditions.map((condition: ICondition) => ({
+					conditionsGroup: { id: conditionsGroup.id },
+					...condition
+				}))
+			],
+			[]
+		);
+
 		const conditions = await this._conditionsService.createConditions(conditionsToCreate);
 
-		return { ...conditionsGroup, conditions };
+		return { ...savedConditionsGroups, conditions };
 	}
 
 	async getConditionsGroup(options?: FindOneOptions<ConditionsGroupEntity>) {
@@ -46,8 +55,7 @@ export class ConditionsGroupsService {
 
 	async createConditionsGroup(conditionsGroup: DeepPartial<IConditionsGroup>) {
 		try {
-			const conditionsGroupWithConditions = await this.getConditionsGroupWithConditions(conditionsGroup);
-			const savedConditionsGroup = await this._conditionsGroupsRepository.save(conditionsGroupWithConditions);
+			const savedConditionsGroup = await this._conditionsGroupsRepository.save(conditionsGroup);
 			const foundConditionsGroup = await this._conditionsGroupsRepository.findOne({
 				where: { id: savedConditionsGroup.id }
 			});
@@ -63,10 +71,7 @@ export class ConditionsGroupsService {
 
 	async createConditionsGroups(conditionsGroups: DeepPartial<IConditionsGroup[]>) {
 		try {
-			const processedGroups = await Promise.all(
-				conditionsGroups.map((group: IConditionsGroup) => this.getConditionsGroupWithConditions(group))
-			);
-			const savedConditionsGroups = await this._conditionsGroupsRepository.save(processedGroups);
+			const savedConditionsGroups = await this._conditionsGroupsRepository.save(conditionsGroups);
 			const savedConditionsGroupsIDs = savedConditionsGroups.map((conditionsGroup) => conditionsGroup.id);
 			const foundConditionsGroups = await this._conditionsGroupsRepository.find({
 				where: { id: In(savedConditionsGroupsIDs) },
@@ -84,8 +89,7 @@ export class ConditionsGroupsService {
 
 	async updateConditionsGroup(id: string, conditionsGroup: DeepPartial<IConditionsGroup>) {
 		try {
-			const conditionsGroupWithConditions = await this.getConditionsGroupWithConditions({ id, ...conditionsGroup });
-			const savedConditionsGroup = await this._conditionsGroupsRepository.save(conditionsGroupWithConditions);
+			const savedConditionsGroup = await this._conditionsGroupsRepository.save({ id, ...conditionsGroup });
 			const foundConditionsGroup = await this._conditionsGroupsRepository.findOne({
 				where: { id: savedConditionsGroup.id }
 			});
@@ -110,15 +114,6 @@ export class ConditionsGroupsService {
 	}
 
 	async deleteConditionsGroups(ids: string[]) {
-		const conditions = await this._conditionsService.getConditions({
-			where: { conditionsGroup: { id: In(ids) } }
-		});
-		const conditionIds = conditions.data.map((condition) => condition.id);
-
-		if (conditionIds.length > 0) {
-			await this._conditionsService.deleteConditions(conditionIds);
-		}
-
 		try {
 			await this._conditionsGroupsRepository.delete(ids);
 			return { deleted: true };

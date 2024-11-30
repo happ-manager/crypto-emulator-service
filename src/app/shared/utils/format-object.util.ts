@@ -36,3 +36,5 @@ export const formatObject = (input: InputObject): FormattedObject => {
 
 	return result;
 };
+
+export const consoleFormat = (input: InputObject) => console.log(formatObject(input));

@@ -1,15 +1,18 @@
-import type { ActionTypeEnum } from "../enums/action-type.enum";
+import type { IBase } from "../../shared/interfaces/base.interface";
 import type { GroupOperatorEnum } from "../enums/group-operator.enum";
+import type { MilestoneTypeEnum } from "../enums/milestone-type.enum";
 import type { IConditionsGroup } from "./conditions-group.interface";
 import type { IStrategy } from "./strategy.interface";
 
-export interface IMilestone {
+export interface IMilestone extends IBase {
 	id: string;
-	name: string;
+	name?: string;
+	description?: string;
+	value?: string;
 	strategy: IStrategy;
 	conditionsGroups: IConditionsGroup[];
-	actionType: ActionTypeEnum;
+	type: MilestoneTypeEnum;
+	refMilestone?: IMilestone;
 	groupOperator: GroupOperatorEnum;
-	value: number;
 	position: number;
 }

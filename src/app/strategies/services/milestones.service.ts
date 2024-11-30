@@ -24,14 +24,23 @@ export class MilestonesService {
 		private readonly _loggerService: LoggerService
 	) {}
 
-	private async getMilestoneWithConditionsGroups(milestone: DeepPartial<IMilestone>) {
-		const conditionsGroupsToCreate = (milestone.conditionsGroups || []).map((conditionsGroup: IConditionsGroup) => ({
-			...conditionsGroup,
-			milestone: { id: milestone.id }
-		}));
-		const conditionsGroups = await this._conditionsGroupsService.createConditionsGroups(conditionsGroupsToCreate);
+	async recreateMilestones(milestones: DeepPartial<IMilestone>[]) {
+		const savedMilestones = await this._milestonesRepository.save(milestones);
 
-		return { ...milestone, conditionsGroups };
+		const conditionsGroupsToCreate = milestones.reduce(
+			(conditionsGroups, milestone) => [
+				...conditionsGroups,
+				...milestone.conditionsGroups.map((conditionsGroup: IConditionsGroup) => ({
+					...conditionsGroup,
+					milestone: { id: milestone.id }
+				}))
+			],
+			[]
+		);
+
+		await this._conditionsGroupsService.recreateConditionsGroups(conditionsGroupsToCreate);
+
+		return savedMilestones;
 	}
 
 	async getMilestone(options?: FindOneOptions<MilestoneEntity>) {
@@ -46,8 +55,7 @@ export class MilestonesService {
 
 	async createMilestone(milestone: DeepPartial<IMilestone>) {
 		try {
-			const milestonesWithCondtionsGroups = await this.getMilestoneWithConditionsGroups(milestone);
-			const savedMilestone = await this._milestonesRepository.save(milestonesWithCondtionsGroups);
+			const savedMilestone = await this._milestonesRepository.save(milestone);
 			const foundMilestone = await this._milestonesRepository.findOne({ where: { id: savedMilestone.id } });
 
 			this._eventsService.emit(EventsEnum.MILESTONE_CREATED, foundMilestone);
@@ -61,10 +69,7 @@ export class MilestonesService {
 
 	async createMilestones(milestones: DeepPartial<IMilestone[]>) {
 		try {
-			const processedMilestones = await Promise.all(
-				milestones.map((milestone: IMilestone) => this.getMilestoneWithConditionsGroups(milestone))
-			);
-			const savedMilestones = await this._milestonesRepository.save(processedMilestones);
+			const savedMilestones = await this._milestonesRepository.save(milestones);
 			const savedMilestonesIds = savedMilestones.map((milestone) => milestone.id);
 			const foundMilestones = await this._milestonesRepository.find({
 				where: { id: In(savedMilestonesIds) }
@@ -81,8 +86,7 @@ export class MilestonesService {
 
 	async updateMilestone(id: string, milestone: DeepPartial<IMilestone>) {
 		try {
-			const milestonesWithCondtionsGroups = await this.getMilestoneWithConditionsGroups({ id, ...milestone });
-			const savedMilestones = await this._milestonesRepository.save(milestonesWithCondtionsGroups);
+			const savedMilestones = await this._milestonesRepository.save({ id, ...milestone });
 			const foundMilestones = await this._milestonesRepository.findOne({ where: { id: savedMilestones.id } });
 
 			this._eventsService.emit(EventsEnum.MILESTONE_UPDATED, foundMilestones);
@@ -105,15 +109,6 @@ export class MilestonesService {
 	}
 
 	async deleteMilestones(ids: string[]) {
-		const conditionsGroups = await this._conditionsGroupsService.getConditionsGroups({
-			where: { milestone: { id: In(ids) } }
-		});
-		const conditionsGroupsIds = conditionsGroups.data.map((conditionGroup) => conditionGroup.id);
-
-		if (conditionsGroupsIds.length > 0) {
-			await this._conditionsGroupsService.deleteConditionsGroups(conditionsGroupsIds);
-		}
-
 		try {
 			await this._milestonesRepository.delete(ids);
 			return { deleted: true };

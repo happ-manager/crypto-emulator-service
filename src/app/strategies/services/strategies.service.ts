@@ -16,6 +16,17 @@ import { MilestonesService } from "./milestones.service";
 
 @Injectable()
 export class StrategiesService {
+	readonly relations = [
+		"milestones",
+		"milestones.refMilestone",
+		"milestones.conditionsGroups",
+		"milestones.conditionsGroups.refMilestone",
+		"milestones.conditionsGroups.refConditionsGroup",
+		"milestones.conditionsGroups.conditions",
+		"milestones.conditionsGroups.conditions.refMilestone",
+		"milestones.conditionsGroups.conditions.refConditionsGroup"
+	];
+
 	constructor(
 		@InjectRepository(StrategyEntity)
 		private readonly _strategiesRepository: Repository<StrategyEntity>,
@@ -24,26 +35,27 @@ export class StrategiesService {
 		private readonly _loggerService: LoggerService
 	) {}
 
-	private async getStrategyWithMilestones(strategy: DeepPartial<IStrategy>) {
-		if (strategy.id) {
-			const { data } = await this._milestonesService.getMilestones({
-				where: { strategy: { id: strategy.id } }
-			});
+	async recreateStrategy(strategy: DeepPartial<IStrategy>) {
+		const { data } = await this._milestonesService.getMilestones({
+			where: { strategy: { id: strategy.id } }
+		});
 
-			const milestonesToDeleteIds = data.map((milestone) => milestone.id);
+		const milestonesToDeleteIds = data.map((milestone) => milestone.id);
 
-			if (milestonesToDeleteIds.length > 0) {
-				await this._milestonesService.deleteMilestones(milestonesToDeleteIds);
-			}
+		if (milestonesToDeleteIds.length > 0) {
+			await this._milestonesService.deleteMilestones(milestonesToDeleteIds);
 		}
 
-		const milestonesToCreate = (strategy.milestones || []).map((milestone: IMilestone) => ({
-			...milestone,
-			strategy: { id: strategy.id }
-		}));
-		const milestones = await this._milestonesService.createMilestones(milestonesToCreate);
+		const savedStrategy = await this._strategiesRepository.save(strategy);
 
-		return { ...strategy, milestones };
+		const milestonesToCreate = strategy.milestones.map((milestone: IMilestone) => ({
+			...milestone,
+			strategy: { id: savedStrategy.id }
+		}));
+
+		await this._milestonesService.recreateMilestones(milestonesToCreate);
+
+		return savedStrategy;
 	}
 
 	async getStrategy(options?: FindOneOptions<StrategyEntity>) {
@@ -58,8 +70,7 @@ export class StrategiesService {
 
 	async createStrategy(strategy: DeepPartial<IStrategy>) {
 		try {
-			const strategyWithMilestones = await this.getStrategyWithMilestones(strategy);
-			const savedStrategy = await this._strategiesRepository.save(strategyWithMilestones);
+			const savedStrategy = await this._strategiesRepository.save(strategy);
 			const foundStrategy = await this._strategiesRepository.findOne({ where: { id: savedStrategy.id } });
 
 			this._eventsService.emit(EventsEnum.STRATEGY_CREATED, foundStrategy);
@@ -73,10 +84,7 @@ export class StrategiesService {
 
 	async createStrategies(strategies: DeepPartial<IStrategy[]>) {
 		try {
-			const processedStrategies = await Promise.all(
-				strategies.map((strategy: IStrategy) => this.getStrategyWithMilestones(strategy))
-			);
-			const savedStrategies = await this._strategiesRepository.save(processedStrategies);
+			const savedStrategies = await this._strategiesRepository.save(strategies);
 			const savedStrategiesIds = savedStrategies.map((strategy) => strategy.id);
 			const foundStrategies = await this._strategiesRepository.find({
 				where: { id: In(savedStrategiesIds) }
@@ -93,8 +101,7 @@ export class StrategiesService {
 
 	async updateStrategy(id: string, strategy: DeepPartial<IStrategy>) {
 		try {
-			const strategyWithMilestones = await this.getStrategyWithMilestones({ id, ...strategy });
-			const savedStrategy = await this._strategiesRepository.save({ id, ...strategyWithMilestones });
+			const savedStrategy = await this._strategiesRepository.save({ id, ...strategy });
 			const foundStrategy = await this._strategiesRepository.findOne({ where: { id: savedStrategy.id } });
 
 			this._eventsService.emit(EventsEnum.STRATEGY_UPDATED, foundStrategy);
@@ -107,13 +114,6 @@ export class StrategiesService {
 	}
 
 	async deleteStrategy(id: string) {
-		const milestones = await this._milestonesService.getMilestones({
-			where: { strategy: { id } }
-		});
-		const milestonesIds = milestones.data.map((milestone) => milestone.id);
-
-		await this._milestonesService.deleteMilestones(milestonesIds);
-
 		try {
 			await this._strategiesRepository.delete(id);
 			return { deleted: true };

@@ -31,7 +31,7 @@ export class HeliusService implements OnModuleInit, ISolanaProvider {
 	) {}
 
 	onModuleInit() {
-		setTimeout(this.init.bind(this));
+		// setTimeout(this.init.bind(this));
 	}
 
 	init() {

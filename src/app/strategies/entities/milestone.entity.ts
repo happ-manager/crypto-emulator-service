@@ -4,8 +4,8 @@ import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
 import { BaseEntity } from "../../shared/entities/base.entity";
 import { Paginated } from "../../shared/models/paginated.model";
 import { MILESTONES } from "../constants/milestones/milestones.constant";
-import { ActionTypeEnum } from "../enums/action-type.enum";
 import { GroupOperatorEnum } from "../enums/group-operator.enum";
+import { MilestoneTypeEnum } from "../enums/milestone-type.enum";
 import type { IConditionsGroup } from "../interfaces/conditions-group.interface";
 import type { IMilestone } from "../interfaces/milestone.interface";
 import { IStrategy } from "../interfaces/strategy.interface";
@@ -17,31 +17,39 @@ import { StrategyEntity } from "./strategy.entity";
 export class MilestoneEntity extends BaseEntity implements IMilestone {
 	@Field({ nullable: true })
 	@Column({ nullable: true })
-	name: string;
+	name?: string;
 
-	@Field(() => StrategyEntity)
-	@ManyToOne(() => StrategyEntity, (strategy) => strategy.milestones)
-	strategy: IStrategy;
-
-	@Field(() => [ConditionsGroupEntity])
-	@OneToMany(() => ConditionsGroupEntity, (conditionsGroup) => conditionsGroup.milestone)
-	conditionsGroups: IConditionsGroup[];
+	@Field({ nullable: true })
+	@Column({ nullable: true })
+	description?: string;
 
 	@Field(() => GroupOperatorEnum)
 	@Column({ type: "enum", enum: GroupOperatorEnum })
 	groupOperator: GroupOperatorEnum;
 
-	@Field(() => ActionTypeEnum)
-	@Column({ type: "enum", enum: ActionTypeEnum })
-	actionType: ActionTypeEnum;
+	@Field(() => MilestoneTypeEnum)
+	@Column({ type: "enum", enum: MilestoneTypeEnum })
+	type: MilestoneTypeEnum;
 
-	@Field(() => Int)
-	@Column("integer", { default: 0 })
-	value: number;
+	@Field({ nullable: true })
+	@Column({ nullable: true })
+	value?: string;
 
 	@Field(() => Int)
 	@Column("integer", { default: 0 })
 	position: number;
+
+	@Field(() => MilestoneEntity, { nullable: true })
+	@ManyToOne(() => MilestoneEntity, { nullable: true, onDelete: "SET NULL" })
+	refMilestone?: MilestoneEntity;
+
+	@Field(() => [ConditionsGroupEntity])
+	@OneToMany(() => ConditionsGroupEntity, (conditionsGroup) => conditionsGroup.milestone)
+	conditionsGroups: IConditionsGroup[];
+
+	@Field(() => StrategyEntity)
+	@ManyToOne(() => StrategyEntity, (strategy) => strategy.milestones, { onDelete: "CASCADE" })
+	strategy: IStrategy;
 }
 
 @ObjectType()

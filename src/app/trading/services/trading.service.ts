@@ -307,7 +307,7 @@ export class TradingService implements OnModuleInit {
 	checkExit(transaction: ISolanaTransaction, enterTransaction: ISolanaTransaction) {
 		const { minPrice, maxPercent, minDuration } = this.strategies[transaction.poolAddress];
 
-		const enterPriceDiff = enterTransaction.price.percentDiff(transaction.price);
+		const enterPriceDiff = transaction.price.percentDiff(enterTransaction.price);
 		const enterTimeDiff = this._dateService.now().diff(enterTransaction.date, "seconds");
 
 		if (minPrice && transaction.price.lte(minPrice)) {

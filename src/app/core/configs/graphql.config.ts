@@ -13,11 +13,10 @@ import { LoadersService } from "../../loaders/services/loaders.service";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { SortOrderEnum } from "../../shared/enums/sort-order.enum";
 import type { IGqlContext } from "../../shared/graphql/interfaces/gql-context.interface";
-import { ActionTypeEnum } from "../../strategies/enums/action-type.enum";
 import { ConditionFieldEnum } from "../../strategies/enums/condition-field.enum";
 import { GroupOperatorEnum } from "../../strategies/enums/group-operator.enum";
+import { MilestoneTypeEnum } from "../../strategies/enums/milestone-type.enum";
 import { OperatorEnum } from "../../strategies/enums/operator.enum";
-import { RelatedToEnum } from "../../strategies/enums/related-to.enum";
 import { TradingTokenStatusEnum } from "../../trading/enums/trading-token-status.enum";
 import { VerificationStatusEnum } from "../../users/enums/verification-status.enum";
 
@@ -41,9 +40,8 @@ export const GRAPHQL_CONFIG: GqlModuleAsyncOptions<ApolloDriverConfig, GqlOption
 registerEnumType(SortOrderEnum, { name: "sortOrder" });
 registerEnumType(ErrorsEnum, { name: "errorsEnum" });
 registerEnumType(VerificationStatusEnum, { name: "verificationStatusEnum" });
-registerEnumType(ActionTypeEnum, { name: "actionTypeEnum" });
+registerEnumType(MilestoneTypeEnum, { name: "milestoneTypeEnum" });
 registerEnumType(ConditionFieldEnum, { name: "conditionFieldEnum" });
 registerEnumType(OperatorEnum, { name: "operatorEnum" });
 registerEnumType(GroupOperatorEnum, { name: "groupOperatorEnum" });
-registerEnumType(RelatedToEnum, { name: "relatedToEnum" });
 registerEnumType(TradingTokenStatusEnum, { name: "tradingTokenStatusEnum" });

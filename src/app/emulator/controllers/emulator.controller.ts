@@ -18,14 +18,12 @@ export class EmulatorController {
 
 	@Post("emulate")
 	async emulate(@Body() body: IEmulateBody) {
-		const { signals, sources, strategies, investment, delay } = body;
-		return this._emulatorService.emulate(signals, sources, strategies, investment, delay);
+		return this._emulatorService.emulate(body);
 	}
 
 	@Post("emulate/excel")
 	async emulateToExcel(@Body() body: IEmulateBody, @Res() res: Response) {
-		const { signals, sources, strategies } = body;
-		const result = await this._emulatorService.emulate(signals, sources, strategies);
+		const result = await this._emulatorService.emulate(body);
 
 		// Создание книги Excel
 		const workbook = new ExcelJS.Workbook();

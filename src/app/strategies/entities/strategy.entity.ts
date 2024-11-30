@@ -17,13 +17,17 @@ export class StrategyEntity extends BaseEntity implements IStrategy {
 	@Column()
 	name: string;
 
-	@Field(() => [MilestoneEntity])
-	@OneToMany(() => MilestoneEntity, (milestone) => milestone.strategy)
-	milestones: IMilestone[];
+	@Field({ nullable: true })
+	@Column({ nullable: true })
+	description?: string;
 
 	@Field(() => [TradingEntity])
 	@OneToMany(() => TradingEntity, (trading) => trading.strategy)
 	tradings: ITrading[];
+
+	@Field(() => [MilestoneEntity])
+	@OneToMany(() => MilestoneEntity, (milestone) => milestone.strategy)
+	milestones: IMilestone[];
 }
 
 @ObjectType()

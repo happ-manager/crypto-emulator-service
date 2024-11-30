@@ -24,18 +24,16 @@ export class LoggerService implements NestLoggerService, OnModuleInit {
 			)
 		);
 
-		// Транспорт для логов
-		const fileTransports: winston.transport[] = [
-			new winston.transports.File({ filename: path.join(logDir, "logs.txt") }),
-			new winston.transports.File({ filename: path.join(logDir, "errors.txt"), level: "error" })
-		];
+		const logsTransport = new winston.transports.File({ filename: path.join(logDir, "logs.txt") });
+		const errorTransport = new winston.transports.File({ filename: path.join(logDir, "errors.txt"), level: "error" });
+		const consoleTransport = new winston.transports.Console({
+			format: winston.format.combine(winston.format.colorize(), winston.format.simple())
+		});
+
+		const fileTransports: winston.transport[] = [logsTransport, errorTransport];
 
 		if (!this._loggerConfig.production) {
-			fileTransports.push(
-				new winston.transports.Console({
-					format: winston.format.combine(winston.format.colorize(), winston.format.simple())
-				})
-			);
+			fileTransports.push(consoleTransport);
 		}
 
 		this.logger = winston.createLogger({

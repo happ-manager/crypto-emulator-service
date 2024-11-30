@@ -19,12 +19,12 @@ export class AnalyticsController {
 
 	@Post(ANALYTCIS_ENDPOINTS.ANALYSE)
 	async analyse(@Body() body: IAnalyticsBody) {
-		return this._analyticsService.analyse(body.signals, body.sources);
+		return this._analyticsService.analyse(body);
 	}
 
 	@Post(ANALYTCIS_ENDPOINTS.ANALYSE_EXCEL)
 	async analsyeExcel(@Body() body: IAnalyticsBody, @Res() res: Response) {
-		const analyse = this._analyticsService.analyse(body.signals, body.sources);
+		const analyse = this._analyticsService.analyse(body);
 
 		// Генерация Excel файла
 		const buffer: any = [];

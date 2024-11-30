@@ -5,7 +5,24 @@ export function getDelayedTransaction(
 	baseTransaction: ITransaction,
 	delay: number
 ): ITransaction {
-	return transactions.find((transaction) =>
-		transaction.date.isSameOrAfter(baseTransaction.date.add(delay, "millisecond"))
+	if (delay === 0) {
+		return baseTransaction;
+	}
+
+	// Вычисляем границы промежутка времени
+	const startTime = baseTransaction.date;
+	const endTime = baseTransaction.date.add(delay, "millisecond");
+
+	// Фильтруем транзакции, которые попадают в этот промежуток
+	const transactionsInDelay = transactions.filter(
+		(transaction) => transaction.date.isAfter(startTime) && transaction.date.isSameOrBefore(endTime)
 	);
+
+	// Если есть транзакции в промежутке, возвращаем последнюю из них
+	if (transactionsInDelay.length > 0) {
+		return transactionsInDelay.at(-1);
+	}
+
+	// Если транзакций в промежутке нет, возвращаем базовую транзакцию
+	return baseTransaction;
 }

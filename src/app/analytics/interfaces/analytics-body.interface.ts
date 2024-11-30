@@ -1,6 +1,7 @@
-import type { ISignal } from "../../signals/interfaces/signal.interface";
+import type { IToken } from "../../tokens/interfaces/token.interface";
+import type { IWallet } from "../../wallets/interfaces/wallet.interface";
 
 export interface IAnalyticsBody {
-	signals: ISignal[];
-	sources: string[];
+	tokens: IToken[];
+	wallets: IWallet[];
 }
