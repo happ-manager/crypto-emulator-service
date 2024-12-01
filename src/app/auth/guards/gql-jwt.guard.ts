@@ -13,7 +13,7 @@ export class GqlJwtGuard implements CanActivate {
 		private readonly _usersService: UsersService
 	) {}
 
-	async canActivate(context: ExecutionContext): Promise<boolean> {
+	async canActivate(context: ExecutionContext) {
 		const ctx = GqlExecutionContext.create(context).getContext();
 		const { authorization } = ctx.req.headers;
 

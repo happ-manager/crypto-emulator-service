@@ -6,14 +6,14 @@ import type { SignalEntity } from "../entities/signal.entity";
 import { SignalsService } from "../services/signals.service";
 
 export interface ISignalsLoader {
-	getSignalByToken: DataLoader<string, SignalEntity | null>;
+	getSignalsByTokens: DataLoader<string, SignalEntity | null>;
 }
 
 @Injectable()
 export class SignalsLoader {
 	constructor(private readonly _signalsService: SignalsService) {}
 
-	createSignalByTokenLoader() {
+	createSignalsByTokensLoader() {
 		return new DataLoader<string, SignalEntity | null>(async (tokenIds: string[]) => {
 			const { data } = await this._signalsService.getSignals({
 				where: { token: { id: In(tokenIds) } },

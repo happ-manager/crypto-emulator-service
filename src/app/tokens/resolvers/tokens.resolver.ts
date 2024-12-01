@@ -17,7 +17,7 @@ export class TokensResolver {
 		return this._tokensService.getTokens({
 			...args,
 			where: {
-				...(signalId ? { signal: { id: signalId } } : {})
+				...(signalId ? { signals: { id: signalId } } : {})
 			},
 			order: {
 				createdAt: "desc"

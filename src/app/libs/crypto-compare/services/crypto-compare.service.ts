@@ -36,7 +36,7 @@ export class CryptoCompareService {
 	}
 
 	// Пример метода для получения символа токена по адресу
-	private async getSymbolByAddress(address: string): Promise<string> {
+	private async getSymbolByAddress(address: string) {
 		// Ваш код для получения символа на основе адреса
 		return "SYMBOL"; // Вернуть соответствующий символ
 	}

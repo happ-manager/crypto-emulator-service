@@ -8,7 +8,7 @@ import { SignalEntity } from "../entities/signal.entity";
 @Resolver(() => SignalEntity)
 export class SignalResolver {
 	@ResolveField(() => TokenEntity, { nullable: true })
-	async token(@Parent() signal: SignalEntity, @Loaders() loaders: ILoaders): Promise<TokenEntity | null> {
-		return loaders.getTokenBySignal.load(signal.id);
+	async token(@Parent() signal: SignalEntity, @Loaders() loaders: ILoaders) {
+		return loaders.getTokensBySignals.load(signal.id);
 	}
 }

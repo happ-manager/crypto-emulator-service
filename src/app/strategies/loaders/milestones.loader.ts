@@ -6,21 +6,21 @@ import type { MilestoneEntity } from "../entities/milestone.entity";
 import { MilestonesService } from "../services/milestones.service";
 
 export interface IMilestonesLoader {
-	getMilestonesByStrategy: DataLoader<string, MilestoneEntity[]>;
+	getMilestonesByStrategies: DataLoader<string, MilestoneEntity[]>;
 }
 
 @Injectable()
 export class MilestonesLoader {
 	constructor(private readonly _milestonesService: MilestonesService) {}
 
-	createMilestonesLoaderByStrategies() {
+	createMilestonesByStrategiesLoader() {
 		return new DataLoader<string, MilestoneEntity[]>(async (strategyIds: string[]) => {
 			const { data } = await this._milestonesService.getMilestones({
 				where: { strategy: { id: In(strategyIds) } },
 				relations: ["strategy"]
 			});
 
-			return strategyIds.map((id) => data.filter((milestone) => milestone.strategy?.id === id));
+			return strategyIds.map((strategyId) => data.filter((milestone) => milestone.strategy?.id === strategyId));
 		});
 	}
 }

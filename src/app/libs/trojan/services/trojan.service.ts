@@ -27,11 +27,11 @@ export class TrojanService implements OnModuleInit {
 		}, 0);
 	}
 
-	async sellToken(tokenAddress: string): Promise<void> {
+	async sellToken(tokenAddress: string) {
 		await this._telegramService.sendMessageToBot(this.trojanConfig.botUsername, `/start sellToken-${tokenAddress}`);
 	}
 
-	async buyToken(tokenAddress: string): Promise<void> {
+	async buyToken(tokenAddress: string) {
 		await this._telegramService.sendMessageToBot(this.trojanConfig.botUsername, `/buy`);
 		this._addressesToBuy.push(tokenAddress);
 	}

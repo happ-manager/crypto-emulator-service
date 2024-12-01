@@ -1,5 +1,6 @@
 import type { IBase } from "../../shared/interfaces/base.interface";
 import type { ISignal } from "../../signals/interfaces/signal.interface";
+import type { ITradingToken } from "../../trading/interfaces/trading-token.interface";
 
 export interface IToken extends IBase {
 	id: string;
@@ -11,5 +12,6 @@ export interface IToken extends IBase {
 	dexToolsPairId?: string;
 	verified: boolean;
 	disabled: boolean;
-	signal?: ISignal;
+	signals: ISignal[];
+	tradingTokens: ITradingToken[];
 }

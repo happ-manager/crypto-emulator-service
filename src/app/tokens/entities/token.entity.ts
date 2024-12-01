@@ -1,10 +1,12 @@
 import { Field, ObjectType } from "@nestjs/graphql";
-import { Column, Entity, JoinColumn, OneToOne } from "typeorm";
+import { Column, Entity, OneToMany } from "typeorm";
 
 import { BaseEntity } from "../../shared/entities/base.entity";
 import { Paginated } from "../../shared/models/paginated.model";
 import { SignalEntity } from "../../signals/entities/signal.entity";
-import { ISignal } from "../../signals/interfaces/signal.interface";
+import type { ISignal } from "../../signals/interfaces/signal.interface";
+import { TradingTokenEntity } from "../../trading/entities/trading-token.entity";
+import type { ITradingToken } from "../../trading/interfaces/trading-token.interface";
 import { TOKENS } from "../constants/tokens.constant";
 import type { IToken } from "../interfaces/token.interface";
 
@@ -43,10 +45,13 @@ export class TokenEntity extends BaseEntity implements IToken {
 	@Column("boolean", { default: false })
 	disabled: boolean;
 
-	@Field(() => SignalEntity, { nullable: true })
-	@OneToOne(() => SignalEntity, (signal) => signal.token, { nullable: true })
-	@JoinColumn()
-	signal?: ISignal;
+	@Field(() => [SignalEntity])
+	@OneToMany(() => SignalEntity, (signal) => signal.token)
+	signals: ISignal[];
+
+	@Field(() => [TradingTokenEntity])
+	@OneToMany(() => TradingTokenEntity, (tradingToken) => tradingToken.token)
+	tradingTokens: ITradingToken[];
 }
 
 @ObjectType()

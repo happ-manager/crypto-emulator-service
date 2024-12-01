@@ -30,9 +30,13 @@ export class TransactionEntity extends BaseEntity implements ITransaction {
 	@PriceColumn()
 	price: IPrice;
 
-	@Field(() => CandleEntity)
-	@ManyToOne(() => CandleEntity, (candle) => candle.transactions, { onDelete: "CASCADE" })
-	candle: ICandle;
+	@Field({ nullable: true })
+	@Column({ nullable: true })
+	signature: string;
+
+	@Field(() => CandleEntity, { nullable: true })
+	@ManyToOne(() => CandleEntity, (candle) => candle.transactions, { nullable: true, onDelete: "SET NULL" })
+	candle?: ICandle;
 }
 
 @ObjectType()

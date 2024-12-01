@@ -6,6 +6,6 @@ import { CreateTradingGuard } from "./tradings/create-trading.guard";
 export const TRADINGS_GUARDS = [
 	CreateTradingGuard,
 	AccessTradingGuard,
-	AccessTradingTokenGuard,
-	CreateTradingTokenGuard
+	CreateTradingTokenGuard,
+	AccessTradingTokenGuard
 ];

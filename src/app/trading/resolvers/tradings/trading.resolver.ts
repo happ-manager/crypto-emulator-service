@@ -11,7 +11,7 @@ import { TradingTokenEntity } from "../../entities/trading-token.entity";
 export class TradingResolver {
 	@ResolveField(() => StrategyEntity)
 	async strategy(@Parent() trading: TradingEntity, @Loaders() loaders: ILoaders) {
-		return loaders.getStrategiesByTrading.load(trading.id);
+		return loaders.getStrategiesByTradings.load(trading.id);
 	}
 
 	@ResolveField(() => WalletEntity)

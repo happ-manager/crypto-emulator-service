@@ -4,44 +4,44 @@ import { In } from "typeorm";
 import type { ITransaction } from "../../candles/interfaces/transaction.interface";
 import { TransactionsService } from "../../candles/services/transactions.service";
 import { findTransaction } from "../../candles/utils/find-transaction.util";
-import { TokensService } from "../../tokens/services/tokens.service";
+import { SignalsService } from "../../signals/services/signals.service";
 import type { IAnalyticsBody } from "../interfaces/analytics-body.interface";
 
 @Injectable()
 export class AnalyticsService {
 	constructor(
-		private readonly _tokensService: TokensService,
+		private readonly _signalsService: SignalsService,
 		private readonly _transactionsService: TransactionsService
 	) {}
 
 	async analyse(body: IAnalyticsBody) {
-		const { tokens, wallets } = body;
-		const { data: findedTokens } = await this._tokensService.getTokens({
+		const { signals, wallets } = body;
+		const { data: findedSignals } = await this._signalsService.getSignals({
 			where: {
 				// ...(wallets.length > 0 ? { wallet: In(wallets.map((wallet) => wallet.id)) } : {}),
-				...(tokens.length > 0 ? { id: In(tokens.map((token) => token.id)) } : {})
+				...(signals.length > 0 ? { id: In(signals.map((signal) => signal.id)) } : {})
 			},
 			take: 1000,
-			relations: ["signal"]
+			relations: ["token"]
 		});
 
 		const results = [];
 
-		for (const token of findedTokens) {
+		for (const signal of findedSignals) {
 			const { data } = await this._transactionsService.getTransactions({
-				where: { poolAddress: token.poolAddress },
+				where: { poolAddress: signal.poolAddress },
 				order: { date: "asc" }
 			});
 
 			const transactions = data.filter((transaction) => transaction.price.gt(0));
 
-			const entryTransaction = findTransaction(transactions, token.signal.signaledAt);
+			const entryTransaction = findTransaction(transactions, signal.signaledAt);
 			const [firstTransaction] = transactions;
 			const lastTransaction = transactions.at(-1);
 
 			if (!entryTransaction) {
 				results.push({
-					token,
+					signal,
 					entryTransaction: {},
 					firstTransaction: {},
 					lastTransaction: {},
@@ -80,7 +80,7 @@ export class AnalyticsService {
 			}
 
 			results.push({
-				token,
+				signal,
 				entryTransaction,
 				maxTransaction,
 				minTransaction,

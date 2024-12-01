@@ -43,7 +43,7 @@ type ConditionEntity {
 }
 
 type ConditionsGroupEntity {
-  conditions: [ConditionEntity!]
+  conditions: [ConditionEntity!]!
   createdAt: DateTime!
   description: String
   duration: Int!
@@ -132,6 +132,11 @@ scalar IDate
 
 """Custom scalar for prices using Big.js"""
 scalar IPrice
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
 
 type MilestoneEntity {
   conditionsGroups: [ConditionsGroupEntity!]!
@@ -346,7 +351,7 @@ input TelegramUserDto {
   added_to_attachment_menu: Boolean
   first_name: String!
   id: Float!
-  is_bot: Boolean
+  is_bot: Boolean!
   is_premium: Boolean
   language_code: String
   last_name: String
@@ -363,8 +368,10 @@ type TokenEntity {
   name: String
   poolAddress: String
   signal: SignalEntity
+  signals: [SignalEntity!]!
   symbol: String
   tokenAddress: String
+  tradingTokens: [TradingTokenEntity!]!
   updatedAt: DateTime!
   verified: Boolean!
 }
@@ -377,35 +384,32 @@ type TradingEntity {
   sourceWallet: WalletEntity!
   strategy: StrategyEntity!
   targetWallet: WalletEntity!
+  tokenTradingDuration: Float
   tradingTokens: [TradingTokenEntity!]
   updatedAt: DateTime!
 }
 
 type TradingTokenEntity {
+  checkedStrategy: JSON
   createdAt: DateTime!
-  enterAt: IDate
-  enterPrice: IPrice
-  exitAt: IDate
-  exitPrice: IPrice
   id: ID!
-  initialAt: IDate
-  initialPrice: IPrice
   poolAddress: String!
-  signaledAt: IDate
-  signaledPrice: IPrice
-  status: tradingTokenStatusEnum!
+  price: IPrice!
+  signaledAt: IDate!
+  token: TokenEntity
   trading: TradingEntity!
   updatedAt: DateTime!
   walletAddress: String!
 }
 
 type TransactionEntity {
-  candle: CandleEntity!
+  candle: CandleEntity
   createdAt: DateTime!
   date: IDate!
   id: ID!
   poolAddress: String!
   price: IPrice!
+  signature: String
   updatedAt: DateTime!
 }
 
@@ -528,20 +532,16 @@ enum groupOperatorEnum {
 }
 
 enum milestoneTypeEnum {
-  ENTER
-  EXIT
+  BUY
+  SELL
   SIGNAL
 }
 
 enum operatorEnum {
   LESS
+  LESS_EQUAL
   MORE
-}
-
-enum tradingTokenStatusEnum {
-  BOUGHT
-  SELLED
-  SIGNALED
+  MORE_EQUAL
 }
 
 enum verificationStatusEnum {

@@ -36,7 +36,7 @@ export class NomicsService {
 	}
 
 	// Пример метода для получения рынка по адресу
-	private async getMarketByAddress(address: string): Promise<string> {
+	private async getMarketByAddress(address: string) {
 		// Ваш код для получения рынка на основе адреса
 		return "MARKET"; // Вернуть соответствующий рынок
 	}

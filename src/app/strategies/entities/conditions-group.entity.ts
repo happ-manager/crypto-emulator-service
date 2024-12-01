@@ -38,7 +38,7 @@ export class ConditionsGroupEntity extends BaseEntity implements IConditionsGrou
 	@ManyToOne(() => ConditionsGroupEntity, { nullable: true, onDelete: "SET NULL" })
 	refConditionsGroup?: ConditionsGroupEntity;
 
-	@Field(() => [ConditionEntity], { nullable: true })
+	@Field(() => [ConditionEntity])
 	@OneToMany(() => ConditionEntity, (condition) => condition.conditionsGroup)
 	conditions: ICondition[];
 

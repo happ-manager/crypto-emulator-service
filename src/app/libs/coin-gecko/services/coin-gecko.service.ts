@@ -37,7 +37,7 @@ export class CoinGeckoService {
 	}
 
 	// Пример метода для получения ID токена по адресу
-	private async getIdByAddress(address: string): Promise<string> {
+	private async getIdByAddress(address: string) {
 		// Ваш код для получения ID на основе адреса
 		return "id"; // Вернуть соответствующий ID
 	}

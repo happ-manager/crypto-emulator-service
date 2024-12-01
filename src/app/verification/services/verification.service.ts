@@ -25,7 +25,7 @@ export class VerificationService implements OnModuleInit {
 		}, 0);
 	}
 
-	async check(tokenAddress: string): Promise<void> {
+	async check(tokenAddress: string) {
 		const message = `/s ${tokenAddress}`;
 
 		try {

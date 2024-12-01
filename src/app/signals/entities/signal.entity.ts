@@ -1,5 +1,5 @@
 import { Field, ObjectType } from "@nestjs/graphql";
-import { Column, Entity, OneToOne } from "typeorm";
+import { Column, Entity, ManyToOne } from "typeorm";
 
 import { DateColumn } from "../../libs/date/decorators/date-column.decorator";
 import { IDate } from "../../libs/date/interfaces/date.interface";
@@ -35,7 +35,7 @@ export class SignalEntity extends BaseEntity implements ISignal {
 	signaledAt: IDate;
 
 	@Field(() => TokenEntity, { nullable: true })
-	@OneToOne(() => TokenEntity, (token) => token.signal, { nullable: true })
+	@ManyToOne(() => TokenEntity, (token) => token.signals, { nullable: true, onDelete: "SET NULL" })
 	token?: IToken;
 }
 

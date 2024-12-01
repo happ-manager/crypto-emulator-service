@@ -7,11 +7,8 @@ import { ConditionsGroupEntity } from "../../entities/conditions-group.entity";
 
 @Resolver(() => ConditionsGroupEntity)
 export class ConditionsGroupResolver {
-	@ResolveField(() => [ConditionEntity], { nullable: true })
-	async conditions(
-		@Parent() group: ConditionsGroupEntity,
-		@Loaders() loaders: ILoaders
-	): Promise<ConditionEntity[] | null> {
+	@ResolveField(() => [ConditionEntity])
+	async conditions(@Parent() group: ConditionsGroupEntity, @Loaders() loaders: ILoaders) {
 		return loaders.getConditionsByConditionsGroup.load(group.id);
 	}
 }

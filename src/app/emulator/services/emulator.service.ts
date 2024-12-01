@@ -4,21 +4,20 @@ import { In } from "typeorm";
 import { TransactionsService } from "../../candles/services/transactions.service";
 import { findTransaction } from "../../candles/utils/find-transaction.util";
 import { LoggerService } from "../../libs/logger";
+import { SignalsService } from "../../signals/services/signals.service";
 import { MilestoneTypeEnum } from "../../strategies/enums/milestone-type.enum";
-import type { IChecked } from "../../strategies/interfaces/checked.interface";
+import type { IChecked, ICheckedTransactions } from "../../strategies/interfaces/checked.interface";
 import type { IMilestone } from "../../strategies/interfaces/milestone.interface";
-import type { IRefs } from "../../strategies/interfaces/refs.interface";
 import type { IStrategy } from "../../strategies/interfaces/strategy.interface";
 import { CheckStrategyService } from "../../strategies/services/check-strategy.service";
 import { StrategiesService } from "../../strategies/services/strategies.service";
-import { TokensService } from "../../tokens/services/tokens.service";
 import type { IEmulateBody } from "../interfaces/emulator-body.interface";
 import { getDelayedTransaction } from "../utils/get-delayed-transaction.util";
 
 @Injectable()
 export class EmulatorService {
 	constructor(
-		private readonly _tokensService: TokensService,
+		private readonly _signalsService: SignalsService,
 		private readonly _strategiesService: StrategiesService,
 		private readonly _transactionsService: TransactionsService,
 		private readonly _checkStrategyService: CheckStrategyService,
@@ -26,15 +25,15 @@ export class EmulatorService {
 	) {}
 
 	async emulate(body: IEmulateBody) {
-		const { wallets, tokens, strategies, delay } = body;
+		const { wallets, signals, strategies, delay } = body;
 
-		const { data: findedTokens } = await this._tokensService.getTokens({
+		const { data: findedSignals } = await this._signalsService.getSignals({
 			where: {
 				// ...(wallets.length > 0 ? { wallet: In(wallets.map((wallet) => wallet.id)) } : {}),
-				...(tokens.length > 0 ? { id: In(tokens.map((token) => token.id)) } : {})
+				...(signals.length > 0 ? { id: In(signals.map((signal) => signal.id)) } : {})
 			},
 			take: 1000,
-			relations: ["signal"]
+			relations: ["token"]
 		});
 		const findedStrategies = await this._strategiesService.getStrategies({
 			where: {
@@ -46,15 +45,15 @@ export class EmulatorService {
 
 		const results = [];
 
-		for (const token of findedTokens) {
+		for (const signal of findedSignals) {
 			const { data: transactions } = await this._transactionsService.getTransactions({
-				where: { poolAddress: token.poolAddress },
+				where: { poolAddress: signal.poolAddress },
 				order: { date: "asc" }
 			});
 			const checkedStrategies: IChecked<IStrategy>[] = [];
 
 			for (const strategy of findedStrategies.data) {
-				const refs: IRefs = {};
+				const checkedTransactions: ICheckedTransactions = {};
 				const signalMilestone = strategy.milestones.find((milestone) => milestone.type === MilestoneTypeEnum.SIGNAL);
 
 				if (!signalMilestone) {
@@ -62,23 +61,24 @@ export class EmulatorService {
 					continue;
 				}
 
-				const signalTransaction = findTransaction(transactions, token.signal.signaledAt);
+				const signalTransaction = findTransaction(transactions, signal.signaledAt);
 
 				if (!signalTransaction) {
 					this._loggerService.log("Не получаеся найти транзакцию сигнала");
 					continue;
 				}
 
-				refs[signalMilestone.id] = signalTransaction;
+				checkedTransactions[signalMilestone.id] = signalTransaction;
 
-				const checkedMilestones: IChecked<IMilestone>[] = [
-					{ ...signalMilestone, checkedTransaction: signalTransaction, delayedTransaction: signalTransaction }
-				];
+				const checkedMilestones: IChecked<IMilestone>[] = [];
+				const sortedMilestones = strategy.milestones.sort((a, b) => a.position - b.position);
 
-				const notSignalMilestones = strategy.milestones.filter(({ type }) => type !== MilestoneTypeEnum.SIGNAL);
-
-				for (const milestone of notSignalMilestones) {
-					const checkedMilestone = this._checkStrategyService.getCheckedMilestone(milestone, transactions, refs);
+				for (const milestone of sortedMilestones) {
+					const checkedMilestone = this._checkStrategyService.getCheckedMilestone(
+						milestone,
+						transactions,
+						checkedTransactions
+					);
 
 					if (!checkedMilestone) {
 						continue;
@@ -86,7 +86,7 @@ export class EmulatorService {
 
 					const delayedTransaction = getDelayedTransaction(transactions, checkedMilestone.checkedTransaction, delay);
 
-					refs[checkedMilestone.id] = delayedTransaction;
+					checkedTransactions[checkedMilestone.id] = delayedTransaction;
 
 					checkedMilestones.push({ ...checkedMilestone, delayedTransaction });
 				}
@@ -98,7 +98,7 @@ export class EmulatorService {
 				checkedStrategies.push({ ...strategy, checkedMilestones, checkedTransaction, delayedTransaction });
 			}
 
-			results.push({ token, checkedStrategies });
+			results.push({ signal, checkedStrategies });
 		}
 
 		return results;

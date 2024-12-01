@@ -18,10 +18,9 @@ import { IHeliusConfig } from "../interfaces/helius-config.interface";
 export class HeliusService implements OnModuleInit, ISolanaProvider {
 	private _ws: WebSocket;
 	private _wsAccounts = {};
+	private _reopen = true;
 
 	readonly connection = new Connection(this._heliusConfig.stakedRpcUrl, "confirmed");
-
-	reopen = true;
 
 	constructor(
 		@Inject(HELIUS_CONFIG) private readonly _heliusConfig: IHeliusConfig,
@@ -63,30 +62,30 @@ export class HeliusService implements OnModuleInit, ISolanaProvider {
 				this._ws.ping();
 			}, 30_000);
 
-			this._eventsService.emit(EventsEnum.HELIUS_OPEN);
+			this._eventsService.emit(EventsEnum.SOLANA_PROVIDER_OPEN);
 		});
 		this._ws.on("message", async (messageBuffer: WebSocket.Data) => {
 			const message = JSON.parse(messageBuffer.toString());
 
 			if (message.error || message.params?.error) {
-				this.reopen = false;
+				this._reopen = false;
 				this._ws.close();
 				return;
 			}
 
-			this._eventsService.emit(EventsEnum.HELIUS_MESSAGE, message);
+			this._eventsService.emit(EventsEnum.SOLANA_PROVIDER_MESSAGE, message);
 		});
 		this._ws.on("error", (error) => {
 			this._loggerService.error("Ошибка WebSocket:", error.message);
 
-			this._eventsService.emit(EventsEnum.HELIUS_ERROR, error);
+			this._eventsService.emit(EventsEnum.SOLANA_PROVIDER_ERROR, error);
 		});
 		this._ws.on("close", (err) => {
 			this._loggerService.error("WebSocket соединение закрыто.", err.toString());
 
-			this._eventsService.emit(EventsEnum.HELIUS_CLOSE);
+			this._eventsService.emit(EventsEnum.SOLANA_PROVIDER_CLOSE);
 
-			if (!this.reopen) {
+			if (!this._reopen) {
 				return;
 			}
 

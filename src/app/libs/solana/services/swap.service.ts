@@ -1,4 +1,3 @@
-import type { OnModuleInit } from "@nestjs/common";
 import { Inject } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
 import type { LiquidityPoolKeysV4 } from "@raydium-io/raydium-sdk";
@@ -28,16 +27,14 @@ import { ISolanaConfig } from "../interfaces/solana-config.interface";
 import { TransactionBuilderService } from "./transaction-builder.service";
 
 @Injectable()
-export class SwapService implements OnModuleInit {
+export class SwapService {
 	constructor(
 		@Inject(SOLANA_CONFIG) private readonly _solanaConfig: ISolanaConfig,
 		private readonly _transactionBuilderService: TransactionBuilderService,
 		private readonly _loggerService: LoggerService
 	) {}
 
-	async onModuleInit() {}
-
-	async buyToken(poolAddress: string, price: number, secret: string) {
+	async buyToken(poolAddress: string, price: number, walletSecret: string) {
 		const poolKeys = await this.getPoolKeys(poolAddress);
 
 		if (!poolKeys) {
@@ -45,7 +42,77 @@ export class SwapService implements OnModuleInit {
 			return;
 		}
 
-		return this.snipeToken(poolKeys, price, secret);
+		const sniperWallet = Keypair.fromSecretKey(bs58.decode(walletSecret));
+
+		try {
+			const WSOL_TOKEN = new Token(
+				TOKEN_PROGRAM_ID,
+				new PublicKey("So11111111111111111111111111111111111111112"),
+				9,
+				"WSOL",
+				"Wrapped SOL"
+			);
+
+			const inputTokenAmount = new TokenAmount(WSOL_TOKEN, price * LAMPORTS_PER_SOL);
+
+			const wsolAccountAddress = getAssociatedTokenAddressSync(WSOL_TOKEN.mint, sniperWallet.publicKey);
+
+			const outputTokenAccountAddress = getAssociatedTokenAddressSync(
+				new PublicKey(poolKeys.quoteMint),
+				sniperWallet.publicKey
+			);
+
+			let transactionIx: TransactionInstruction[] = [];
+
+			transactionIx = [
+				createAssociatedTokenAccountIdempotentInstruction(
+					sniperWallet.publicKey,
+					wsolAccountAddress,
+					sniperWallet.publicKey,
+					WSOL_TOKEN.mint
+				),
+				SystemProgram.transfer({
+					fromPubkey: sniperWallet.publicKey,
+					toPubkey: wsolAccountAddress,
+					lamports: inputTokenAmount.raw.toNumber()
+				}),
+				createSyncNativeInstruction(wsolAccountAddress),
+				createAssociatedTokenAccountIdempotentInstruction(
+					sniperWallet.publicKey,
+					outputTokenAccountAddress,
+					sniperWallet.publicKey,
+					poolKeys.quoteMint
+				)
+			];
+
+			const { innerTransaction } = Liquidity.makeSwapFixedInInstruction(
+				{
+					poolKeys,
+					userKeys: {
+						owner: sniperWallet.publicKey,
+						tokenAccountIn: wsolAccountAddress,
+						tokenAccountOut: outputTokenAccountAddress
+					},
+					amountIn: inputTokenAmount.raw,
+					minAmountOut: 0
+				},
+				poolKeys.version
+			);
+
+			transactionIx.push(
+				...innerTransaction.instructions,
+				createCloseAccountInstruction(wsolAccountAddress, sniperWallet.publicKey, sniperWallet.publicKey)
+			);
+
+			return await this._transactionBuilderService.sendSmartTransaction(
+				transactionIx,
+				[sniperWallet, ...innerTransaction.signers],
+				[]
+				// 2_500_000
+			);
+		} catch (error) {
+			this._loggerService.error(error);
+		}
 	}
 
 	async sellToken(poolAddress: string, secret: string) {
@@ -56,10 +123,6 @@ export class SwapService implements OnModuleInit {
 			return;
 		}
 
-		return this.snipeSellToken(poolKeys, secret);
-	}
-
-	async snipeSellToken(poolKeys: LiquidityPoolKeysV4, secret: string) {
 		const sniperWallet = Keypair.fromSecretKey(bs58.decode(secret));
 
 		try {
@@ -148,81 +211,7 @@ export class SwapService implements OnModuleInit {
 		}
 	}
 
-	async snipeToken(poolKeys: LiquidityPoolKeysV4, price: number, walletSecret: string) {
-		const sniperWallet = Keypair.fromSecretKey(bs58.decode(walletSecret));
-
-		try {
-			const WSOL_TOKEN = new Token(
-				TOKEN_PROGRAM_ID,
-				new PublicKey("So11111111111111111111111111111111111111112"),
-				9,
-				"WSOL",
-				"Wrapped SOL"
-			);
-
-			const inputTokenAmount = new TokenAmount(WSOL_TOKEN, price * LAMPORTS_PER_SOL);
-
-			const wsolAccountAddress = getAssociatedTokenAddressSync(WSOL_TOKEN.mint, sniperWallet.publicKey);
-
-			const outputTokenAccountAddress = getAssociatedTokenAddressSync(
-				new PublicKey(poolKeys.quoteMint),
-				sniperWallet.publicKey
-			);
-
-			let transactionIx: TransactionInstruction[] = [];
-
-			transactionIx = [
-				createAssociatedTokenAccountIdempotentInstruction(
-					sniperWallet.publicKey,
-					wsolAccountAddress,
-					sniperWallet.publicKey,
-					WSOL_TOKEN.mint
-				),
-				SystemProgram.transfer({
-					fromPubkey: sniperWallet.publicKey,
-					toPubkey: wsolAccountAddress,
-					lamports: inputTokenAmount.raw.toNumber()
-				}),
-				createSyncNativeInstruction(wsolAccountAddress),
-				createAssociatedTokenAccountIdempotentInstruction(
-					sniperWallet.publicKey,
-					outputTokenAccountAddress,
-					sniperWallet.publicKey,
-					poolKeys.quoteMint
-				)
-			];
-
-			const { innerTransaction } = Liquidity.makeSwapFixedInInstruction(
-				{
-					poolKeys,
-					userKeys: {
-						owner: sniperWallet.publicKey,
-						tokenAccountIn: wsolAccountAddress,
-						tokenAccountOut: outputTokenAccountAddress
-					},
-					amountIn: inputTokenAmount.raw,
-					minAmountOut: 0
-				},
-				poolKeys.version
-			);
-
-			transactionIx.push(
-				...innerTransaction.instructions,
-				createCloseAccountInstruction(wsolAccountAddress, sniperWallet.publicKey, sniperWallet.publicKey)
-			);
-
-			return await this._transactionBuilderService.sendSmartTransaction(
-				transactionIx,
-				[sniperWallet, ...innerTransaction.signers],
-				[]
-				// 2_500_000
-			);
-		} catch (error) {
-			this._loggerService.error(error);
-		}
-	}
-
-	async getPoolKeys(poolAddress: string): Promise<LiquidityPoolKeysV4> {
+	async getPoolKeys(poolAddress: string) {
 		const poolId = new PublicKey(poolAddress);
 		let poolAccount;
 		let marketAccount;
@@ -245,7 +234,7 @@ export class SwapService implements OnModuleInit {
 
 		const marketInfo = MARKET_STATE_LAYOUT_V3.decode(marketAccount.data);
 
-		return {
+		const poolKeys: LiquidityPoolKeysV4 = {
 			id: poolId,
 			baseMint: poolInfo.baseMint,
 			quoteMint: poolInfo.quoteMint,
@@ -278,5 +267,7 @@ export class SwapService implements OnModuleInit {
 			marketEventQueue: marketInfo.eventQueue,
 			lookupTableAccount: new PublicKey("11111111111111111111111111111111")
 		};
+
+		return poolKeys;
 	}
 }

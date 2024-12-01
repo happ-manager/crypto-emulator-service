@@ -11,5 +11,6 @@ export interface ITrading extends IBase {
 	targetWallet: IWallet;
 	sourceWallet: IWallet;
 	disabled: boolean;
+	tokenTradingDuration: number;
 	tradingTokens?: ITradingToken[];
 }

@@ -1,12 +1,10 @@
-import type { IDate } from "../../libs/date/interfaces/date.interface";
-import type { IPrice } from "../../libs/price/interfaces/price.interface";
 import type { IBase } from "../../shared/interfaces/base.interface";
+import type { IBaseTransaction } from "../../shared/interfaces/base-transaction.interface";
 import type { ICandle } from "./candle.interface";
 
-export interface ITransaction extends IBase {
+export interface ITransaction extends IBase, IBaseTransaction {
 	id: string;
 	poolAddress: string;
-	price: IPrice;
-	date: IDate;
-	candle: ICandle;
+	signature: string;
+	candle?: ICandle;
 }

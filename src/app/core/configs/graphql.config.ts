@@ -17,7 +17,6 @@ import { ConditionFieldEnum } from "../../strategies/enums/condition-field.enum"
 import { GroupOperatorEnum } from "../../strategies/enums/group-operator.enum";
 import { MilestoneTypeEnum } from "../../strategies/enums/milestone-type.enum";
 import { OperatorEnum } from "../../strategies/enums/operator.enum";
-import { TradingTokenStatusEnum } from "../../trading/enums/trading-token-status.enum";
 import { VerificationStatusEnum } from "../../users/enums/verification-status.enum";
 
 export const GRAPHQL_CONFIG: GqlModuleAsyncOptions<ApolloDriverConfig, GqlOptionsFactory<ApolloDriverConfig>> = {
@@ -44,4 +43,3 @@ registerEnumType(MilestoneTypeEnum, { name: "milestoneTypeEnum" });
 registerEnumType(ConditionFieldEnum, { name: "conditionFieldEnum" });
 registerEnumType(OperatorEnum, { name: "operatorEnum" });
 registerEnumType(GroupOperatorEnum, { name: "groupOperatorEnum" });
-registerEnumType(TradingTokenStatusEnum, { name: "tradingTokenStatusEnum" });

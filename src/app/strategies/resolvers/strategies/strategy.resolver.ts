@@ -7,11 +7,8 @@ import { StrategyEntity } from "../../entities/strategy.entity";
 
 @Resolver(() => StrategyEntity)
 export class StrategyResolver {
-	@ResolveField(() => [MilestoneEntity], { nullable: true })
-	async milestones(
-		@Parent() strategy: StrategyEntity,
-		@Loaders() loaders: ILoaders
-	): Promise<MilestoneEntity[] | null> {
-		return loaders.getMilestonesByStrategy.load(strategy.id);
+	@ResolveField(() => [MilestoneEntity])
+	async milestones(@Parent() strategy: StrategyEntity, @Loaders() loaders: ILoaders) {
+		return loaders.getMilestonesByStrategies.load(strategy.id);
 	}
 }

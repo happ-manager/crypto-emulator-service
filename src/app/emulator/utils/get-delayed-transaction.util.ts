@@ -1,10 +1,10 @@
-import type { ITransaction } from "../../candles/interfaces/transaction.interface";
+import type { IBaseTransaction } from "../../shared/interfaces/base-transaction.interface";
 
 export function getDelayedTransaction(
-	transactions: ITransaction[],
-	baseTransaction: ITransaction,
+	transactions: IBaseTransaction[],
+	baseTransaction: IBaseTransaction,
 	delay: number
-): ITransaction {
+) {
 	if (delay === 0) {
 		return baseTransaction;
 	}

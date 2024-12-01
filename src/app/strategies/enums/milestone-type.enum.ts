@@ -1,5 +1,5 @@
 export enum MilestoneTypeEnum {
 	SIGNAL = "SIGNAL",
-	ENTER = "ENTER",
-	EXIT = "EXIT"
+	BUY = "BUY",
+	SELL = "SELL"
 }

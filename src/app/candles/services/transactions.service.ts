@@ -29,7 +29,7 @@ export class TransactionsService {
 		this._solanaTransactions.push(solanaTransaction);
 	}
 
-	@Cron("*/10 * * * * *") // Это выражение cron для запуска каждые 10 секунд
+	@Cron("*/5 * * * * *") // Это выражение cron для запуска каждые 10 секунд
 	async handleSolanaTransactions() {
 		if (this._solanaTransactions.length === 0) {
 			return;
@@ -39,7 +39,8 @@ export class TransactionsService {
 		const transactionsToCreate: DeepPartial<ITransaction>[] = solanaTransactions.map((solanaTransaction) => ({
 			price: solanaTransaction.price?.toString(),
 			date: solanaTransaction.date,
-			poolAddress: solanaTransaction.poolAddress
+			poolAddress: solanaTransaction.poolAddress,
+			signature: solanaTransaction.signature
 		}));
 
 		await this.createTransactions(transactionsToCreate);

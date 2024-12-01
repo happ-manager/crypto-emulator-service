@@ -1,9 +1,6 @@
-import type { IDate } from "../../date/interfaces/date.interface";
-import type { IPrice } from "../../price/interfaces/price.interface";
+import type { IBaseTransaction } from "../../../shared/interfaces/base-transaction.interface";
 
-export interface ISolanaTransaction {
-	price: IPrice;
-	date: IDate;
+export interface ISolanaTransaction extends IBaseTransaction {
 	poolAddress: string;
 	authories?: string[];
 	walletAddress?: string;

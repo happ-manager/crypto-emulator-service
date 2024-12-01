@@ -13,14 +13,16 @@ export interface IConditionsLoader {
 export class ConditionsLoader {
 	constructor(private readonly _conditionsService: ConditionsService) {}
 
-	createConditionsLoaderByConditionsGroups() {
+	createConditionsByConditionsGroupsLoader() {
 		return new DataLoader<string, ConditionEntity[]>(async (conditionsGroupIds: string[]) => {
 			const { data } = await this._conditionsService.getConditions({
 				where: { conditionsGroup: { id: In(conditionsGroupIds) } },
 				relations: ["conditionsGroup"]
 			});
 
-			return conditionsGroupIds.map((id) => data.filter((condition) => condition.conditionsGroup?.id === id));
+			return conditionsGroupIds.map((conditionsGroupId) =>
+				data.filter((condition) => condition.conditionsGroup?.id === conditionsGroupId)
+			);
 		});
 	}
 }

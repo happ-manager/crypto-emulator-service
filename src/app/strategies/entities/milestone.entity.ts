@@ -7,7 +7,7 @@ import { MILESTONES } from "../constants/milestones/milestones.constant";
 import { GroupOperatorEnum } from "../enums/group-operator.enum";
 import { MilestoneTypeEnum } from "../enums/milestone-type.enum";
 import type { IConditionsGroup } from "../interfaces/conditions-group.interface";
-import type { IMilestone } from "../interfaces/milestone.interface";
+import { IMilestone } from "../interfaces/milestone.interface";
 import { IStrategy } from "../interfaces/strategy.interface";
 import { ConditionsGroupEntity } from "./conditions-group.entity";
 import { StrategyEntity } from "./strategy.entity";
@@ -41,7 +41,7 @@ export class MilestoneEntity extends BaseEntity implements IMilestone {
 
 	@Field(() => MilestoneEntity, { nullable: true })
 	@ManyToOne(() => MilestoneEntity, { nullable: true, onDelete: "SET NULL" })
-	refMilestone?: MilestoneEntity;
+	refMilestone?: IMilestone;
 
 	@Field(() => [ConditionsGroupEntity])
 	@OneToMany(() => ConditionsGroupEntity, (conditionsGroup) => conditionsGroup.milestone)

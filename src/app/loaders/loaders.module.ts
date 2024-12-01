@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { CandlesModule } from "../candles/candles.module";
 import { SignalsModule } from "../signals/signals.module";
 import { StrategiesModule } from "../strategies/strategies.module";
 import { TokensModule } from "../tokens/tokens.module";
@@ -9,7 +10,7 @@ import { WalletsModule } from "../wallets/wallets.module";
 import { LOADERS_SERVICES } from "./services";
 
 @Module({
-	imports: [UsersModule, TokensModule, SignalsModule, StrategiesModule, TradingModule, WalletsModule],
+	imports: [UsersModule, TokensModule, SignalsModule, StrategiesModule, TradingModule, WalletsModule, CandlesModule],
 	providers: LOADERS_SERVICES,
 	exports: LOADERS_SERVICES
 })

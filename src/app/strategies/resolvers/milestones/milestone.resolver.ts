@@ -8,16 +8,13 @@ import { StrategyEntity } from "../../entities/strategy.entity";
 
 @Resolver(() => MilestoneEntity)
 export class MilestoneResolver {
-	@ResolveField(() => StrategyEntity, { nullable: true })
-	async strategy(@Parent() milestone: MilestoneEntity, @Loaders() loaders: ILoaders): Promise<StrategyEntity | null> {
-		return loaders.getStrategiesByMilestone.load(milestone.id);
+	@ResolveField(() => StrategyEntity)
+	async strategy(@Parent() milestone: MilestoneEntity, @Loaders() loaders: ILoaders) {
+		return loaders.getStrategiesByMilestones.load(milestone.id);
 	}
 
-	@ResolveField(() => ConditionsGroupEntity, { nullable: true })
-	async conditionsGroups(
-		@Parent() milestone: MilestoneEntity,
-		@Loaders() loaders: ILoaders
-	): Promise<ConditionsGroupEntity[] | null> {
-		return loaders.getConditionsGroupByMilestone.load(milestone.id);
+	@ResolveField(() => ConditionsGroupEntity)
+	async conditionsGroups(@Parent() milestone: MilestoneEntity, @Loaders() loaders: ILoaders) {
+		return loaders.getConditionsGroupsByMilestones.load(milestone.id);
 	}
 }

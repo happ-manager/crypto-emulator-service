@@ -35,7 +35,7 @@ export class SantimentService {
 	}
 
 	// Пример метода для получения slug токена по адресу
-	private async getSlugByAddress(address: string): Promise<string> {
+	private async getSlugByAddress(address: string) {
 		// Ваш код для получения slug на основе адреса
 		return "SLUG"; // Вернуть соответствующий slug
 	}

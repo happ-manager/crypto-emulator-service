@@ -14,7 +14,7 @@ export interface IWalletsLoader {
 export class WalletsLoader {
 	constructor(private readonly _walletsService: WalletsService) {}
 
-	createTargetWalletsLoaderByTradings() {
+	createTargetWalletsByTradingsLoader() {
 		return new DataLoader<string, WalletEntity | null>(async (walletsIds: string[]) => {
 			const { data } = await this._walletsService.getWallets({
 				where: { targetTradings: { id: In(walletsIds) } },
@@ -25,7 +25,7 @@ export class WalletsLoader {
 		});
 	}
 
-	createSourceWalletsLoaderByTradings() {
+	createSourceWalletsByTradingsLoader() {
 		return new DataLoader<string, WalletEntity | null>(async (walletsIds: string[]) => {
 			const { data } = await this._walletsService.getWallets({
 				where: { sourceTradings: { id: In(walletsIds) } },

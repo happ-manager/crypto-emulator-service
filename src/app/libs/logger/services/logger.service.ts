@@ -15,20 +15,20 @@ export class LoggerService implements NestLoggerService, OnModuleInit {
 
 	onModuleInit() {
 		const logDir = path.join(process.cwd(), "logs");
+		const { pid } = process; // ID процесса
 
 		// Общие форматы
 		const logFormat = winston.format.combine(
-			winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+			winston.format.timestamp({ format: "MM/DD/YYYY, HH:mm:ss:SSS" }),
 			winston.format.printf(
-				({ level, message, timestamp, stack }) => `${timestamp} [${level.toUpperCase()}] ${stack || message}`
+				({ level, message, timestamp, stack }) =>
+					`[NEST] ${pid}  - ${timestamp}   ${level.toUpperCase()} [LoggerService] ${stack || message}`
 			)
 		);
 
 		const logsTransport = new winston.transports.File({ filename: path.join(logDir, "logs.txt") });
 		const errorTransport = new winston.transports.File({ filename: path.join(logDir, "errors.txt"), level: "error" });
-		const consoleTransport = new winston.transports.Console({
-			format: winston.format.combine(winston.format.colorize(), winston.format.simple())
-		});
+		const consoleTransport = new winston.transports.Console();
 
 		const fileTransports: winston.transport[] = [logsTransport, errorTransport];
 

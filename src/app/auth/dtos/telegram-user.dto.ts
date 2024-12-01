@@ -9,7 +9,7 @@ export class TelegramUserDto implements ITelegramUser {
 	@IsNotEmpty()
 	id: number;
 
-	@Field(() => Boolean, { nullable: true })
+	@Field(() => Boolean)
 	@IsOptional()
 	is_bot: boolean;
 

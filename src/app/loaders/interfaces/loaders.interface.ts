@@ -1,3 +1,4 @@
+import type { ITransactiosnLoader } from "../../candles/loaders/transactions.loader";
 import type { ISignalsLoader } from "../../signals/loaders/signals.loader";
 import type { IConditionsLoader } from "../../strategies/loaders/conditions.loader";
 import type { IConditionsGroupsLoader } from "../../strategies/loaders/conditions-groups.loader";
@@ -16,4 +17,5 @@ export type ILoaders = IUsersLoader &
 	IConditionsGroupsLoader &
 	IConditionsLoader &
 	ITradingTokensLoader &
-	IWalletsLoader;
+	IWalletsLoader &
+	ITransactiosnLoader;

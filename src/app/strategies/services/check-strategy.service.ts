@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
 
-import type { ITransaction } from "../../candles/interfaces/transaction.interface";
 import { LoggerService } from "../../libs/logger";
+import type { IBaseTransaction } from "../../shared/interfaces/base-transaction.interface";
 import { ConditionFieldEnum } from "../enums/condition-field.enum";
+import type { ICheckedTransactions } from "../interfaces/checked.interface";
 import type { ICondition } from "../interfaces/condition.interface";
 import type { IConditionsGroup } from "../interfaces/conditions-group.interface";
 import type { IMilestone } from "../interfaces/milestone.interface";
-import type { IRefs } from "../interfaces/refs.interface";
 import { getCheckedTransaction } from "../utils/get-checked-transaction.util";
 import { getGroupOperatorValue } from "../utils/get-group-operator-value.util";
 import { getOperatorValue } from "../utils/get-operator-value.util";
@@ -15,24 +15,34 @@ import { getOperatorValue } from "../utils/get-operator-value.util";
 export class CheckStrategyService {
 	constructor(private readonly _loggerService: LoggerService) {}
 
-	getCheckedMilestone(milestone: IMilestone, transactions: ITransaction[], refs: IRefs) {
+	getCheckedMilestone(
+		milestone: IMilestone,
+		transactions: IBaseTransaction[],
+		checkedTransactions: ICheckedTransactions
+	) {
+		if (checkedTransactions[milestone.id]) {
+			return { ...milestone, checkedTransaction: checkedTransactions[milestone.id] };
+		}
+
 		const refId = milestone.refMilestone?.id;
 
 		if (!refId) {
-			this._loggerService.error("У группа должна быть ссылка");
+			this._loggerService.error("У группы должна быть ссылка");
 			return;
 		}
 
-		const refTransaction = refs[refId];
+		const refTransaction = checkedTransactions[refId];
 
 		if (!refTransaction) {
 			return;
 		}
 
-		const milestoneTransactions = transactions.filter((transaction) => transaction.date.isAfter(refTransaction.date));
+		const milestoneTransactions = transactions.filter((transaction) =>
+			transaction.date.isSameOrAfter(refTransaction.date)
+		);
 
 		const conditionsGroups = milestone.conditionsGroups.map((group) =>
-			this.getCheckedConditionsGroup(group, milestoneTransactions, refs)
+			this.getCheckedConditionsGroup(group, milestoneTransactions, checkedTransactions)
 		);
 
 		const checkedConditionsGroups = getGroupOperatorValue(conditionsGroups, milestone.groupOperator);
@@ -43,12 +53,16 @@ export class CheckStrategyService {
 
 		const checkedTransaction = getCheckedTransaction(checkedConditionsGroups, milestone.groupOperator);
 
-		refs[milestone.id] = checkedTransaction;
+		checkedTransactions[milestone.id] = checkedTransaction;
 
 		return { ...milestone, checkedConditionsGroups, checkedTransaction };
 	}
 
-	getCheckedConditionsGroup(conditionsGroup: IConditionsGroup, transactions: ITransaction[], refs: IRefs) {
+	getCheckedConditionsGroup(
+		conditionsGroup: IConditionsGroup,
+		transactions: IBaseTransaction[],
+		checkedTransactions: ICheckedTransactions
+	) {
 		const refId = conditionsGroup.refMilestone?.id || conditionsGroup.refConditionsGroup?.id;
 
 		if (!refId) {
@@ -56,17 +70,16 @@ export class CheckStrategyService {
 			return;
 		}
 
-		const refTransaction = refs[refId];
+		const refTransaction = checkedTransactions[refId];
 
 		if (!refTransaction) {
-			this._loggerService.error("Неправильный порядок условий");
 			return;
 		}
 
-		const groupTransactions = transactions.filter((transaction) => transaction.date.isAfter(refTransaction.date));
+		const groupTransactions = transactions.filter((transaction) => transaction.date.isSameOrAfter(refTransaction.date));
 
 		const conditions = conditionsGroup.conditions.map((condition) =>
-			this.getCheckedConditon(condition, groupTransactions, conditionsGroup.duration, refs)
+			this.getCheckedConditon(condition, groupTransactions, checkedTransactions, conditionsGroup.duration)
 		);
 
 		const checkedConditions = getGroupOperatorValue(conditions, conditionsGroup.groupOperator);
@@ -77,12 +90,17 @@ export class CheckStrategyService {
 
 		const checkedTransaction = getCheckedTransaction(checkedConditions, conditionsGroup.groupOperator);
 
-		refs[conditionsGroup.id] = checkedTransaction;
+		checkedTransactions[conditionsGroup.id] = checkedTransaction;
 
 		return { ...conditionsGroup, checkedConditions, checkedTransaction };
 	}
 
-	getCheckedConditon(condition: ICondition, transactions: ITransaction[], groupDuration: number, refs: IRefs) {
+	getCheckedConditon(
+		condition: ICondition,
+		transactions: IBaseTransaction[],
+		checkedTransactions: ICheckedTransactions,
+		groupDuration: number
+	) {
 		const refId = condition.refMilestone?.id || condition.refConditionsGroup?.id;
 
 		if (!refId) {
@@ -90,10 +108,9 @@ export class CheckStrategyService {
 			return;
 		}
 
-		const refTransaction = refs[refId];
+		const refTransaction = checkedTransactions[refId];
 
 		if (!refTransaction) {
-			this._loggerService.error("Неправильный порядок условий");
 			return;
 		}
 
@@ -106,9 +123,9 @@ export class CheckStrategyService {
 		}
 
 		// Нам нужна только безпрерывна последовательность подходящих транзакций. Если между успешными транзакциями была неподходящяя - они будут в разных массивах
-		const group: ITransaction[][] = [[]];
+		const group: IBaseTransaction[][] = [[]];
 		let groupIndex = 0;
-		let checkedTransaction: ITransaction;
+		let checkedTransaction: IBaseTransaction;
 
 		for (const transaction of transactions) {
 			let transactionValue: number;

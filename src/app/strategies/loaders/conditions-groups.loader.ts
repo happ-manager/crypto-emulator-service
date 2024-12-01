@@ -6,21 +6,23 @@ import type { ConditionsGroupEntity } from "../entities/conditions-group.entity"
 import { ConditionsGroupsService } from "../services/conditions-groups.service";
 
 export interface IConditionsGroupsLoader {
-	getConditionsGroupByMilestone: DataLoader<string, ConditionsGroupEntity[]>;
+	getConditionsGroupsByMilestones: DataLoader<string, ConditionsGroupEntity[]>;
 }
 
 @Injectable()
 export class ConditionsGroupsLoader {
 	constructor(private readonly _conditionsGroupsService: ConditionsGroupsService) {}
 
-	createConditionsGroupsLoaderByMilestones() {
+	createConditionsGroupsByMilestonesLoader() {
 		return new DataLoader<string, ConditionsGroupEntity[]>(async (milestoneIds: string[]) => {
 			const { data } = await this._conditionsGroupsService.getConditionsGroups({
 				where: { milestone: { id: In(milestoneIds) } },
 				relations: ["milestone"]
 			});
 
-			return milestoneIds.map((id) => data.filter((conditionsGroup) => conditionsGroup.milestone?.id === id));
+			return milestoneIds.map((milestoneId) =>
+				data.filter((conditionsGroup) => conditionsGroup.milestone?.id === milestoneId)
+			);
 		});
 	}
 }

@@ -13,7 +13,7 @@ export class ExcelService {
 	}
 
 	// Метод для создания нового Excel-буфера
-	async createWorkbook(): Promise<ExcelJS.Workbook> {
+	async createWorkbook() {
 		return new ExcelJS.Workbook();
 	}
 
@@ -39,7 +39,7 @@ export class ExcelService {
 	}
 
 	// Метод для сохранения Workbook в буфер
-	async saveWorkbookToBuffer(workbook: ExcelJS.Workbook): Promise<ExcelJS.Buffer> {
+	async saveWorkbookToBuffer(workbook: ExcelJS.Workbook) {
 		return workbook.xlsx.writeBuffer();
 	}
 }

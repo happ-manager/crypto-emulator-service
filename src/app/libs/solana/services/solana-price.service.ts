@@ -6,7 +6,7 @@ import { firstValueFrom } from "rxjs";
 
 @Injectable()
 export class SolanaPriceService implements OnModuleInit {
-	private currentSolanaPrice: number = 0;
+	solanaPrice: number = 0;
 
 	constructor(private readonly _httpService: HttpService) {}
 
@@ -14,22 +14,16 @@ export class SolanaPriceService implements OnModuleInit {
 		setTimeout(this.startPriceCheck.bind(this));
 	}
 
-	getSolanaPrice() {
-		return this.currentSolanaPrice;
-	}
-
 	computeMemeTokenPrice(prices: number[], parsed?: boolean) {
 		const solPercent = parsed ? 1 : 0.000_000_001;
 		const memePercent = parsed ? 1 : 0.000_001;
-
-		const solPrice = this.getSolanaPrice();
 
 		const sortedPrices = prices.sort((a, b) => a - b);
 
 		const memeCount = sortedPrices.at(-1);
 		const solCount = sortedPrices.at(-2);
 
-		const currentTokenPrice = ((solCount * solPercent) / (memeCount * memePercent)) * solPrice;
+		const currentTokenPrice = ((solCount * solPercent) / (memeCount * memePercent)) * this.solanaPrice;
 
 		if (currentTokenPrice > 0.000_99) {
 			return;
@@ -38,7 +32,7 @@ export class SolanaPriceService implements OnModuleInit {
 		return Big(currentTokenPrice || 0);
 	}
 
-	async fetchSolanaPrice(): Promise<number> {
+	async fetchSolanaPrice() {
 		const response = await firstValueFrom(
 			this._httpService.get("https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112")
 		);
@@ -57,12 +51,12 @@ export class SolanaPriceService implements OnModuleInit {
 		}
 	}
 
-	async startPriceCheck(): Promise<void> {
+	async startPriceCheck() {
 		setInterval(async () => {
 			const price = await this.fetchSolanaPrice();
 
-			if (price !== this.currentSolanaPrice) {
-				this.currentSolanaPrice = price;
+			if (price !== this.solanaPrice) {
+				this.solanaPrice = price;
 			}
 		}, 3000);
 	}

@@ -29,7 +29,7 @@ export class CandlesService {
 		this._transactions.push(...transactions);
 	}
 
-	@Cron("*/10 * * * * *") // Это выражение cron для запуска каждые 10 секунд
+	@Cron("*/5 * * * * *") // Это выражение cron для запуска каждые 10 секунд
 	async handleTransactions() {
 		if (this._transactions.length === 0) {
 			return;

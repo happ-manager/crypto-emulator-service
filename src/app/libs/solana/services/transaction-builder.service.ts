@@ -5,8 +5,7 @@ import type {
 	SendOptions,
 	SerializeConfig,
 	Signer,
-	TransactionInstruction,
-	TransactionSignature
+	TransactionInstruction
 } from "@solana/web3.js";
 import {
 	ComputeBudgetProgram,
@@ -18,12 +17,7 @@ import {
 	VersionedTransaction
 } from "@solana/web3.js";
 import bs58 from "bs58";
-import type {
-	GetPriorityFeeEstimateRequest,
-	GetPriorityFeeEstimateResponse,
-	JitoRegion,
-	SmartTransactionContext
-} from "helius-sdk";
+import type { GetPriorityFeeEstimateRequest, GetPriorityFeeEstimateResponse, JitoRegion } from "helius-sdk";
 import { JITO_API_URLS, JITO_TIP_ACCOUNTS } from "helius-sdk";
 import { firstValueFrom } from "rxjs";
 
@@ -45,7 +39,7 @@ export class TransactionBuilderService {
 			feePayer?: Signer;
 			lastValidBlockHeightOffset?: number;
 		} = { skipPreflight: false, lastValidBlockHeightOffset: 150 }
-	): Promise<TransactionSignature> {
+	) {
 		const lastValidBlockHeightOffset = sendOptions.lastValidBlockHeightOffset ?? 150;
 
 		if (lastValidBlockHeightOffset < 0) {
@@ -125,7 +119,7 @@ export class TransactionBuilderService {
 			requireAllSignatures: true,
 			verifySignatures: true
 		}
-	): Promise<SmartTransactionContext> {
+	) {
 		if (signers.length === 0) {
 			throw new Error("The transaction must have at least one signer");
 		}
@@ -278,7 +272,7 @@ export class TransactionBuilderService {
 		};
 	}
 
-	async getPriorityFeeEstimate(params: GetPriorityFeeEstimateRequest): Promise<GetPriorityFeeEstimateResponse> {
+	async getPriorityFeeEstimate(params: GetPriorityFeeEstimateRequest) {
 		try {
 			const url = `${this._solanaConfig.provider.connection.rpcEndpoint}`;
 			const response = await firstValueFrom(
@@ -311,7 +305,7 @@ export class TransactionBuilderService {
 		payer: PublicKey,
 		lookupTables: AddressLookupTableAccount[],
 		signers?: Signer[]
-	): Promise<number | null> {
+	) {
 		const testInstructions = [ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 }), ...instructions];
 
 		const testTransaction = new VersionedTransaction(
@@ -346,7 +340,7 @@ export class TransactionBuilderService {
 		region: JitoRegion = "Default",
 		feePayer?: Signer,
 		lastValidBlockHeightOffset = 150
-	): Promise<string> {
+	) {
 		if (lastValidBlockHeightOffset < 0) {
 			throw new Error("lastValidBlockHeightOffset must be a positive integer");
 		}
@@ -403,7 +397,7 @@ export class TransactionBuilderService {
 		throw new Error("Bundle failed to confirm within the timeout period");
 	}
 
-	async sendJitoBundle(serializedTransactions: string[], jitoApiUrl: string): Promise<string> {
+	async sendJitoBundle(serializedTransactions: string[], jitoApiUrl: string) {
 		const response = await firstValueFrom(
 			this.httpService.post(
 				jitoApiUrl,
@@ -428,7 +422,7 @@ export class TransactionBuilderService {
 		return response.data.result;
 	}
 
-	async getBundleStatuses(bundleIds: string[], jitoApiUrl: string): Promise<any> {
+	async getBundleStatuses(bundleIds: string[], jitoApiUrl: string) {
 		const response = await firstValueFrom(
 			this.httpService.post(
 				jitoApiUrl,
@@ -459,7 +453,7 @@ export class TransactionBuilderService {
 		lookupTables: AddressLookupTableAccount[] = [],
 		tipAmount: number = 1000,
 		feePayer?: Signer
-	): Promise<SmartTransactionContext> {
+	) {
 		if (signers.length === 0) {
 			throw new Error("The transaction must have at least one signer");
 		}

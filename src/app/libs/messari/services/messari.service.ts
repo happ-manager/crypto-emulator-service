@@ -34,7 +34,7 @@ export class MessariService {
 	}
 
 	// Пример метода для получения ID актива по адресу
-	private async getAssetByAddress(address: string): Promise<string> {
+	private async getAssetByAddress(address: string) {
 		// Ваш код для получения актива на основе адреса
 		return "ASSET"; // Вернуть соответствующий ID актива
 	}

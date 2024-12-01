@@ -13,7 +13,7 @@ export interface ITradingTokensLoader {
 export class TradingTokensLoader {
 	constructor(private readonly _tradingTokensService: TradingTokensService) {}
 
-	createTradingTokensLoaderTradingsGroups() {
+	createTradingTokensByTradingsLoader() {
 		return new DataLoader<string, TradingTokenEntity[]>(async (tradingsIds: string[]) => {
 			const { data } = await this._tradingTokensService.getTradingTokens({
 				where: { trading: { id: In(tradingsIds) } },

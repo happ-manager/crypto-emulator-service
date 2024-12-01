@@ -13,16 +13,17 @@ import type { ILoaders } from "../interfaces/loaders.interface";
 @Injectable()
 export class LoadersService {
 	readonly loaders: ILoaders = {
-		getTokenBySignal: this._tokensLoader.createTokenBySignalLoader(),
-		getSignalByToken: this._signalsLoader.createSignalByTokenLoader(),
-		getStrategiesByMilestone: this._strategiesLoader.createStrategiesLoaderByMilestones(),
-		getStrategiesByTrading: this._strategiesLoader.createStrategiesLoaderByTradings(),
-		getMilestonesByStrategy: this._milestonesLoader.createMilestonesLoaderByStrategies(),
-		getConditionsGroupByMilestone: this._conditionsGroupsLoader.createConditionsGroupsLoaderByMilestones(),
-		getConditionsByConditionsGroup: this._conditionsLoader.createConditionsLoaderByConditionsGroups(),
-		getTradingTokensByTradings: this._tradingTokensLoader.createTradingTokensLoaderTradingsGroups(),
-		getSourceWalletsByTrading: this._walletsLoader.createSourceWalletsLoaderByTradings(),
-		getTargetWalletsByTrading: this._walletsLoader.createTargetWalletsLoaderByTradings()
+		getTokensBySignals: this._tokensLoader.createTokensBySignalsLoader(),
+		getTokensByTradingTokens: this._tokensLoader.createTokensByTradingTokensLoader(),
+		getSignalsByTokens: this._signalsLoader.createSignalsByTokensLoader(),
+		getStrategiesByMilestones: this._strategiesLoader.createStrategiesByMilestonesLoader(),
+		getStrategiesByTradings: this._strategiesLoader.createStrategiesByTradingsLoader(),
+		getMilestonesByStrategies: this._milestonesLoader.createMilestonesByStrategiesLoader(),
+		getConditionsGroupsByMilestones: this._conditionsGroupsLoader.createConditionsGroupsByMilestonesLoader(),
+		getConditionsByConditionsGroup: this._conditionsLoader.createConditionsByConditionsGroupsLoader(),
+		getTradingTokensByTradings: this._tradingTokensLoader.createTradingTokensByTradingsLoader(),
+		getSourceWalletsByTrading: this._walletsLoader.createSourceWalletsByTradingsLoader(),
+		getTargetWalletsByTrading: this._walletsLoader.createTargetWalletsByTradingsLoader()
 	};
 
 	constructor(
