@@ -1,16 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
-import Big from "big.js";
-import * as dayjs from "dayjs";
 import { Subject } from "rxjs";
 
 import { EventsEnum } from "../../../events/enums/events.enum";
 import { EventsService } from "../../../events/services/events.service";
-import { sleep } from "../../../shared/utils/sleep.util";
 import { DateService } from "../../date";
 import { LoggerService } from "../../logger";
 import { PUMFUN_WALLET, RADIUM_WALLET, WSOL_WALLET } from "../constant/wallets.constant";
-import { BUY_TRANSACTION, FREN_WALLET, PRICE_TRANSACTIONS, RAYDIUM } from "../data/data";
+import { CommitmentTypeEnum } from "../enums/commitment-type.enum";
 import { SubscribtionTypeEnum } from "../enums/subscribtion-type.enum";
 import { SOLANA_CONFIG } from "../injection-tokens/solana-config.injection-token";
 import { ISolanaConfig } from "../interfaces/solana-config.interface";
@@ -34,36 +31,6 @@ export class SolanaService {
 		private readonly _loggerService: LoggerService,
 		private readonly _eventsService: EventsService
 	) {}
-
-	onModuleInit() {
-		setTimeout(async () => {
-			this._buySubscribers[RAYDIUM].next({
-				...BUY_TRANSACTION,
-				price: new Big(BUY_TRANSACTION.price),
-				date: dayjs(BUY_TRANSACTION.date)
-			});
-
-			const transactions = PRICE_TRANSACTIONS.map((priceTransaction: any) => ({
-				price: new Big(priceTransaction.price),
-				date: dayjs(priceTransaction.date),
-				poolAddress: priceTransaction.poolAddress,
-				authories: priceTransaction.authories || [],
-				walletAddress: RADIUM_WALLET,
-				signature: "",
-				id: priceTransaction.id
-			})).sort((a, b) => (a.date.isAfter(b.date) ? 1 : -1));
-
-			for (const priceTransaction of transactions) {
-				if (!this._priceSubscribers[FREN_WALLET]) {
-					continue;
-				}
-
-				await sleep(100);
-
-				this._priceSubscribers[FREN_WALLET].next(priceTransaction);
-			}
-		}, 2000);
-	}
 
 	@OnEvent(EventsEnum.SOLANA_PROVIDER_MESSAGE)
 	handleTransfer(message: ISolanaMessage) {
@@ -179,7 +146,6 @@ export class SolanaService {
 			}
 		}
 
-		// Если это покупка - то мы ищем по адресу кошелька. Если это осталеживание по цене - мы ищем по адрес пула
 		if (!walletAddress || !poolAddress || !this._buySubscribers[walletAddress]) {
 			return;
 		}
@@ -203,10 +169,10 @@ export class SolanaService {
 
 		if (type === SubscribtionTypeEnum.BUY && !this._buySubscribers[account]) {
 			this._buySubscribers[account] = subject;
-			// this._solanaConfig.provider.subscribe([account], CommitmentTypeEnum.PROCESSED);
+			this._solanaConfig.provider.subscribe([account], CommitmentTypeEnum.PROCESSED);
 		} else if (type === SubscribtionTypeEnum.PRICE && !this._priceSubscribers[account]) {
 			this._priceSubscribers[account] = subject;
-			// this._solanaConfig.provider.subscribe([account], CommitmentTypeEnum.CONFIRMED);
+			this._solanaConfig.provider.subscribe([account], CommitmentTypeEnum.CONFIRMED);
 		}
 
 		this._eventsService.emit(EventsEnum.SOLANA_SUBSCRIBE, { account, type }, true);
@@ -219,11 +185,13 @@ export class SolanaService {
 			delete this._buySubscribers[account];
 			delete this._priceSubscribers[account];
 		}
+
+		this._eventsService.emit(EventsEnum.SOLANA_UNSUBSCRIBE, { accounts }, true);
 	}
 
 	async buy(pollAddress: string, price: number, secret: string) {
 		try {
-			// return await this._swapService.buyToken(pollAddress, price, secret);
+			return await this._swapService.buyToken(pollAddress, price, secret);
 		} catch (error) {
 			this._loggerService.error(error);
 		}
@@ -231,7 +199,7 @@ export class SolanaService {
 
 	async sell(pollAddress: string, secret: string) {
 		try {
-			// return await this._swapService.sellToken(pollAddress, secret);
+			return await this._swapService.sellToken(pollAddress, secret);
 		} catch (error) {
 			this._loggerService.error(error);
 		}

@@ -30,14 +30,14 @@ export class HeliusService implements OnModuleInit, ISolanaProvider {
 	) {}
 
 	onModuleInit() {
-		// setTimeout(this.init.bind(this));
+		setTimeout(this.init.bind(this));
 	}
 
 	init() {
 		this._ws = new WebSocket(this._heliusConfig.enhancedWebsocketUrl);
 
 		this._ws.on("open", () => {
-			this._loggerService.log("WebSocket соединение установлено.");
+			this._loggerService.log("Helius соединение установлено.");
 
 			const accounts = Object.keys(this._wsAccounts);
 
@@ -72,6 +72,8 @@ export class HeliusService implements OnModuleInit, ISolanaProvider {
 				this._ws.close();
 				return;
 			}
+
+			// console.log(message);
 
 			this._eventsService.emit(EventsEnum.SOLANA_PROVIDER_MESSAGE, message);
 		});

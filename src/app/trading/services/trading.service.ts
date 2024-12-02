@@ -45,7 +45,7 @@ export class TradingService implements OnModuleInit {
 	) {}
 
 	onModuleInit() {
-		setTimeout(this.init.bind(this), 0);
+		// setTimeout(this.init.bind(this), 5000);
 	}
 
 	async init() {
@@ -57,6 +57,7 @@ export class TradingService implements OnModuleInit {
 		for (const trading of tradings.data) {
 			this.subscribeOnBuyChanges(trading);
 
+			// TODO: Что бы перезапускать отслеживания монет после падения приложения нужно придумать как доставать транзакцию сигнала для первого значения массива
 			for (const tradingToken of trading.tradingTokens) {
 				// this._transactions[tradingToken.poolAddress] = [];
 				// this.subscribeOnPriceChanges(trading, tradingToken);
@@ -151,8 +152,8 @@ export class TradingService implements OnModuleInit {
 
 			// Первое выполненое условие - "Сигнал". Если их > 2 - значит была "Покупка"
 			if (duration > trading.tokenTradingDuration && checkedMilestones.length < 2) {
-				// this.unsubscribe(transaction.poolAddress);
-				// return;
+				this.unsubscribe(transaction.poolAddress);
+				return;
 			}
 
 			transactions.push(transaction);

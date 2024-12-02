@@ -9,14 +9,13 @@ import { EventsService } from "../../events/services/events.service";
 import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
+import { sleep } from "../../shared/utils/sleep.util";
 import { ITradingToken } from "../../trading/interfaces/trading-token.interface";
 import { SignalEntity } from "../entities/signal.entity";
 import type { ISignal } from "../interfaces/signal.interface";
 
 @Injectable()
 export class SignalsService {
-	private readonly _tradingTokens: ITradingToken[] = [];
-
 	constructor(
 		@InjectRepository(SignalEntity) private readonly _signalsRepository: Repository<SignalEntity>,
 		private readonly _eventsService: EventsService,
@@ -25,6 +24,8 @@ export class SignalsService {
 
 	@OnEvent(EventsEnum.TRADING_TOKENS_CREATED)
 	async onTradingTokensCreate(tradingTokens: ITradingToken[]) {
+		await sleep(5000);
+
 		const signalsToCreate: DeepPartial<ISignal>[] = tradingTokens.map((tradingToken) => ({
 			source: tradingToken.walletAddress,
 			signaledAt: tradingToken.signaledAt,
@@ -36,6 +37,8 @@ export class SignalsService {
 
 	@OnEvent(EventsEnum.TRADING_TOKEN_CREATED)
 	async onTradingTokenCreate(tradingToken: ITradingToken) {
+		await sleep(5000);
+
 		await this.createSignal({
 			source: tradingToken.walletAddress,
 			signaledAt: tradingToken.signaledAt,

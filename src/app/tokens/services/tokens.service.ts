@@ -17,8 +17,6 @@ import type { IToken } from "../interfaces/token.interface";
 
 @Injectable()
 export class TokensService {
-	private readonly _signals: ISignal[] = [];
-
 	constructor(
 		@InjectRepository(TokenEntity) private readonly _tokensRepository: Repository<TokenEntity>,
 		private readonly _dexToolsService: DexToolsService,
