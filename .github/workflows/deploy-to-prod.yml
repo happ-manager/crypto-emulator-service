@@ -52,6 +52,6 @@ jobs:
           script: |
             set -e
             docker load -i /home/happ/crypto/docker-images/happ-crypto-api.tar
-            cd /home/happ
+            cd /home/happ/crypto
             docker-compose down --remove-orphans
             docker-compose up -d --force-recreate
