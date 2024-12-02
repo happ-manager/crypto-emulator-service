@@ -45,7 +45,7 @@ export class TradingService implements OnModuleInit {
 	) {}
 
 	onModuleInit() {
-		// setTimeout(this.init.bind(this), 5000);
+		setTimeout(this.init.bind(this), 5000);
 	}
 
 	async init() {

@@ -29,7 +29,7 @@ export const environment = {
 		bucketName: ""
 	},
 	database: {
-		certificate: true,
+		certificate: false,
 		host: "",
 		port: 0,
 		username: "",

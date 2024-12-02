@@ -40,7 +40,7 @@ lerna-debug.log*
 **/*/environments/environment.dev.ts
 
 # DB
-../telegram-admin/ca-certificate.crt
+ca-certificate.crt
 
 # Documentation
 /documentation

@@ -19,9 +19,6 @@ jobs:
       - name: Decode and create prod environment file
         run: echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.prod.ts
 
-      - name: Decode and create ca-certificate file
-        run: echo "${{ secrets.PROD_CA_CERTIFICATE_BASE64 }}" | base64 -d > ./ca-certificate.crt
-
       - name: Build Docker image
         run: docker build -t happ-crypto-api .
 
@@ -39,7 +36,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           overwrite: true
           source: "happ-crypto-api.tar"
-          target: "/home/happ/docker-images"
+          target: "/home/happ/crypto/docker-images"
 
   deploy:
     runs-on: ubuntu-latest
@@ -54,7 +51,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             set -e
-            docker load -i /home/happ/docker-images/happ-crypto-api.tar
+            docker load -i /home/happ/crypto/docker-images/happ-crypto-api.tar
             cd /home/happ
             docker-compose down --remove-orphans
             docker-compose up -d --force-recreate
