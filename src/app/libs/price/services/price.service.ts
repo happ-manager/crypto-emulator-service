@@ -15,7 +15,7 @@ declare module "big.js" {
 	if (other.eq(0)) {
 		return Big(0);
 	}
-	return this.minus(other).div(this).times(100);
+	return this.minus(other).div(other).times(100);
 };
 
 (Big as any).prototype.percentOf = function (this: Big, percent: number): Big {
