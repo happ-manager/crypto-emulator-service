@@ -32,7 +32,7 @@ export class TradingsService {
 
 			return await this._tradingsRepository.findOne({ where: { id: savedTrading.id } });
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createTrading");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -42,7 +42,7 @@ export class TradingsService {
 			await this._tradingsRepository.save({ id, ...trading });
 			return await this._tradingsRepository.findOne({ where: { id } });
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "updateTrading");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -52,7 +52,7 @@ export class TradingsService {
 			await this._tradingsRepository.delete(id);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "deleteTrading");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

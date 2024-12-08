@@ -27,7 +27,7 @@ export class CheckStrategyService {
 		const refId = milestone.refMilestone?.id;
 
 		if (!refId) {
-			this._loggerService.error("У группы должна быть ссылка");
+			this._loggerService.error("У группы должна быть ссылка", "getCheckedMilestone");
 			return;
 		}
 
@@ -66,7 +66,7 @@ export class CheckStrategyService {
 		const refId = conditionsGroup.refMilestone?.id || conditionsGroup.refConditionsGroup?.id;
 
 		if (!refId) {
-			this._loggerService.error("Для условия нужная транзакция");
+			this._loggerService.error("Для условия нужная транзакция", "getCheckedConditionsGroup");
 			return;
 		}
 
@@ -104,7 +104,7 @@ export class CheckStrategyService {
 		const refId = condition.refMilestone?.id || condition.refConditionsGroup?.id;
 
 		if (!refId) {
-			this._loggerService.error("Для условия нужная транзакция");
+			this._loggerService.error("Для условия нужная транзакция", "getCheckedConditon");
 			return;
 		}
 
@@ -118,7 +118,7 @@ export class CheckStrategyService {
 		const conditioValue = Number.parseInt(condition.value);
 
 		if (typeof conditioValue !== "number") {
-			this._loggerService.error("Неправильный формат значения");
+			this._loggerService.error("Неправильный формат значения", "getCheckedConditon");
 			return;
 		}
 

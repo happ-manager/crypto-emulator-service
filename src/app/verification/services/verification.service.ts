@@ -31,7 +31,7 @@ export class VerificationService implements OnModuleInit {
 		try {
 			await this._telegramService.sendMessageToBot(this.botUsername, message);
 		} catch (error) {
-			this._loggerService.error("Verification failed:", error);
+			this._loggerService.error(error, "check");
 		}
 	}
 
@@ -48,14 +48,17 @@ export class VerificationService implements OnModuleInit {
 		const tokenAddress = getTokenAddress(response.message);
 
 		if (!tokenAddress) {
-			this._loggerService.error(`Не получается найти адрес токена ${response.message}`);
+			this._loggerService.error(`Не получается найти адрес токена ${response.message}`, "handleMessage");
 			return;
 		}
 
 		const isTextValid = checkBlackList(response.message, blackList);
 
 		if (!isTextValid) {
-			this._loggerService.error(`Токен ${tokenAddress} не прошел проверку в пирбе. ${response.message}`);
+			this._loggerService.error(
+				`Токен ${tokenAddress} не прошел проверку в пирбе. ${response.message}`,
+				"handleMessage"
+			);
 			return;
 		}
 

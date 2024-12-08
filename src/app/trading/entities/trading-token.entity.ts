@@ -30,6 +30,10 @@ export class TradingTokenEntity extends BaseEntity implements ITradingToken {
 	@Column()
 	poolAddress: string;
 
+	@Field()
+	@Column()
+	tokenMint: string;
+
 	@Field(() => PriceScalar)
 	@PriceColumn()
 	price: IPrice;

@@ -28,7 +28,7 @@ export class MessariService {
 			const res = await lastValueFrom(res$);
 			return res.data.data;
 		} catch (error) {
-			this._loggerService.error("getOHLCV", error?.response?.data);
+			this._loggerService.error(error?.response?.data, "getOHLCV");
 			return null;
 		}
 	}

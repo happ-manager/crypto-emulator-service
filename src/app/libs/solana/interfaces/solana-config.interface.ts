@@ -7,7 +7,7 @@ import type { IApiTransaction } from "./api-transaction.interface";
 
 export interface ISolanaProvider {
 	connection: Connection;
-	subscribe: (accounts: string[], commitment: CommitmentTypeEnum) => void;
+	send: (accountInclude: string[], accountExclude: string[], commitment: CommitmentTypeEnum) => void;
 	getTransactions: (pollAddress: string, signature?: string) => Observable<AxiosResponse<IApiTransaction[]>>;
 }
 

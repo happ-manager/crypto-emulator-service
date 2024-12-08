@@ -32,7 +32,7 @@ export class ChannelsService {
 
 			return await this._channelsRepository.findOne({ where: { id: savedChannel.id } });
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createChannel");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -42,7 +42,7 @@ export class ChannelsService {
 			await this._channelsRepository.save({ id, ...channel });
 			return await this._channelsRepository.findOne({ where: { id } });
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "updateChannel");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -52,7 +52,7 @@ export class ChannelsService {
 			await this._channelsRepository.delete(id);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "deleteChannel");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

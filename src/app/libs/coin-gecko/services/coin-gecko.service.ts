@@ -31,7 +31,7 @@ export class CoinGeckoService {
 			const res = await lastValueFrom(res$);
 			return res.data.prices;
 		} catch (error) {
-			this._loggerService.error("getMarketChartRange", error?.response?.data);
+			this._loggerService.error(error?.response?.data, "getMarketChartRange");
 			return null;
 		}
 	}

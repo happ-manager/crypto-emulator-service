@@ -30,7 +30,7 @@ export class NomicsService {
 			const res = await lastValueFrom(res$);
 			return res.data;
 		} catch (error) {
-			this._loggerService.error("getCandles", error?.response?.data);
+			this._loggerService.error(error?.response?.data, "getCandles");
 			return null;
 		}
 	}

@@ -62,7 +62,7 @@ export class MilestonesService {
 
 			return foundMilestone;
 		} catch (error) {
-			this._loggerService.error(`createMilestone ${error}`);
+			this._loggerService.error(error, "createMilestone");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -79,7 +79,7 @@ export class MilestonesService {
 
 			return foundMilestones;
 		} catch (error) {
-			this._loggerService.error(`createMilestones ${error}`);
+			this._loggerService.error(error, "createMilestones");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -93,7 +93,7 @@ export class MilestonesService {
 
 			return foundMilestones;
 		} catch (error) {
-			this._loggerService.error(`updateMilestone ${error}`);
+			this._loggerService.error(error, "updateMilestone");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -103,7 +103,7 @@ export class MilestonesService {
 			await this._milestonesRepository.delete(id);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(`deleteMilestone ${error}`);
+			this._loggerService.error(error, "deleteMilestone");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -113,7 +113,7 @@ export class MilestonesService {
 			await this._milestonesRepository.delete(ids);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(`deleteMilestones ${error}`);
+			this._loggerService.error(error, "deleteMilestones");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

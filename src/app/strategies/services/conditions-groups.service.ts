@@ -64,7 +64,7 @@ export class ConditionsGroupsService {
 
 			return foundConditionsGroup;
 		} catch (error) {
-			this._loggerService.error(`createConditionsGroup ${error}`);
+			this._loggerService.error(error, "createConditionsGroup");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -82,7 +82,7 @@ export class ConditionsGroupsService {
 
 			return foundConditionsGroups;
 		} catch (error) {
-			this._loggerService.error(`createConditionsGroups ${error}`);
+			this._loggerService.error(error, "createConditionsGroups");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -98,7 +98,7 @@ export class ConditionsGroupsService {
 
 			return foundConditionsGroup;
 		} catch (error) {
-			this._loggerService.error(`updateConditionsGroup ${error}`);
+			this._loggerService.error(error, "updateConditionsGroup");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -108,7 +108,7 @@ export class ConditionsGroupsService {
 			await this._conditionsGroupsRepository.delete(id);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(`deleteConditionsGroup ${error}`);
+			this._loggerService.error(error, "deleteConditionsGroup");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -118,7 +118,7 @@ export class ConditionsGroupsService {
 			await this._conditionsGroupsRepository.delete(ids);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(`deleteConditionsGroups ${error}`);
+			this._loggerService.error(error, "deleteConditionsGroups");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

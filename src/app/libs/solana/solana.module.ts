@@ -7,13 +7,20 @@ import { first, interval, lastValueFrom, map, race, Subject } from "rxjs";
 import { EventsModule } from "../../events/events.module";
 import type { AsyncModuleOptions } from "../../shared/interfaces/async-module-options.interface";
 import { DateModule } from "../date";
+import { FilesModule } from "../files";
 import { LoggerModule } from "../logger";
 import { SOLANA_CONFIG } from "./injection-tokens/solana-config.injection-token";
 import type { ISolanaConfig } from "./interfaces/solana-config.interface";
 import { SOLANA_SERVICES } from "./services";
 
 @Module({
-	imports: [HttpModule, EventsModule.forChild(), DateModule.forChild(), LoggerModule.forChild()],
+	imports: [
+		HttpModule,
+		EventsModule.forChild(),
+		DateModule.forChild(),
+		LoggerModule.forChild(),
+		FilesModule.forChild()
+	],
 	providers: SOLANA_SERVICES,
 	exports: SOLANA_SERVICES
 })

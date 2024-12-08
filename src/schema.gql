@@ -305,6 +305,7 @@ type Query {
   getGroupOperators: [groupOperatorEnum!]!
   getMilestoneTypes: [milestoneTypeEnum!]!
   getOperators: [operatorEnum!]!
+  getTransactionTypes: [transactionTypeEnum!]!
   milestone(id: ID!): MilestoneEntity!
   milestones(skip: Int, take: Int): PaginatedMilestones!
   signal(id: ID!): SignalEntity!
@@ -397,6 +398,7 @@ type TradingTokenEntity {
   price: IPrice!
   signaledAt: IDate!
   token: TokenEntity
+  tokenMint: String!
   trading: TradingEntity!
   updatedAt: DateTime!
   walletAddress: String!
@@ -410,6 +412,7 @@ type TransactionEntity {
   poolAddress: String!
   price: IPrice!
   signature: String
+  type: transactionTypeEnum!
   updatedAt: DateTime!
 }
 
@@ -542,6 +545,11 @@ enum operatorEnum {
   LESS_EQUAL
   MORE
   MORE_EQUAL
+}
+
+enum transactionTypeEnum {
+  INIT
+  TRANSFER
 }
 
 enum verificationStatusEnum {

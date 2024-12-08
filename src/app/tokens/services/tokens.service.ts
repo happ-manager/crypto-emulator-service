@@ -30,7 +30,7 @@ export class TokensService {
 		const pairs = await this._dexToolsService.searchPair(tokenAddress || poolAddress || name);
 
 		if (!pairs) {
-			this._loggerService.error(`Cannot find pair for: ${tokenAddress}, ${poolAddress}, ${name}`);
+			this._loggerService.error(`Cannot find pair for: ${tokenAddress}, ${poolAddress}, ${name}`, "_getTokenInfo");
 			return;
 		}
 
@@ -40,7 +40,10 @@ export class TokensService {
 		const [pair] = filteredPairs.sort((a, b) => b.metrics.liquidity - a.metrics.liquidity);
 
 		if (!pair) {
-			this._loggerService.error(`Cannot find pair for: ${token.name}, ${token.tokenAddress}, ${token.poolAddress}`);
+			this._loggerService.error(
+				`Cannot find pair for: ${token.name}, ${token.tokenAddress}, ${token.poolAddress}`,
+				"_getTokenInfo"
+			);
 			return;
 		}
 
@@ -111,7 +114,7 @@ export class TokensService {
 
 			return findedToken;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createToken");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -149,7 +152,7 @@ export class TokensService {
 
 			return findedTokens;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createTokens");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -163,7 +166,7 @@ export class TokensService {
 
 			return findedToken;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "updateToken");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -176,7 +179,7 @@ export class TokensService {
 
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "deleteToken");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

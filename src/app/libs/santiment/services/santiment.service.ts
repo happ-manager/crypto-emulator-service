@@ -29,7 +29,7 @@ export class SantimentService {
 			const res = await lastValueFrom(res$);
 			return res.data;
 		} catch (error) {
-			this._loggerService.error("getOHLC", error?.response?.data);
+			this._loggerService.error(error?.response?.data, "getOHLC");
 			return null;
 		}
 	}

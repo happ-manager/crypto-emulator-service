@@ -26,7 +26,7 @@ export class SolanaPriceService implements OnModuleInit {
 		const currentTokenPrice = ((solCount * solPercent) / (memeCount * memePercent)) * this.solanaPrice;
 
 		if (currentTokenPrice > 0.000_99) {
-			return;
+			return new Big(0);
 		}
 
 		return Big(currentTokenPrice || 0);

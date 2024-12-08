@@ -30,7 +30,7 @@ export class CryptoCompareService {
 			const res = await lastValueFrom(res$);
 			return res.data.Data;
 		} catch (error) {
-			this._loggerService.error("getHistoricalData", error?.response?.data);
+			this._loggerService.error(error?.response?.data, "getHistoricalData");
 			return null;
 		}
 	}

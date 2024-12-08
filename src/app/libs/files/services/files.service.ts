@@ -23,7 +23,7 @@ export class FilesService {
 				fs.writeFileSync(filePath, data, "utf-8");
 			}
 		} catch (error) {
-			this._loggerService.error("Error creating file:", error);
+			this._loggerService.error(error, "createFile");
 		}
 	}
 
@@ -36,7 +36,7 @@ export class FilesService {
 				return isTextFile ? fileData : JSON.parse(fileData);
 			}
 		} catch (error) {
-			this._loggerService.error("Error reading file:", error);
+			this._loggerService.error(error, "getFile");
 		}
 	}
 
@@ -46,7 +46,7 @@ export class FilesService {
 		try {
 			fs.appendFileSync(filePath, data, "utf-8");
 		} catch (error) {
-			this._loggerService.error("Error appending to file:", error);
+			this._loggerService.error(error, "appendToFile");
 		}
 	}
 
@@ -56,7 +56,7 @@ export class FilesService {
 		try {
 			fs.writeFileSync(filePath, "", "utf-8");
 		} catch (error) {
-			this._loggerService.error("Error clearing file:", error);
+			this._loggerService.error(error, "clearFile");
 		}
 	}
 
@@ -67,7 +67,7 @@ export class FilesService {
 			// Всегда записываем данные в файл, независимо от его существования
 			fs.writeFileSync(filePath, data, "utf-8");
 		} catch (error) {
-			this._loggerService.error("Error creating or updating file:", error);
+			this._loggerService.error(error, "createOrUpdateFile");
 		}
 	}
 

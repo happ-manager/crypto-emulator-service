@@ -1,15 +1,18 @@
 import type { OnModuleInit } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
+import { OnEvent } from "@nestjs/event-emitter";
+import { Subject } from "rxjs";
 import { v4 } from "uuid";
 
+import { TransactionTypeEnum } from "../../candles/enums/transaction-type.enum";
 import { EventsEnum } from "../../events/enums/events.enum";
 import { EventsService } from "../../events/services/events.service";
 import { CryptoService } from "../../libs/crypto";
 import { DateService } from "../../libs/date";
 import { LoggerService } from "../../libs/logger";
 import type { IPrice } from "../../libs/price/interfaces/price.interface";
-import { SubscribtionTypeEnum } from "../../libs/solana/enums/subscribtion-type.enum";
-import type { ISolanaTransaction } from "../../libs/solana/interfaces/solana-transaction.interface";
+import { CommitmentTypeEnum } from "../../libs/solana/enums/commitment-type.enum";
+import { ISolanaTransaction } from "../../libs/solana/interfaces/solana-transaction.interface";
 import { SolanaService } from "../../libs/solana/services/solana.service";
 import { MilestoneTypeEnum } from "../../strategies/enums/milestone-type.enum";
 import type { IChecked, ICheckedTransactions } from "../../strategies/interfaces/checked.interface";
@@ -21,6 +24,8 @@ import type { ITradingToken } from "../interfaces/trading-token.interface";
 import { TradingTokensService } from "./trading-tokens.service";
 import { TradingsService } from "./tradings.service";
 
+const MINUTES_15 = 900;
+
 @Injectable()
 export class TradingService implements OnModuleInit {
 	private readonly _tradingRelations = [
@@ -31,6 +36,8 @@ export class TradingService implements OnModuleInit {
 	];
 
 	private readonly _transactions: Record<string, ISolanaTransaction[]> = {};
+	private readonly _initSubscribtions: Record<string, Subject<ISolanaTransaction>> = {};
+	private readonly _transferSubscribtions: Record<string, Subject<ISolanaTransaction>> = {};
 
 	constructor(
 		private readonly _cryptoService: CryptoService,
@@ -45,7 +52,7 @@ export class TradingService implements OnModuleInit {
 	) {}
 
 	onModuleInit() {
-		setTimeout(this.init.bind(this), 5000);
+		// setTimeout(this.init.bind(this), 3000);
 	}
 
 	async init() {
@@ -55,7 +62,7 @@ export class TradingService implements OnModuleInit {
 		});
 
 		for (const trading of tradings.data) {
-			this.subscribeOnBuyChanges(trading);
+			this.handleBuys(trading);
 
 			// TODO: Что бы перезапускать отслеживания монет после падения приложения нужно придумать как доставать транзакцию сигнала для первого значения массива
 			for (const tradingToken of trading.tradingTokens) {
@@ -65,6 +72,46 @@ export class TradingService implements OnModuleInit {
 		}
 	}
 
+	@OnEvent(EventsEnum.SOLANA_TRANSACTION)
+	handleSolanaTransaction(transaction: ISolanaTransaction) {
+		if (transaction.type === TransactionTypeEnum.INIT) {
+			this._initSubscribtions[transaction.walletAddress]?.next(transaction);
+		} else if (transaction.type === TransactionTypeEnum.TRANSFER) {
+			this._transferSubscribtions[transaction.poolAddress]?.next(transaction);
+		}
+
+		if (!this._transactions[transaction.poolAddress]) {
+			return;
+		}
+
+		const [initTransaction] = this._transactions[transaction.poolAddress];
+		const duration = transaction.date.diff(initTransaction.date, "s");
+
+		if (duration < MINUTES_15) {
+			return;
+		}
+
+		this._solanaService.send([], [transaction.poolAddress]);
+	}
+
+	on(account: string, transactionType: TransactionTypeEnum) {
+		const subject = new Subject<ISolanaTransaction>();
+
+		let commitmentType: CommitmentTypeEnum;
+
+		if (transactionType === TransactionTypeEnum.INIT) {
+			this._initSubscribtions[account] = subject;
+			commitmentType = CommitmentTypeEnum.PROCESSED; // Для покупок. Можно в процессе
+		} else if (transactionType === TransactionTypeEnum.TRANSFER) {
+			this._transferSubscribtions[account] = subject;
+			commitmentType = CommitmentTypeEnum.CONFIRMED; // Для цен. Только подтверженных
+		}
+
+		this._solanaService.send([account], [], commitmentType);
+
+		return subject;
+	}
+
 	async start(id: string) {
 		const findedTrading = await this._tradingsService.getTrading({ where: { id }, relations: this._tradingRelations });
 
@@ -72,7 +119,7 @@ export class TradingService implements OnModuleInit {
 			return;
 		}
 
-		this.subscribeOnBuyChanges(findedTrading);
+		this.handleBuys(findedTrading);
 
 		await this._tradingsService.updateTrading(findedTrading.id, { disabled: false });
 	}
@@ -89,12 +136,12 @@ export class TradingService implements OnModuleInit {
 
 		const poolAddresses = findedTrading.tradingTokens.map((tradingToken) => tradingToken.poolAddress);
 
-		this.unsubscribe(findedTrading.targetWallet.address, ...poolAddresses);
+		this.unsubscribe([findedTrading.targetWallet.address, ...poolAddresses]);
 
 		await this._tradingsService.updateTrading(findedTrading.id, { disabled: true });
 	}
 
-	subscribeOnBuyChanges(trading: ITrading) {
+	handleBuys(trading: ITrading) {
 		const signalMilestone = trading.strategy.milestones.find(
 			(milestone) => milestone.type === MilestoneTypeEnum.SIGNAL
 		);
@@ -104,25 +151,28 @@ export class TradingService implements OnModuleInit {
 			return;
 		}
 
-		this._solanaService.on(trading.targetWallet.address, SubscribtionTypeEnum.BUY).subscribe(async (transaction) => {
-			if (this._transactions[transaction.poolAddress] || !transaction) {
+		this.on(trading.targetWallet.address, TransactionTypeEnum.INIT).subscribe(async (transaction) => {
+			if (this._transactions[transaction.poolAddress]) {
 				return;
 			}
 
 			this._transactions[transaction.poolAddress] = [transaction];
 
-			const tradingToken = {
+			const tradingToken: ITradingToken = {
 				id: v4(),
 				signaledAt: transaction.date,
 				walletAddress: transaction.walletAddress,
 				poolAddress: transaction.poolAddress,
 				price: trading.price,
+				tokenMint: transaction.tokenMint,
+				createdAt: new Date(),
+				updatedAt: new Date(),
 				trading
-			} as ITradingToken;
+			};
 
 			const checkedTransactions: ICheckedTransactions = { [signalMilestone.id]: transaction };
 
-			this.subscribeOnPriceChanges(trading, tradingToken, checkedTransactions);
+			this.handlePrices(trading, tradingToken, checkedTransactions);
 
 			await this._tradingTokensService.createTradingToken({
 				...tradingToken,
@@ -134,7 +184,7 @@ export class TradingService implements OnModuleInit {
 		});
 	}
 
-	subscribeOnPriceChanges(trading: ITrading, tradingToken: ITradingToken, checkedTransactions: ICheckedTransactions) {
+	handlePrices(trading: ITrading, tradingToken: ITradingToken, checkedTransactions: ICheckedTransactions) {
 		if (!this._transactions[tradingToken.poolAddress]) {
 			return;
 		}
@@ -144,15 +194,19 @@ export class TradingService implements OnModuleInit {
 
 		let pendingMilestone: IChecked<IMilestone>;
 
-		this._solanaService.on(tradingToken.poolAddress, SubscribtionTypeEnum.PRICE).subscribe(async (transaction) => {
+		this.on(tradingToken.poolAddress, TransactionTypeEnum.TRANSFER).subscribe(async (transaction) => {
 			const [firstTransaction] = transactions;
 
 			const checkedMilestones = sortedMilestones.filter((milestone) => checkedTransactions[milestone.id]);
 			const duration = this._dateService.now().diff(firstTransaction.date, "s");
 
-			// Первое выполненое условие - "Сигнал". Если их > 2 - значит была "Покупка"
-			if (duration > trading.tokenTradingDuration && checkedMilestones.length < 2) {
-				this.unsubscribe(transaction.poolAddress);
+			// Первое выполненое условие - "Сигнал". Если их > 1 - значит была "Покупка"
+			const isTradingStartedAndNotOver =
+				checkedMilestones.length > 1 && checkedMilestones.length < sortedMilestones.length;
+			const isExpired = duration > trading.tokenTradingDuration;
+
+			if (isExpired && !isTradingStartedAndNotOver) {
+				this.unsubscribe([transaction.poolAddress]);
 				return;
 			}
 
@@ -177,7 +231,7 @@ export class TradingService implements OnModuleInit {
 				pendingMilestone = undefined;
 
 				if (sortedMilestones.length === checkedMilestones.length) {
-					this.unsubscribe(transaction.poolAddress);
+					this.unsubscribe([transaction.poolAddress]);
 					return;
 				}
 			}
@@ -226,11 +280,13 @@ export class TradingService implements OnModuleInit {
 		return this._solanaService.sell(poolAddress, secret);
 	}
 
-	unsubscribe(...accounts: string[]) {
-		this._solanaService.unsubscribe(accounts);
-
+	unsubscribe(accounts: string[]) {
 		for (const account of accounts) {
-			delete this._transactions[account];
+			this._initSubscribtions[account]?.complete();
+			this._transferSubscribtions[account]?.complete();
+
+			delete this._initSubscribtions[account];
+			delete this._transferSubscribtions[account];
 		}
 	}
 }

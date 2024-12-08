@@ -101,7 +101,7 @@ export class CandlesService {
 
 			return findedCandle;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createCandle");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -117,7 +117,7 @@ export class CandlesService {
 
 			return findedCandles;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createCandles");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -132,7 +132,7 @@ export class CandlesService {
 
 			return updatedCandle;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "updateCandle");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -145,7 +145,7 @@ export class CandlesService {
 
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "deleteCandle");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

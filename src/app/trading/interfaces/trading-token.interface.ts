@@ -10,6 +10,7 @@ export interface ITradingToken extends IBase {
 	id: string;
 	walletAddress: string;
 	poolAddress: string;
+	tokenMint: string;
 	signaledAt: IDate;
 	price: IPrice;
 	trading: ITrading;

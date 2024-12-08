@@ -101,7 +101,7 @@ export class SolscanService {
 
 			return res.data;
 		} catch (error) {
-			this._loggerService.error("error", error.response);
+			this._loggerService.error(error.response, "getBalanceChanges");
 		}
 	}
 
@@ -151,7 +151,7 @@ export class SolscanService {
 
 			return res.data.data;
 		} catch (error) {
-			this._loggerService.error("getSplTransfers", error?.response?.data);
+			this._loggerService.error(error?.response?.data, "getSplTransfers");
 			return null;
 		}
 	}

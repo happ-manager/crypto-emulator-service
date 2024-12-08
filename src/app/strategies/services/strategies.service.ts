@@ -77,7 +77,7 @@ export class StrategiesService {
 
 			return foundStrategy;
 		} catch (error) {
-			this._loggerService.error(`createStrategy ${error}`);
+			this._loggerService.error(error, "createStrategy");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -94,7 +94,7 @@ export class StrategiesService {
 
 			return foundStrategies;
 		} catch (error) {
-			this._loggerService.error(`createStrategies ${error}`);
+			this._loggerService.error(error, "createStrategies");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -108,7 +108,7 @@ export class StrategiesService {
 
 			return foundStrategy;
 		} catch (error) {
-			this._loggerService.error(`updateStrategy ${error}`);
+			this._loggerService.error(error, "updateStrategy");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -118,7 +118,7 @@ export class StrategiesService {
 			await this._strategiesRepository.delete(id);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(`deleteStrategy ${error}`);
+			this._loggerService.error(error, "deleteStrategy");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

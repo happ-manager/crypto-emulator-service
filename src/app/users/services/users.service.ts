@@ -32,7 +32,7 @@ export class UsersService {
 
 			return await this._usersRepository.findOne({ where: { id: savedUser.id } });
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createUser");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -42,7 +42,7 @@ export class UsersService {
 			await this._usersRepository.save({ id, ...user });
 			return await this._usersRepository.findOne({ where: { id } });
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "updateUser");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -52,7 +52,7 @@ export class UsersService {
 			await this._usersRepository.delete(id);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "deleteUser");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

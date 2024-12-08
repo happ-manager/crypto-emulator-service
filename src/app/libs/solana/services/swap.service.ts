@@ -38,7 +38,7 @@ export class SwapService {
 		const poolKeys = await this.getPoolKeys(poolAddress);
 
 		if (!poolKeys) {
-			this._loggerService.error(`Cant find pool keys`);
+			this._loggerService.error(`Cant find pool keys`, "buyToken");
 			return;
 		}
 
@@ -111,7 +111,7 @@ export class SwapService {
 				// 2_500_000
 			);
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "buyToken");
 		}
 	}
 
@@ -119,7 +119,7 @@ export class SwapService {
 		const poolKeys = await this.getPoolKeys(poolAddress);
 
 		if (!poolKeys) {
-			this._loggerService.error(`Cant find pool keys`);
+			this._loggerService.error(`Cant find pool keys`, "sellToken");
 			return;
 		}
 
@@ -159,7 +159,7 @@ export class SwapService {
 			const outputTokenAmount = new TokenAmount(outputToken, outputTokenAccountInfo.value.amount);
 
 			if (outputTokenAmount.raw.isZero()) {
-				this._loggerService.error("No tokens available to sell.");
+				this._loggerService.error("No tokens available to sell.", "sellToken");
 				return;
 			}
 
@@ -207,7 +207,7 @@ export class SwapService {
 				// 2_500_000
 			);
 		} catch (error) {
-			this._loggerService.error(`Error during sell token: ${error.message}`);
+			this._loggerService.error(`Error during sell token: ${error.message}`, "sellToken");
 		}
 	}
 

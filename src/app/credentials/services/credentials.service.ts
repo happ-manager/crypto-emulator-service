@@ -32,7 +32,7 @@ export class CredentialsService {
 
 			return await this._credentialsRepository.findOne({ where: { id: savedCredential.id } });
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createCredential");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -42,7 +42,7 @@ export class CredentialsService {
 			await this._credentialsRepository.save({ id, ...credential });
 			return await this._credentialsRepository.findOne({ where: { id } });
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "updateCredential");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -52,7 +52,7 @@ export class CredentialsService {
 			await this._credentialsRepository.delete(id);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "deleteCredential");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

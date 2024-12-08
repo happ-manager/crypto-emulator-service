@@ -38,7 +38,7 @@ export class WalletsService {
 
 			return await this._walletsRepository.findOne({ where: { id: savedWallet.id } });
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createWallet");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -52,7 +52,7 @@ export class WalletsService {
 			await this._walletsRepository.save({ id, ...wallet });
 			return await this._walletsRepository.findOne({ where: { id } });
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "updateWallet");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -62,7 +62,7 @@ export class WalletsService {
 			await this._walletsRepository.delete(id);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "deleteWallet");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

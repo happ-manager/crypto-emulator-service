@@ -40,7 +40,7 @@ export class ConditionsService {
 
 			return foundCondition;
 		} catch (error) {
-			this._loggerService.error(`createCondition ${error}`);
+			this._loggerService.error(error, "createCondition");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -56,7 +56,7 @@ export class ConditionsService {
 
 			return foundConditions;
 		} catch (error) {
-			this._loggerService.error(`createConditions ${error}`);
+			this._loggerService.error(error, "createConditions");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -66,7 +66,7 @@ export class ConditionsService {
 			await this._conditionsRepository.save({ id, ...condition });
 			return await this._conditionsRepository.findOne({ where: { id } });
 		} catch (error) {
-			this._loggerService.error(`updateCondition ${error}`);
+			this._loggerService.error(error, "updateCondition");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -76,7 +76,7 @@ export class ConditionsService {
 			await this._conditionsRepository.delete(id);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(`deleteCondition ${error}`);
+			this._loggerService.error(error, "deleteCondition");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -86,7 +86,7 @@ export class ConditionsService {
 			await this._conditionsRepository.delete(ids);
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(`deleteConditions ${error}`);
+			this._loggerService.error(error, "deleteConditions");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

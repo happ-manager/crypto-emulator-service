@@ -36,7 +36,7 @@ export class CoinMarketCapService {
 
 			return Object.values(res.data.data);
 		} catch (error) {
-			this._loggerService.error("info", error?.response?.data?.status);
+			this._loggerService.error(error?.response?.data?.status, "info");
 			return null;
 		}
 	}
@@ -53,7 +53,7 @@ export class CoinMarketCapService {
 
 			return res.data.data;
 		} catch (error) {
-			this._loggerService.error("quotesHistorical", error?.response.data);
+			this._loggerService.error(error?.response.data, "quotesHistorical");
 			return null;
 		}
 	}

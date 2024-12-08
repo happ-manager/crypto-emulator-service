@@ -22,7 +22,7 @@ export class LoggerService implements NestLoggerService, OnModuleInit {
 			winston.format.timestamp({ format: "MM/DD/YYYY, HH:mm:ss:SSS" }),
 			winston.format.printf(
 				({ level, message, timestamp, stack }) =>
-					`[NEST] ${pid}  - ${timestamp}   ${level.toUpperCase()} [LoggerService] ${stack || message}`
+					`[NEST] ${pid}  - ${timestamp}   ${level.toUpperCase()} [${stack}] ${message}`
 			)
 		);
 
@@ -43,12 +43,12 @@ export class LoggerService implements NestLoggerService, OnModuleInit {
 		});
 	}
 
-	log(message: string) {
-		this.logger.info(message);
+	log(message: string, stack?: string) {
+		this.logger.info(message, { stack });
 	}
 
-	error(message: string, trace?: string) {
-		this.logger.error(message, { stack: trace });
+	error(message: string, stack?: string) {
+		this.logger.error(message, { stack });
 	}
 
 	warn(message: string) {

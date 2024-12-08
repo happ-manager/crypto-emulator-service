@@ -29,7 +29,7 @@ export class TransactionsService {
 		this._solanaTransactions.push(solanaTransaction);
 	}
 
-	@Cron("*/5 * * * * *") // Это выражение cron для запуска каждые 10 секунд
+	@Cron("*/5 * * * * *") // Это выражение cron для запуска каждые 5 секунд
 	async handleSolanaTransactions() {
 		if (this._solanaTransactions.length === 0) {
 			return;
@@ -66,7 +66,7 @@ export class TransactionsService {
 
 			return findedTransaction;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createTransaction");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -82,7 +82,7 @@ export class TransactionsService {
 
 			return findedTransactions;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createTransactions");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -96,7 +96,7 @@ export class TransactionsService {
 
 			return updatedTransaction;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "updateTransaction");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -109,7 +109,7 @@ export class TransactionsService {
 
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "deleteTransaction");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

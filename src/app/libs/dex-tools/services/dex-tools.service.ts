@@ -43,7 +43,7 @@ export class DexToolsService {
 
 			return candles.map((candle) => this._dexToolsUtilsService.convertCandle(candle));
 		} catch (error) {
-			this._loggerService.error("getCandles failed:", error?.response?.data);
+			this._loggerService.error(error?.response?.data, "getCandles");
 			return [];
 		}
 	}
@@ -57,7 +57,7 @@ export class DexToolsService {
 
 			return pairs.map((pair) => this._dexToolsUtilsService.convertPair(pair));
 		} catch (error) {
-			this._loggerService.error("searchPair failed:", error?.response?.data);
+			this._loggerService.error(error?.response?.data, "searchPair");
 			return null;
 		}
 	}
@@ -75,7 +75,7 @@ export class DexToolsService {
 
 			return this._dexToolsUtilsService.convertPair(pair);
 		} catch (error) {
-			this._loggerService.error("getPair failed:", error?.response?.data);
+			this._loggerService.error(error?.response?.data, "getPair");
 			return null;
 		}
 	}

@@ -101,7 +101,7 @@ export class TradingTokensService {
 
 			return findedTradingToken;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createTradingToken");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -117,7 +117,7 @@ export class TradingTokensService {
 
 			return createdTokens;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createTradingTokens");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -132,7 +132,7 @@ export class TradingTokensService {
 
 			return updatedTradingToken;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "updateTradingToken");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -145,7 +145,7 @@ export class TradingTokensService {
 
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "deleteTradingToken");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

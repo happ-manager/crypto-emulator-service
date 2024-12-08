@@ -72,7 +72,7 @@ export class TelegramService implements OnModuleInit {
 				message
 			});
 		} catch (error) {
-			this._loggerService.error("Error while sending message to bot:", error);
+			this._loggerService.error(error, "sendMessageToBot");
 		}
 	}
 
@@ -82,7 +82,7 @@ export class TelegramService implements OnModuleInit {
 			const result = await this._telegramClient.getMessages(chatId, { ids: messageId });
 
 			if (result.length === 0) {
-				this._loggerService.error("Message not found.");
+				this._loggerService.error("Message not found.", "clickInlineButton");
 				return;
 			}
 
@@ -90,7 +90,7 @@ export class TelegramService implements OnModuleInit {
 
 			// Проверяем наличие инлайн-кнопок
 			if (!message.replyMarkup || !(message.replyMarkup instanceof Api.ReplyInlineMarkup)) {
-				this._loggerService.error("No inline buttons found.");
+				this._loggerService.error("No inline buttons found.", "clickInlineButton");
 				return;
 			}
 
@@ -99,14 +99,14 @@ export class TelegramService implements OnModuleInit {
 			// Проверяем, существует ли указанный ряд
 			const row = message.replyMarkup.rows[rowIndex];
 			if (!row) {
-				this._loggerService.error("Row not found.");
+				this._loggerService.error("Row not found.", "clickInlineButton");
 				return;
 			}
 
 			// Проверяем, существует ли кнопка в этом ряду
 			const inlineButton = row.buttons[columnIndex];
 			if (!inlineButton) {
-				this._loggerService.error("Button not found.");
+				this._loggerService.error("Button not found.", "clickInlineButton");
 				return;
 			}
 
@@ -119,7 +119,7 @@ export class TelegramService implements OnModuleInit {
 				})
 			);
 		} catch (error) {
-			this._loggerService.error("Error clicking inline button:", error);
+			this._loggerService.error(error, "clickInlineButton");
 		}
 	}
 }

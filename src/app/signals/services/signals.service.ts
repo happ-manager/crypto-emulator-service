@@ -24,7 +24,7 @@ export class SignalsService {
 
 	@OnEvent(EventsEnum.TRADING_TOKENS_CREATED)
 	async onTradingTokensCreate(tradingTokens: ITradingToken[]) {
-		await sleep(5000);
+		await sleep(10_000);
 
 		const signalsToCreate: DeepPartial<ISignal>[] = tradingTokens.map((tradingToken) => ({
 			source: tradingToken.walletAddress,
@@ -37,7 +37,7 @@ export class SignalsService {
 
 	@OnEvent(EventsEnum.TRADING_TOKEN_CREATED)
 	async onTradingTokenCreate(tradingToken: ITradingToken) {
-		await sleep(5000);
+		await sleep(10_000);
 
 		await this.createSignal({
 			source: tradingToken.walletAddress,
@@ -65,7 +65,7 @@ export class SignalsService {
 
 			return findedSignal;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createSignal");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -90,7 +90,7 @@ export class SignalsService {
 
 			return findedSignals;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "createSignals");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -104,7 +104,7 @@ export class SignalsService {
 
 			return findedSignal;
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "updateSignal");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
@@ -117,7 +117,7 @@ export class SignalsService {
 
 			return { deleted: true };
 		} catch (error) {
-			this._loggerService.error(error);
+			this._loggerService.error(error, "deleteSignal");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

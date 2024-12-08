@@ -10,6 +10,7 @@ import { PriceScalar } from "../../libs/price/scalars/price.scalar";
 import { BaseEntity } from "../../shared/entities/base.entity";
 import { Paginated } from "../../shared/models/paginated.model";
 import { TRANSACTIONS } from "../constants/transactions/transactions.constant";
+import { TransactionTypeEnum } from "../enums/transaction-type.enum";
 import { ICandle } from "../interfaces/candle.interface";
 import type { ITransaction } from "../interfaces/transaction.interface";
 import { CandleEntity } from "./candle.entity";
@@ -33,6 +34,10 @@ export class TransactionEntity extends BaseEntity implements ITransaction {
 	@Field({ nullable: true })
 	@Column({ nullable: true })
 	signature: string;
+
+	@Field(() => TransactionTypeEnum)
+	@Column("enum", { enum: TransactionTypeEnum, nullable: true })
+	type: TransactionTypeEnum;
 
 	@Field(() => CandleEntity, { nullable: true })
 	@ManyToOne(() => CandleEntity, (candle) => candle.transactions, { nullable: true, onDelete: "SET NULL" })
