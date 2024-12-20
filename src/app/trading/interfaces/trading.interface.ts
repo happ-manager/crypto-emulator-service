@@ -12,5 +12,7 @@ export interface ITrading extends IBase {
 	sourceWallet: IWallet;
 	disabled: boolean;
 	tokenTradingDuration: number;
+	microLamports: number;
+	units: number;
 	tradingTokens?: ITradingToken[];
 }

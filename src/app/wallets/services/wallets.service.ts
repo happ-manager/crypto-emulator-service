@@ -1,10 +1,13 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { Keypair } from "@solana/web3.js";
+import bs58 from "bs58";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { Repository } from "typeorm";
 
 import { CryptoService } from "../../libs/crypto";
 import { LoggerService } from "../../libs/logger";
+import { SolanaService } from "../../libs/solana/services/solana.service";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import { WalletEntity } from "../entities/wallet.entity";
@@ -15,7 +18,8 @@ export class WalletsService {
 	constructor(
 		@InjectRepository(WalletEntity) private readonly _walletsRepository: Repository<WalletEntity>,
 		private readonly _loggerService: LoggerService,
-		private readonly _cryptoService: CryptoService
+		private readonly _cryptoService: CryptoService,
+		private readonly _solanaService: SolanaService
 	) {}
 
 	async getWallet(options?: FindOneOptions<WalletEntity>) {
@@ -63,6 +67,25 @@ export class WalletsService {
 			return { deleted: true };
 		} catch (error) {
 			this._loggerService.error(error, "deleteWallet");
+			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
+		}
+	}
+
+	async wrapSolana(id: string, amount: number) {
+		try {
+			const findedWallet = await this._walletsRepository.findOne({ where: { id } });
+			const secret = this._cryptoService.decrypt(findedWallet.secret);
+			const owner = Keypair.fromSecretKey(bs58.decode(secret));
+
+			const signature = await this._solanaService.wrap({
+				amount,
+				owner,
+				rpc: this._solanaService.rpc
+			});
+
+			return { signature };
+		} catch (error) {
+			this._loggerService.error(error, "wrapSolana");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

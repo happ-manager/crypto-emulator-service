@@ -13,12 +13,12 @@ export class TradingController {
 
 	@Post(TRADING_ENDPOINTS.BUY)
 	buy(poolAddress: string, price: IPrice, walletSercret: string) {
-		return this._tradingService.buy(poolAddress, price, walletSercret);
+		// return this._tradingService.buy(poolAddress, price, walletSercret);
 	}
 
 	@Post(TRADING_ENDPOINTS.SELL)
 	sell(poolAddress: string, walletSecret: string) {
-		return this._tradingService.sell(poolAddress, walletSecret);
+		// return this._tradingService.sell(poolAddress, walletSecret);
 	}
 
 	@Post(TRADING_ENDPOINTS.START)

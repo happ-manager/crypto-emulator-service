@@ -39,4 +39,10 @@ export class WalletsController {
 	async deleteWallet(@Param("id") walletId: string) {
 		return this._walletsService.deleteWallet(walletId);
 	}
+
+	@Post(WALLETS_ENDPOINTS.WRAP_SOLANA)
+	@UseGuards(AccessWalletGuard)
+	async wrapSolana(@Param("id") walletId: string, @Body("amount") amount: string) {
+		return this._walletsService.wrapSolana(walletId, Number(amount));
+	}
 }

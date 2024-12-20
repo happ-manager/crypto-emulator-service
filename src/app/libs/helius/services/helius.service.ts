@@ -112,7 +112,10 @@ export class HeliusService implements OnModuleInit, IRpc {
 	}
 
 	sendSmartTransaction(instructions: TransactionInstruction[], signers: Signer[]): Promise<TransactionSignature> {
-		return this.helius.rpc.sendSmartTransaction(instructions, signers);
+		return this.helius.rpc.sendSmartTransaction(instructions, signers, [], {
+			skipPreflight: true,
+			preflightCommitment: "processed"
+		});
 	}
 
 	sendTransaction(transaction: ISolanaOutTransaction, options?: HeliusSendOptions): Promise<TransactionSignature> {

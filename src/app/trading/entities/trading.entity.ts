@@ -30,6 +30,14 @@ export class TradingEntity extends BaseEntity implements ITrading {
 	@Column("integer", { nullable: true })
 	tokenTradingDuration: number;
 
+	@Field(() => Number, { nullable: true })
+	@Column("integer", { nullable: true })
+	microLamports: number;
+
+	@Field(() => Number, { nullable: true })
+	@Column("integer", { nullable: true })
+	units: number;
+
 	@Field(() => StrategyEntity)
 	@ManyToOne(() => StrategyEntity, (strategy) => strategy.tradings)
 	strategy: IStrategy;

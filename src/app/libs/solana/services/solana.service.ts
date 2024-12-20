@@ -15,7 +15,7 @@ import { RaydiumService } from "../../raydium/services/raydium.service";
 import { INIT_LOG, TRANSFER_LOG } from "../constant/logs.constant";
 import { PUMFUN_WALLET, RADIUM_WALLET, SPL_TOKEN_PROGRAM, WSOL_WALLET } from "../constant/wallets.constant";
 import type { CommitmentTypeEnum } from "../enums/commitment-type.enum";
-import type { IDexSwap } from "../interfaces/dex.interface";
+import type { IDexSwap, IDexWrap } from "../interfaces/dex.interface";
 import { ISolanaMessage } from "../interfaces/solana-message.interface";
 import type { ISolanaInTransaction } from "../interfaces/solana-transaction.interface";
 import { SolanaBlockhashService } from "./solana-blockhash.service";
@@ -241,5 +241,9 @@ export class SolanaService {
 
 	swap(dexSwap: IDexSwap) {
 		return this._raydiumService.swap(dexSwap);
+	}
+
+	wrap(dexWrap: IDexWrap) {
+		return this._raydiumService.wrap(dexWrap);
 	}
 }

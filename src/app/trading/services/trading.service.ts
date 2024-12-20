@@ -14,7 +14,6 @@ import { CryptoService } from "../../libs/crypto";
 import { DateService } from "../../libs/date";
 import { LoggerService } from "../../libs/logger";
 import type { IPrice } from "../../libs/price/interfaces/price.interface";
-import { MIN_MICRO_LAMPORTS, MIN_UNITS } from "../../libs/solana/constant/fee.constant";
 import { CommitmentTypeEnum } from "../../libs/solana/enums/commitment-type.enum";
 import { ISolanaInTransaction } from "../../libs/solana/interfaces/solana-transaction.interface";
 import { SolanaService } from "../../libs/solana/services/solana.service";
@@ -180,8 +179,6 @@ export class TradingService implements OnModuleInit {
 
 			const checkedTransactions: ICheckedTransactions = { [signalMilestone.id]: transaction };
 
-			await this.buy(transaction.poolAddress, trading.price, trading.sourceWallet.secret);
-
 			this.handlePrices(trading, tradingToken, checkedTransactions);
 
 			this._transferSubscribtions[tradingToken.poolAddress]?.next(transaction);
@@ -265,23 +262,39 @@ export class TradingService implements OnModuleInit {
 				}
 
 				pendingMilestone = checkedMilestone;
+				let signature = "";
 
 				if (checkedMilestone.type === MilestoneTypeEnum.BUY) {
-					this.buy(transaction.poolAddress, trading.price, trading.sourceWallet.secret).then();
+					signature = await this.buy(
+						tradingToken.poolAddress,
+						trading.price,
+						trading.sourceWallet.secret,
+						trading.microLamports,
+						trading.units
+					);
 				}
 
 				if (checkedMilestone.type === MilestoneTypeEnum.SELL) {
-					this.sell(transaction.poolAddress, trading.sourceWallet.secret).then();
+					signature = await this.sell(
+						tradingToken.poolAddress,
+						trading.sourceWallet.secret,
+						trading.microLamports,
+						trading.units
+					);
 				}
 
-				this._eventsService.emit(EventsEnum.MILESTONE_CHECKED, { tradingToken, milestone: checkedMilestone }, true);
+				this._eventsService.emit(
+					EventsEnum.MILESTONE_CHECKED,
+					{ tradingToken, milestone: checkedMilestone, signature },
+					true
+				);
 
 				break;
 			}
 		});
 	}
 
-	buy(poolAddress: string, price: IPrice, cryptedSecret: string) {
+	buy(poolAddress: string, price: IPrice, cryptedSecret: string, microLamports: number, units: number) {
 		const secret = this._cryptoService.decrypt(cryptedSecret);
 		const poolKeys = this._poolKeys[poolAddress];
 		const owner = Keypair.fromSecretKey(bs58.decode(secret));
@@ -296,8 +309,8 @@ export class TradingService implements OnModuleInit {
 			from: poolKeys.baseMint,
 			to: poolKeys.quoteMint,
 			amount: price.toNumber(),
-			microLamports: MIN_MICRO_LAMPORTS,
-			units: MIN_UNITS,
+			microLamports,
+			units,
 			skipPreflight: true,
 			preflightCommitment: "processed",
 			maxRetries: 1,
@@ -306,7 +319,7 @@ export class TradingService implements OnModuleInit {
 		});
 	}
 
-	sell(poolAddress: string, cryptedSecret: string) {
+	sell(poolAddress: string, cryptedSecret: string, microLamports: number, units: number) {
 		const secret = this._cryptoService.decrypt(cryptedSecret);
 		const poolKeys = this._poolKeys[poolAddress];
 		const amount = this._tokens[poolAddress];
@@ -322,8 +335,8 @@ export class TradingService implements OnModuleInit {
 			from: poolKeys.quoteMint,
 			to: poolKeys.baseMint,
 			amount,
-			microLamports: MIN_MICRO_LAMPORTS,
-			units: MIN_UNITS,
+			microLamports,
+			units,
 			skipPreflight: true,
 			preflightCommitment: "processed",
 			maxRetries: 1,

@@ -366,12 +366,14 @@ type TradingEntity {
   createdAt: DateTime!
   disabled: Boolean!
   id: ID!
+  microLamports: Float
   price: IPrice!
   sourceWallet: WalletEntity!
   strategy: StrategyEntity!
   targetWallet: WalletEntity!
   tokenTradingDuration: Float
   tradingTokens: [TradingTokenEntity!]
+  units: Float
   updatedAt: DateTime!
 }
 
