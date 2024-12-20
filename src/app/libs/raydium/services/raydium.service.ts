@@ -54,6 +54,14 @@ export class RaydiumService implements IDex {
 		const tokenInAccount = getAssociatedTokenAddressSync(from, owner.publicKey);
 		const tokenOutAccount = getAssociatedTokenAddressSync(to, owner.publicKey);
 
+		console.log({
+			owner: owner.publicKey,
+			from,
+			to,
+			tokenInAccount,
+			tokenOutAccount
+		});
+
 		const instructions: TransactionInstruction[] = [
 			ComputeBudgetProgram.setComputeUnitPrice({ microLamports }),
 			ComputeBudgetProgram.setComputeUnitLimit({ units }),

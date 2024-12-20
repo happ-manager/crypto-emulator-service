@@ -265,6 +265,8 @@ export class TradingService implements OnModuleInit {
 				let signature = "";
 
 				if (checkedMilestone.type === MilestoneTypeEnum.BUY) {
+					console.log("START BUY", trading.microLamports, trading.units);
+
 					signature = await this.buy(
 						tradingToken.poolAddress,
 						trading.price,
@@ -275,6 +277,8 @@ export class TradingService implements OnModuleInit {
 				}
 
 				if (checkedMilestone.type === MilestoneTypeEnum.SELL) {
+					console.log("START SELL", trading.microLamports, trading.units);
+
 					signature = await this.sell(
 						tradingToken.poolAddress,
 						trading.sourceWallet.secret,
@@ -282,6 +286,8 @@ export class TradingService implements OnModuleInit {
 						trading.units
 					);
 				}
+
+				console.log({ signature });
 
 				this._eventsService.emit(
 					EventsEnum.MILESTONE_CHECKED,

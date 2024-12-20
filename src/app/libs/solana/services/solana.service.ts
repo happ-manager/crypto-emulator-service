@@ -13,7 +13,7 @@ import { FilesService } from "../../files";
 import { HeliusService } from "../../helius/services/helius.service";
 import { RaydiumService } from "../../raydium/services/raydium.service";
 import { INIT_LOG, TRANSFER_LOG } from "../constant/logs.constant";
-import { PUMFUN_WALLET, RADIUM_WALLET, SPL_TOKEN_PROGRAM, WSOL_WALLET } from "../constant/wallets.constant";
+import { PUMFUN_WALLET, RADIUM_WALLET, WSOL_WALLET } from "../constant/wallets.constant";
 import type { CommitmentTypeEnum } from "../enums/commitment-type.enum";
 import type { IDexSwap, IDexWrap } from "../interfaces/dex.interface";
 import { ISolanaMessage } from "../interfaces/solana-message.interface";
@@ -86,10 +86,9 @@ export class SolanaService {
 		let poolAddress = null;
 		let walletAddress = null;
 		let isPumpFun = true;
-		let tokenMint = null;
 
 		for (const instruction of instructions) {
-			const { accounts = [], parsed, programId } = instruction;
+			const { accounts = [], parsed } = instruction;
 			const { amount, authority, source } = parsed?.info || {};
 
 			if (amount) {
@@ -124,15 +123,6 @@ export class SolanaService {
 					// eslint-disable-next-line prefer-destructuring
 					poolAddress = accounts[4];
 				}
-
-				if (!tokenMint && programId === SPL_TOKEN_PROGRAM) {
-					if (parsed?.type === "initializeMint") {
-						tokenMint = parsed.info.mint;
-					} else if (accounts.length > 1) {
-						// eslint-disable-next-line prefer-destructuring
-						tokenMint = accounts[1];
-					}
-				}
 			}
 		}
 
@@ -146,6 +136,8 @@ export class SolanaService {
 		let poolKeys: LiquidityPoolKeysV4;
 
 		let price = this._solanaPriceService.getTokenPrice(prices);
+		let tokenMint = null;
+		let tokenAmount = 0;
 
 		if (initCheck) {
 			const accountKeys = transaction.message.accountKeys.map((accountKey) => accountKey.pubkey);
@@ -188,19 +180,13 @@ export class SolanaService {
 			const secondTokenAmount = Number.parseFloat(secondToken.uiTokenAmount.amount);
 
 			if (firstToken.mint === WSOL_WALLET) {
-				// Рассчитываем цену одного memeToken
-				const wsolTotalValueUSD = firstTokenAmount * this._solanaPriceService.solanaPrice;
-				const memeTokenPriceUSD = wsolTotalValueUSD / secondTokenAmount;
-				price = new Big(memeTokenPriceUSD);
-			} else {
-				// Рассчитываем цену одного memeToken
-				const wsolTotalValueUSD = secondTokenAmount * this._solanaPriceService.solanaPrice;
-				const memeTokenPriceUSD = wsolTotalValueUSD / firstTokenAmount;
-				price = new Big(memeTokenPriceUSD);
+				price = new Big((firstTokenAmount * this._solanaPriceService.solanaPrice) / secondTokenAmount);
+				tokenMint = secondToken.mint;
+			} else if (secondToken.mint === WSOL_WALLET) {
+				price = new Big((secondTokenAmount * this._solanaPriceService.solanaPrice) / firstTokenAmount);
+				tokenMint = firstToken.mint;
 			}
 		}
-
-		let tokenAmount = 0;
 
 		if (transferCheck) {
 			const [sellToken, boughtToken] = transferCheck ? meta.postTokenBalances : [undefined, undefined];
