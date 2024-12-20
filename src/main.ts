@@ -3,7 +3,6 @@ import { NestFactory } from "@nestjs/core";
 
 import { authMiddlewares } from "./app/auth/middlewares";
 import { CoreModule } from "./app/core/core.module";
-import { DelayInterceptor } from "./app/core/interceptors/delay.interceptor";
 import { swagger } from "./app/core/swagger";
 import { environment } from "./environments/environment";
 
@@ -19,8 +18,6 @@ async function bootstrap() {
 
 	authMiddlewares(app);
 	swagger(app);
-
-	app.useGlobalInterceptors(new DelayInterceptor());
 
 	await app.listen(environment.port);
 }

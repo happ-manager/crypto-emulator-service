@@ -4,6 +4,8 @@ import { Injectable } from "@nestjs/common";
 import Big from "big.js";
 import { firstValueFrom } from "rxjs";
 
+const SOLANA_PRICE_INTERVAL = 5000;
+
 @Injectable()
 export class SolanaPriceService implements OnModuleInit {
 	solanaPrice: number = 0;
@@ -11,10 +13,13 @@ export class SolanaPriceService implements OnModuleInit {
 	constructor(private readonly _httpService: HttpService) {}
 
 	onModuleInit() {
-		setTimeout(this.startPriceCheck.bind(this));
+		setTimeout(async () => {
+			this.solanaPrice = await this.getSolanaPrice();
+			this.startPriceCheck();
+		});
 	}
 
-	computeMemeTokenPrice(prices: number[], parsed?: boolean) {
+	getTokenPrice(prices: number[], parsed?: boolean) {
 		const solPercent = parsed ? 1 : 0.000_000_001;
 		const memePercent = parsed ? 1 : 0.000_001;
 
@@ -32,7 +37,17 @@ export class SolanaPriceService implements OnModuleInit {
 		return Big(currentTokenPrice || 0);
 	}
 
-	async fetchSolanaPrice() {
+	startPriceCheck() {
+		setInterval(async () => {
+			const price = await this.getSolanaPrice();
+
+			if (price !== this.solanaPrice) {
+				this.solanaPrice = price;
+			}
+		}, SOLANA_PRICE_INTERVAL);
+	}
+
+	async getSolanaPrice() {
 		const response = await firstValueFrom(
 			this._httpService.get("https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112")
 		);
@@ -42,22 +57,9 @@ export class SolanaPriceService implements OnModuleInit {
 		const solPrice = solanaData[solanaKey]?.price;
 
 		if (!solPrice || solPrice < 10) {
-			// this._loggerService.error("No Solana Price");
 			return 211;
 		}
 
-		if (solPrice) {
-			return solPrice;
-		}
-	}
-
-	async startPriceCheck() {
-		setInterval(async () => {
-			const price = await this.fetchSolanaPrice();
-
-			if (price !== this.solanaPrice) {
-				this.solanaPrice = price;
-			}
-		}, 3000);
+		return solPrice;
 	}
 }

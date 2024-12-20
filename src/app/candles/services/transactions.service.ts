@@ -8,7 +8,7 @@ import { In, Repository } from "typeorm";
 import { EventsEnum } from "../../events/enums/events.enum";
 import { EventsService } from "../../events/services/events.service";
 import { LoggerService } from "../../libs/logger";
-import { ISolanaTransaction } from "../../libs/solana/interfaces/solana-transaction.interface";
+import { ISolanaInTransaction } from "../../libs/solana/interfaces/solana-transaction.interface";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import { TransactionEntity } from "../entities/transaction.entity";
@@ -16,7 +16,7 @@ import type { ITransaction } from "../interfaces/transaction.interface";
 
 @Injectable()
 export class TransactionsService {
-	private readonly _solanaTransactions: ISolanaTransaction[] = [];
+	private readonly _solanaTransactions: ISolanaInTransaction[] = [];
 
 	constructor(
 		@InjectRepository(TransactionEntity) private readonly _transactionsRepository: Repository<TransactionEntity>,
@@ -25,7 +25,7 @@ export class TransactionsService {
 	) {}
 
 	@OnEvent(EventsEnum.SOLANA_TRANSACTION)
-	async onSolanaTransaction(solanaTransaction: ISolanaTransaction) {
+	async onSolanaTransaction(solanaTransaction: ISolanaInTransaction) {
 		this._solanaTransactions.push(solanaTransaction);
 	}
 
@@ -40,7 +40,7 @@ export class TransactionsService {
 			price: solanaTransaction.price?.toString(),
 			date: solanaTransaction.date,
 			poolAddress: solanaTransaction.poolAddress,
-			signature: solanaTransaction.signature
+			signature: solanaTransaction.message.params.result.signature
 		}));
 
 		await this.createTransactions(transactionsToCreate);

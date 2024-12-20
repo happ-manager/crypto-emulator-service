@@ -39,7 +39,7 @@ export class LoggerService implements NestLoggerService, OnModuleInit {
 		this.logger = winston.createLogger({
 			level: "info",
 			format: logFormat,
-			transports: fileTransports
+			transports: [consoleTransport]
 		});
 	}
 

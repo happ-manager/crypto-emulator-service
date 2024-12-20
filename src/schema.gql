@@ -68,10 +68,6 @@ input CreateConditionDto {
   id: ID!
 }
 
-input CreateCredentialDto {
-  solscanHeaders: String!
-}
-
 input CreateMilestoneDto {
   id: ID!
 }
@@ -158,7 +154,6 @@ type Mutation {
   createChannel(channel: CreateChannelDto!): ChannelEntity!
   createCondition(condition: CreateConditionDto!): ConditionEntity!
   createConditionsGroup(conditionsGroup: CreateConditionDto!): ConditionsGroupEntity!
-  createCredential(credential: CreateCredentialDto!): CredentialEntity!
   createMilestone(milestone: CreateMilestoneDto!): MilestoneEntity!
   createSignal(signal: CreateSignalDto!): SignalEntity!
   createStrategy(strategy: CreateStrategyDto!): StrategyEntity!
@@ -172,7 +167,6 @@ type Mutation {
   deleteChannel(id: String!): Void!
   deleteCondition(id: String!): Void!
   deleteConditionsGroup(id: String!): Void!
-  deleteCredential(id: String!): Void!
   deleteMilestone(id: String!): Void!
   deleteSignal(id: String!): Void!
   deleteStrategy(id: String!): Void!
@@ -192,7 +186,6 @@ type Mutation {
   updateChannel(channel: UpdateChannelDto!): ChannelEntity!
   updateCondition(condition: UpdateConditionDto!): ConditionEntity!
   updateConditionsGroup(conditionsGroup: UpdateConditionDto!): ConditionsGroupEntity!
-  updateCredential(credential: UpdateCredentialDto!): CredentialEntity!
   updateMilestone(milestone: UpdateMilestoneDto!): MilestoneEntity!
   updateSignal(signal: UpdateSignalDto!): SignalEntity!
   updateStrategy(strategy: UpdateStrategyDto!): StrategyEntity!
@@ -225,12 +218,6 @@ type PaginatedConditions {
 
 type PaginatedConditionsGroups {
   data: [ConditionsGroupEntity!]!
-  page: Int!
-  totalCount: Int!
-}
-
-type PaginatedCredentials {
-  data: [CredentialEntity!]!
   page: Int!
   totalCount: Int!
 }
@@ -298,8 +285,6 @@ type Query {
   conditions(skip: Int, take: Int): PaginatedConditions!
   conditionsGroup(id: ID!): ConditionsGroupEntity!
   conditionsGroups(skip: Int, take: Int): PaginatedConditionsGroups!
-  credential(id: ID!): CredentialEntity!
-  credentials(skip: Int, take: Int): PaginatedCredentials!
   getConditionField: [conditionFieldEnum!]!
   getErrors: [errorsEnum!]!
   getGroupOperators: [groupOperatorEnum!]!
@@ -425,10 +410,6 @@ input UpdateChannelDto {
 }
 
 input UpdateConditionDto {
-  id: ID!
-}
-
-input UpdateCredentialDto {
   id: ID!
 }
 

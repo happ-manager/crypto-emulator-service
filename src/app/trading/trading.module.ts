@@ -5,11 +5,9 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { EventsModule } from "../events/events.module";
 import { CryptoModule } from "../libs/crypto";
 import { DateModule } from "../libs/date";
-import { DexToolsModule } from "../libs/dex-tools";
 import { LoggerModule } from "../libs/logger";
 import { SolanaModule } from "../libs/solana";
 import { TelegramModule } from "../libs/telegram";
-import { TrojanModule } from "../libs/trojan";
 import { StrategiesModule } from "../strategies/strategies.module";
 import { TRADING_CONTROLLERS } from "./controllers";
 import { TRADING_ENTITIES } from "./entities";
@@ -22,13 +20,11 @@ import { TRADING_SERVICES } from "./services";
 	imports: [
 		TypeOrmModule.forFeature(TRADING_ENTITIES),
 		TelegramModule.forChild(),
-		DexToolsModule.forChild(),
 		LoggerModule.forChild(),
 		DateModule.forChild(),
-		TrojanModule.forChild(),
 		EventsModule.forChild(),
-		SolanaModule.forChild(),
 		CryptoModule.forChild(),
+		SolanaModule,
 		StrategiesModule,
 		ScheduleModule
 	],

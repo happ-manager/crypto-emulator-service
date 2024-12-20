@@ -2,7 +2,8 @@ import { HttpModule } from "@nestjs/axios";
 import type { DynamicModule } from "@nestjs/common";
 import { Module } from "@nestjs/common";
 import type { Observable } from "rxjs";
-import { first, interval, lastValueFrom, map, race, Subject } from "rxjs";
+import { Subject } from "rxjs";
+import { first, interval, lastValueFrom, map, race } from "rxjs";
 
 import { EventsModule } from "../../events/events.module";
 import { LoggerModule } from "../logger";

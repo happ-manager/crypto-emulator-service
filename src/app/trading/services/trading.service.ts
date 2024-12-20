@@ -1,6 +1,9 @@
 import type { OnModuleInit } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
+import type { LiquidityPoolKeysV4 } from "@raydium-io/raydium-sdk";
+import { Keypair } from "@solana/web3.js";
+import bs58 from "bs58";
 import { Subject } from "rxjs";
 import { v4 } from "uuid";
 
@@ -11,8 +14,9 @@ import { CryptoService } from "../../libs/crypto";
 import { DateService } from "../../libs/date";
 import { LoggerService } from "../../libs/logger";
 import type { IPrice } from "../../libs/price/interfaces/price.interface";
+import { MIN_MICRO_LAMPORTS, MIN_UNITS } from "../../libs/solana/constant/fee.constant";
 import { CommitmentTypeEnum } from "../../libs/solana/enums/commitment-type.enum";
-import { ISolanaTransaction } from "../../libs/solana/interfaces/solana-transaction.interface";
+import { ISolanaInTransaction } from "../../libs/solana/interfaces/solana-transaction.interface";
 import { SolanaService } from "../../libs/solana/services/solana.service";
 import { MilestoneTypeEnum } from "../../strategies/enums/milestone-type.enum";
 import type { IChecked, ICheckedTransactions } from "../../strategies/interfaces/checked.interface";
@@ -35,9 +39,12 @@ export class TradingService implements OnModuleInit {
 		...this._strategiesService.relations.map((relation) => `strategy.${relation}`)
 	];
 
-	private readonly _transactions: Record<string, ISolanaTransaction[]> = {};
-	private readonly _initSubscribtions: Record<string, Subject<ISolanaTransaction>> = {};
-	private readonly _transferSubscribtions: Record<string, Subject<ISolanaTransaction>> = {};
+	private readonly _transactions: Record<string, ISolanaInTransaction[]> = {};
+	private readonly _initSubscribtions: Record<string, Subject<ISolanaInTransaction>> = {};
+	private readonly _transferSubscribtions: Record<string, Subject<ISolanaInTransaction>> = {};
+
+	private readonly _tokens: Record<string, number> = {};
+	private readonly _poolKeys: Record<string, LiquidityPoolKeysV4> = {};
 
 	constructor(
 		private readonly _cryptoService: CryptoService,
@@ -52,7 +59,7 @@ export class TradingService implements OnModuleInit {
 	) {}
 
 	onModuleInit() {
-		// setTimeout(this.init.bind(this), 3000);
+		setTimeout(this.init.bind(this), 3000);
 	}
 
 	async init() {
@@ -73,7 +80,7 @@ export class TradingService implements OnModuleInit {
 	}
 
 	@OnEvent(EventsEnum.SOLANA_TRANSACTION)
-	handleSolanaTransaction(transaction: ISolanaTransaction) {
+	handleSolanaTransaction(transaction: ISolanaInTransaction) {
 		if (transaction.type === TransactionTypeEnum.INIT) {
 			this._initSubscribtions[transaction.walletAddress]?.next(transaction);
 		} else if (transaction.type === TransactionTypeEnum.TRANSFER) {
@@ -91,11 +98,11 @@ export class TradingService implements OnModuleInit {
 			return;
 		}
 
-		this._solanaService.send([], [transaction.poolAddress]);
+		this._solanaService.subscribeTransactions([], [transaction.poolAddress]);
 	}
 
 	on(account: string, transactionType: TransactionTypeEnum) {
-		const subject = new Subject<ISolanaTransaction>();
+		const subject = new Subject<ISolanaInTransaction>();
 
 		let commitmentType: CommitmentTypeEnum;
 
@@ -107,7 +114,7 @@ export class TradingService implements OnModuleInit {
 			commitmentType = CommitmentTypeEnum.CONFIRMED; // Для цен. Только подтверженных
 		}
 
-		this._solanaService.send([account], [], commitmentType);
+		this._solanaService.subscribeTransactions([account], [], commitmentType);
 
 		return subject;
 	}
@@ -156,6 +163,7 @@ export class TradingService implements OnModuleInit {
 				return;
 			}
 
+			this._poolKeys[transaction.poolAddress] = transaction.poolKeys;
 			this._transactions[transaction.poolAddress] = [transaction];
 
 			const tradingToken: ITradingToken = {
@@ -172,7 +180,11 @@ export class TradingService implements OnModuleInit {
 
 			const checkedTransactions: ICheckedTransactions = { [signalMilestone.id]: transaction };
 
+			await this.buy(transaction.poolAddress, trading.price, trading.sourceWallet.secret);
+
 			this.handlePrices(trading, tradingToken, checkedTransactions);
+
+			this._transferSubscribtions[tradingToken.poolAddress]?.next(transaction);
 
 			await this._tradingTokensService.createTradingToken({
 				...tradingToken,
@@ -220,6 +232,8 @@ export class TradingService implements OnModuleInit {
 				}
 
 				pendingMilestone.delayedTransaction = transaction;
+				checkedTransactions[pendingMilestone.id] = transaction;
+				this._tokens[transaction.poolAddress] = transaction.tokenAmount;
 
 				this._eventsService.emit(
 					EventsEnum.MILESTONE_CONFIRMED,
@@ -227,7 +241,6 @@ export class TradingService implements OnModuleInit {
 					true
 				);
 
-				checkedTransactions[pendingMilestone.id] = transaction;
 				pendingMilestone = undefined;
 
 				if (sortedMilestones.length === checkedMilestones.length) {
@@ -270,14 +283,53 @@ export class TradingService implements OnModuleInit {
 
 	buy(poolAddress: string, price: IPrice, cryptedSecret: string) {
 		const secret = this._cryptoService.decrypt(cryptedSecret);
+		const poolKeys = this._poolKeys[poolAddress];
+		const owner = Keypair.fromSecretKey(bs58.decode(secret));
 
-		return this._solanaService.buy(poolAddress, price.toNumber(), secret);
+		if (!poolKeys) {
+			return;
+		}
+
+		return this._solanaService.swap({
+			owner,
+			poolKeys,
+			from: poolKeys.baseMint,
+			to: poolKeys.quoteMint,
+			amount: price.toNumber(),
+			microLamports: MIN_MICRO_LAMPORTS,
+			units: MIN_UNITS,
+			skipPreflight: true,
+			preflightCommitment: "processed",
+			maxRetries: 1,
+			rpc: this._solanaService.rpc,
+			blockhash: this._solanaService.blockhash
+		});
 	}
 
 	sell(poolAddress: string, cryptedSecret: string) {
 		const secret = this._cryptoService.decrypt(cryptedSecret);
+		const poolKeys = this._poolKeys[poolAddress];
+		const amount = this._tokens[poolAddress];
+		const owner = Keypair.fromSecretKey(bs58.decode(secret));
 
-		return this._solanaService.sell(poolAddress, secret);
+		if (!poolKeys || !amount) {
+			return;
+		}
+
+		return this._solanaService.swap({
+			owner,
+			poolKeys,
+			from: poolKeys.quoteMint,
+			to: poolKeys.baseMint,
+			amount,
+			microLamports: MIN_MICRO_LAMPORTS,
+			units: MIN_UNITS,
+			skipPreflight: true,
+			preflightCommitment: "processed",
+			maxRetries: 1,
+			rpc: this._solanaService.rpc,
+			blockhash: this._solanaService.blockhash
+		});
 	}
 
 	unsubscribe(accounts: string[]) {

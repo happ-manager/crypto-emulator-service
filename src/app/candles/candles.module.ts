@@ -3,7 +3,6 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { EventsModule } from "../events/events.module";
 import { DateModule } from "../libs/date";
-import { DexToolsModule } from "../libs/dex-tools";
 import { LoggerModule } from "../libs/logger";
 import { CANDLES_CONTROLLERS } from "./controllers";
 import { CANDLES_ENTITIES } from "./entities";
@@ -15,7 +14,6 @@ import { CANDLES_SERVICES } from "./services";
 @Module({
 	imports: [
 		TypeOrmModule.forFeature(CANDLES_ENTITIES),
-		DexToolsModule.forChild(),
 		EventsModule.forChild(),
 		DateModule.forChild(),
 		LoggerModule.forChild()

@@ -4,7 +4,9 @@ export interface ISolanaMessage {
 	params: {
 		subscription: number;
 		result: TransactionNotificationResult;
+		error?: any;
 	};
+	error?: any;
 }
 
 interface TransactionNotificationResult {
@@ -38,7 +40,7 @@ interface AccountKey {
 	source: string;
 }
 
-interface Instruction {
+export interface Instruction {
 	program?: string;
 	programId: string;
 	parsed?: ParsedInstruction;

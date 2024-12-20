@@ -10,7 +10,7 @@ import { ANALYTICS_SERVICES } from "./services";
 
 @Module({
 	controllers: ANALYTICS_CONTROLLERS,
-	imports: [DateModule.forChild(), ExcelModule.forChild(), LoggerModule.forChild(), SignalsModule, CandlesModule],
+	imports: [DateModule.forChild(), LoggerModule.forChild(), SignalsModule, CandlesModule, ExcelModule],
 	providers: ANALYTICS_SERVICES
 })
 export class AnalyticsModule {}

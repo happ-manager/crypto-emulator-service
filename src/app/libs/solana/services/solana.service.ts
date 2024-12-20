@@ -1,35 +1,47 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
+import type { LiquidityPoolKeysV4 } from "@raydium-io/raydium-sdk";
+import { MAINNET_PROGRAM_ID, Market } from "@raydium-io/raydium-sdk";
+import { PublicKey } from "@solana/web3.js";
+import Big from "big.js";
 
 import { TransactionTypeEnum } from "../../../candles/enums/transaction-type.enum";
 import { EventsEnum } from "../../../events/enums/events.enum";
 import { EventsService } from "../../../events/services/events.service";
 import { DateService } from "../../date";
 import { FilesService } from "../../files";
-import { LoggerService } from "../../logger";
+import { HeliusService } from "../../helius/services/helius.service";
+import { RaydiumService } from "../../raydium/services/raydium.service";
 import { INIT_LOG, TRANSFER_LOG } from "../constant/logs.constant";
 import { PUMFUN_WALLET, RADIUM_WALLET, SPL_TOKEN_PROGRAM, WSOL_WALLET } from "../constant/wallets.constant";
 import type { CommitmentTypeEnum } from "../enums/commitment-type.enum";
-import { SOLANA_CONFIG } from "../injection-tokens/solana-config.injection-token";
-import { ISolanaConfig } from "../interfaces/solana-config.interface";
+import type { IDexSwap } from "../interfaces/dex.interface";
 import { ISolanaMessage } from "../interfaces/solana-message.interface";
-import type { ISolanaTransaction } from "../interfaces/solana-transaction.interface";
+import type { ISolanaInTransaction } from "../interfaces/solana-transaction.interface";
+import { SolanaBlockhashService } from "./solana-blockhash.service";
 import { SolanaPriceService } from "./solana-price.service";
-import { SwapService } from "./swap.service";
 
 @Injectable()
 export class SolanaService {
 	private _accounts = {};
 
 	constructor(
-		@Inject(SOLANA_CONFIG) private readonly _solanaConfig: ISolanaConfig,
 		private readonly _solanaPriceService: SolanaPriceService,
+		private readonly _solanaBlockhashService: SolanaBlockhashService,
 		private readonly _dateService: DateService,
-		private readonly _swapService: SwapService,
-		private readonly _loggerService: LoggerService,
 		private readonly _eventsService: EventsService,
+		private readonly _raydiumService: RaydiumService,
+		private readonly _heliusService: HeliusService,
 		private readonly _filesService: FilesService
 	) {}
+
+	get blockhash() {
+		return this._solanaBlockhashService.blockhash;
+	}
+
+	get rpc() {
+		return this._heliusService;
+	}
 
 	@OnEvent(EventsEnum.SOLANA_PROVIDER_MESSAGE)
 	handleSolanaMessage(message: ISolanaMessage) {
@@ -40,6 +52,11 @@ export class SolanaService {
 		}
 
 		const { meta, transaction } = message.params.result.transaction;
+
+		if (meta.err) {
+			return;
+		}
+
 		const instructions = [
 			...(transaction.message?.instructions || []),
 			...(meta?.innerInstructions?.flatMap((inner) => inner.instructions) || [])
@@ -68,7 +85,7 @@ export class SolanaService {
 
 		let poolAddress = null;
 		let walletAddress = null;
-		let isPumpFun = false;
+		let isPumpFun = true;
 		let tokenMint = null;
 
 		for (const instruction of instructions) {
@@ -126,8 +143,72 @@ export class SolanaService {
 			return;
 		}
 
-		const price = this._solanaPriceService.computeMemeTokenPrice(prices);
-		const body: ISolanaTransaction = {
+		let poolKeys: LiquidityPoolKeysV4;
+
+		let price = this._solanaPriceService.getTokenPrice(prices);
+
+		if (initCheck) {
+			const accountKeys = transaction.message.accountKeys.map((accountKey) => accountKey.pubkey);
+			poolKeys = {
+				id: new PublicKey(accountKeys[2]),
+				baseMint: new PublicKey(accountKeys[13]),
+				quoteMint: new PublicKey(accountKeys[18]),
+				lpMint: new PublicKey(accountKeys[4]),
+				programId: new PublicKey(accountKeys[15]),
+				authority: new PublicKey(accountKeys[17]),
+				openOrders: new PublicKey(accountKeys[3]),
+				targetOrders: new PublicKey(accountKeys[7]),
+				baseVault: new PublicKey(accountKeys[5]),
+				quoteVault: new PublicKey(accountKeys[6]),
+				withdrawQueue: new PublicKey("11111111111111111111111111111111"),
+				lpVault: new PublicKey("11111111111111111111111111111111"),
+				marketProgramId: MAINNET_PROGRAM_ID.OPENBOOK_MARKET,
+				marketId: new PublicKey(accountKeys[21]),
+				marketAuthority: Market.getAssociatedAuthority({
+					programId: MAINNET_PROGRAM_ID.OPENBOOK_MARKET,
+					marketId: new PublicKey(accountKeys[21])
+				}).publicKey,
+				marketBaseVault: new PublicKey(accountKeys[5]),
+				marketQuoteVault: new PublicKey(accountKeys[6]),
+				marketBids: new PublicKey(accountKeys[7]),
+				marketAsks: new PublicKey(accountKeys[7]),
+				marketEventQueue: new PublicKey("11111111111111111111111111111111"),
+				lookupTableAccount: new PublicKey("11111111111111111111111111111111"),
+				baseDecimals: 9,
+				quoteDecimals: 6,
+				lpDecimals: 9,
+				version: 4,
+				marketVersion: 3
+			};
+
+			const [firstToken, secondToken] = meta.postTokenBalances;
+
+			// Достаём значения балансов
+			const firstTokenAmount = Number.parseFloat(firstToken.uiTokenAmount.amount);
+			const secondTokenAmount = Number.parseFloat(secondToken.uiTokenAmount.amount);
+
+			if (firstToken.mint === WSOL_WALLET) {
+				// Рассчитываем цену одного memeToken
+				const wsolTotalValueUSD = firstTokenAmount * this._solanaPriceService.solanaPrice;
+				const memeTokenPriceUSD = wsolTotalValueUSD / secondTokenAmount;
+				price = new Big(memeTokenPriceUSD);
+			} else {
+				// Рассчитываем цену одного memeToken
+				const wsolTotalValueUSD = secondTokenAmount * this._solanaPriceService.solanaPrice;
+				const memeTokenPriceUSD = wsolTotalValueUSD / firstTokenAmount;
+				price = new Big(memeTokenPriceUSD);
+			}
+		}
+
+		let tokenAmount = 0;
+
+		if (transferCheck) {
+			const [sellToken, boughtToken] = transferCheck ? meta.postTokenBalances : [undefined, undefined];
+			tokenAmount =
+				sellToken.mint === WSOL_WALLET ? boughtToken.uiTokenAmount?.uiAmount : sellToken.uiTokenAmount?.uiAmount;
+		}
+
+		const body: ISolanaInTransaction = {
 			type,
 			price,
 			walletAddress,
@@ -136,30 +217,16 @@ export class SolanaService {
 			authories,
 			prices,
 			tokenMint,
-			signature: message?.params?.result?.signature
+			tokenAmount,
+			poolKeys,
+			message
 		};
 
 		this._eventsService.emit(EventsEnum.SOLANA_TRANSACTION, body);
 	}
 
-	async buy(pollAddress: string, price: number, secret: string) {
-		try {
-			return await this._swapService.buyToken(pollAddress, price, secret);
-		} catch (error) {
-			this._loggerService.error(error, "buy");
-		}
-	}
-
-	async sell(pollAddress: string, secret: string) {
-		try {
-			return await this._swapService.sellToken(pollAddress, secret);
-		} catch (error) {
-			this._loggerService.error(error, "sell");
-		}
-	}
-
-	send(accountInclude: string[], accountExclude: string[], commitmentType?: CommitmentTypeEnum) {
-		this._solanaConfig.provider.send(accountInclude, accountExclude, commitmentType);
+	subscribeTransactions(accountInclude: string[], accountExclude: string[], commitmentType?: CommitmentTypeEnum) {
+		this._heliusService.subscribeTransactions(accountInclude, accountExclude, commitmentType);
 
 		this._eventsService.emit(EventsEnum.SOLANA_SEND, { accountInclude, accountExclude, commitmentType }, true);
 
@@ -172,7 +239,7 @@ export class SolanaService {
 		}
 	}
 
-	getTransactions(pollAddress: string, signature?: string) {
-		return this._solanaConfig.provider.getTransactions(pollAddress, signature);
+	swap(dexSwap: IDexSwap) {
+		return this._raydiumService.swap(dexSwap);
 	}
 }
