@@ -8,15 +8,15 @@ import { In, Repository } from "typeorm";
 import { EventsEnum } from "../../events/enums/events.enum";
 import { EventsService } from "../../events/services/events.service";
 import { LoggerService } from "../../libs/logger";
-import { ISolanaInTransaction } from "../../libs/solana/interfaces/solana-transaction.interface";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
+import { ITradingTransaction } from "../../trading/interfaces/trading-transaction.interface";
 import { TransactionEntity } from "../entities/transaction.entity";
 import type { ITransaction } from "../interfaces/transaction.interface";
 
 @Injectable()
 export class TransactionsService {
-	private readonly _solanaTransactions: ISolanaInTransaction[] = [];
+	private readonly _tradingTransactions: ITradingTransaction[] = [];
 
 	constructor(
 		@InjectRepository(TransactionEntity) private readonly _transactionsRepository: Repository<TransactionEntity>,
@@ -24,23 +24,23 @@ export class TransactionsService {
 		private readonly _loggerService: LoggerService
 	) {}
 
-	@OnEvent(EventsEnum.SOLANA_TRANSACTION)
-	async onSolanaTransaction(solanaTransaction: ISolanaInTransaction) {
-		this._solanaTransactions.push(solanaTransaction);
+	@OnEvent(EventsEnum.TRADING_TRANSACTION)
+	async onTradingTransaction(tradignTransaction: ITradingTransaction) {
+		this._tradingTransactions.push(tradignTransaction);
 	}
 
 	@Cron("*/5 * * * * *") // Это выражение cron для запуска каждые 5 секунд
-	async handleSolanaTransactions() {
-		if (this._solanaTransactions.length === 0) {
+	async handleTradingTransactions() {
+		if (this._tradingTransactions.length === 0) {
 			return;
 		}
 
-		const solanaTransactions = this._solanaTransactions.splice(0, this._solanaTransactions.length);
-		const transactionsToCreate: DeepPartial<ITransaction>[] = solanaTransactions.map((solanaTransaction) => ({
-			price: solanaTransaction.price?.toString(),
-			date: solanaTransaction.date,
-			poolAddress: solanaTransaction.poolAddress,
-			signature: solanaTransaction.message.params.result.signature
+		const tradingTransactions = this._tradingTransactions.splice(0, this._tradingTransactions.length);
+		const transactionsToCreate: DeepPartial<ITransaction>[] = tradingTransactions.map((tradingTransaction) => ({
+			price: tradingTransaction.tokenPrice,
+			date: tradingTransaction.date,
+			poolAddress: tradingTransaction.poolAddress,
+			signature: tradingTransaction.signature
 		}));
 
 		await this.createTransactions(transactionsToCreate);

@@ -1,9 +1,10 @@
 import bs58 from "bs58";
+import type { Instruction } from "helius-sdk";
 
-import type { Instruction } from "../../solana/interfaces/solana-message.interface";
+import { CREATE_POOL_STRUCT } from "../constants/structs";
 
 // Типы для декодированных инструкций
-interface IDecodedInstruction {
+export interface IDecodedInstruction {
 	instructionType: number;
 	details: Record<string, any>;
 }
@@ -14,6 +15,8 @@ export function decodeInstruction(instruction: Instruction): IDecodedInstruction
 	}
 
 	const decodedData = bs58.decode(instruction.data);
+	const buffer = Buffer.from(decodedData);
+
 	const [instructionType] = decodedData;
 	let details: Record<string, any> = {};
 
@@ -25,12 +28,8 @@ export function decodeInstruction(instruction: Instruction): IDecodedInstruction
 			};
 			break;
 		case 1: // Create Pool
-			details = {
-				nonce: decodedData[1],
-				openTime: decodedData.slice(2, 10),
-				coinAmount: decodedData.slice(10, 18),
-				pcAmount: decodedData.slice(18, 26)
-			};
+			details = CREATE_POOL_STRUCT.decode(buffer);
+
 			break;
 		case 3: // Add Liquidity
 			details = {

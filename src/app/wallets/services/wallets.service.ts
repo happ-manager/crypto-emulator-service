@@ -79,8 +79,7 @@ export class WalletsService {
 
 			const signature = await this._solanaService.wrap({
 				amount,
-				owner,
-				rpc: this._solanaService.rpc
+				owner
 			});
 
 			return { signature };

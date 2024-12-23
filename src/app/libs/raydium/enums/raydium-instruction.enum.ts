@@ -7,3 +7,6 @@ export enum RaydiumInstruction {
 	"SWAP_FIXED_OUT" = 11,
 	"SIMULATE_POOL" = 12
 }
+
+export const SWAP_INSTRUCTIONS = [RaydiumInstruction.SWAP_FIXED_IN, RaydiumInstruction.SWAP_FIXED_OUT];
+export const INIT_INSTRUCTIONS = [RaydiumInstruction.INIT_POOL, RaydiumInstruction.CREATE_POOL];

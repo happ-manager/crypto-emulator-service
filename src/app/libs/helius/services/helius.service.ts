@@ -13,7 +13,7 @@ import { LoggerService } from "../../logger";
 import type { CommitmentTypeEnum } from "../../solana/enums/commitment-type.enum";
 import type { IRpc } from "../../solana/interfaces/rpc.interface";
 import type { ISolanaMessage } from "../../solana/interfaces/solana-message.interface";
-import type { ISolanaOutTransaction } from "../../solana/interfaces/solana-transaction.interface";
+import type { ISolanaTransaction } from "../../solana/interfaces/solana-transaction.interface";
 import { HELIUS_CONFIG } from "../injection-tokens/helius-config.injection-token";
 import { IHeliusConfig } from "../interfaces/helius-config.interface";
 import { HeliusApiService } from "./helius-api.service";
@@ -33,7 +33,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 	) {}
 
 	onModuleInit() {
-		setTimeout(this.init.bind(this));
+		// setTimeout(this.init.bind(this));
 	}
 
 	init() {
@@ -50,7 +50,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 				this._ws.ping();
 			}, 30_000);
 
-			this._eventsService.emit(EventsEnum.SOLANA_PROVIDER_OPEN);
+			this._eventsService.emit(EventsEnum.HELIUS_OPEN);
 		});
 		this._ws.on("message", async (messageBuffer: WebSocket.Data) => {
 			const message: ISolanaMessage = JSON.parse(messageBuffer.toString());
@@ -62,17 +62,17 @@ export class HeliusService implements OnModuleInit, IRpc {
 				return;
 			}
 
-			this._eventsService.emit(EventsEnum.SOLANA_PROVIDER_MESSAGE, message);
+			this._eventsService.emit(EventsEnum.HELIUS_MESSAGE, message);
 		});
 		this._ws.on("error", (error) => {
 			this._loggerService.error(`Ошибка WebSocket: ${error.message}`, "init");
 
-			this._eventsService.emit(EventsEnum.SOLANA_PROVIDER_ERROR, error);
+			this._eventsService.emit(EventsEnum.HELIUS_ERROR, error);
 		});
 		this._ws.on("close", (err) => {
 			this._loggerService.error(err.toString(), "WebSocket соединение закрыто");
 
-			this._eventsService.emit(EventsEnum.SOLANA_PROVIDER_CLOSE);
+			this._eventsService.emit(EventsEnum.HELIUS_CLOSE);
 
 			setTimeout(this.init.bind(this), 2000);
 		});
@@ -118,7 +118,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 		});
 	}
 
-	sendTransaction(transaction: ISolanaOutTransaction, options?: HeliusSendOptions): Promise<TransactionSignature> {
+	sendTransaction(transaction: ISolanaTransaction, options?: HeliusSendOptions): Promise<TransactionSignature> {
 		return this.helius.rpc.sendTransaction(transaction, options);
 	}
 }

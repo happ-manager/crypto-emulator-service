@@ -5,6 +5,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { EventsModule } from "../events/events.module";
 import { CryptoModule } from "../libs/crypto";
 import { DateModule } from "../libs/date";
+import { FilesModule } from "../libs/files";
 import { LoggerModule } from "../libs/logger";
 import { SolanaModule } from "../libs/solana";
 import { TelegramModule } from "../libs/telegram";
@@ -21,6 +22,7 @@ import { TRADING_SERVICES } from "./services";
 		TypeOrmModule.forFeature(TRADING_ENTITIES),
 		TelegramModule.forChild(),
 		LoggerModule.forChild(),
+		FilesModule.forChild(),
 		DateModule.forChild(),
 		EventsModule.forChild(),
 		CryptoModule.forChild(),
