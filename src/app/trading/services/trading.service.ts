@@ -14,7 +14,6 @@ import { EventsEnum } from "../../events/enums/events.enum";
 import { EventsService } from "../../events/services/events.service";
 import { CryptoService } from "../../libs/crypto";
 import { DateService } from "../../libs/date";
-import { FilesService } from "../../libs/files";
 import { LoggerService } from "../../libs/logger";
 import type { RaydiumInstruction } from "../../libs/raydium/enums/raydium-instruction.enum";
 import { INIT_INSTRUCTIONS, SWAP_INSTRUCTIONS } from "../../libs/raydium/enums/raydium-instruction.enum";
@@ -61,8 +60,7 @@ export class TradingService implements OnModuleInit {
 		private readonly _checkStrategiesService: CheckStrategyService,
 		private readonly _dateService: DateService,
 		private readonly _loggerService: LoggerService,
-		private readonly _eventsService: EventsService,
-		private readonly _filesService: FilesService
+		private readonly _eventsService: EventsService
 	) {}
 
 	onModuleInit() {
@@ -205,8 +203,6 @@ export class TradingService implements OnModuleInit {
 			}
 
 			if (SWAP_INSTRUCTIONS.includes(type)) {
-				this._filesService.appendToFile("transactions.json", `${JSON.stringify(message)},\n`);
-
 				poolAddress = instruction.accounts[1];
 
 				if (!this._swapSubjects[poolAddress]) {
