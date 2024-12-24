@@ -5,13 +5,12 @@ import type { Observable } from "rxjs";
 import { first, interval, lastValueFrom, map, race, Subject } from "rxjs";
 
 import { EventsModule } from "../../events/events.module";
-import { TelegramModule } from "../telegram";
 import { TROJAN_CONFIG } from "./injection-tokens/trojan-config.injection-token";
 import type { ITrojanConfig } from "./interfaces/trojan-config.interface";
 import { TROJAN_SERVICES } from "./services";
 
 @Module({
-	imports: [HttpModule, EventsModule.forChild(), TelegramModule.forChild()],
+	imports: [HttpModule, EventsModule.forChild()],
 	providers: TROJAN_SERVICES,
 	exports: TROJAN_SERVICES
 })

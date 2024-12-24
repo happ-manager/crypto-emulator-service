@@ -4,7 +4,6 @@ import { environment } from "src/environments/environment";
 
 import { CANDLES_ENTITIES } from "../../candles/entities";
 import { CHANNELS_ENTITIES } from "../../channels/entities";
-import { CREDENTIALS_ENTITIES } from "../../credentials/entities";
 import { SIGNALS_ENTITIES } from "../../signals/entities";
 import { STRATEGIES_ENTITIES } from "../../strategies/entities";
 import { TOKENS_ENTITIES } from "../../tokens/entities";
@@ -22,7 +21,6 @@ export const TYPEORM_CONFIG: TypeOrmModuleOptions = {
 	database: environment.database.name,
 	entities: [
 		...USERS_ENTITIES,
-		...CREDENTIALS_ENTITIES,
 		...CHANNELS_ENTITIES,
 		...TOKENS_ENTITIES,
 		...TRADING_ENTITIES,

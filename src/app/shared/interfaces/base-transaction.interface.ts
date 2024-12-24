@@ -4,4 +4,5 @@ import type { IPrice } from "../../libs/price/interfaces/price.interface";
 export interface IBaseTransaction {
 	date: IDate;
 	price: IPrice;
+	author: string;
 }

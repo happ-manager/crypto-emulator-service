@@ -14,6 +14,7 @@ import { EventsEnum } from "../../events/enums/events.enum";
 import { EventsService } from "../../events/services/events.service";
 import { CryptoService } from "../../libs/crypto";
 import { DateService } from "../../libs/date";
+import { FilesService } from "../../libs/files";
 import { LoggerService } from "../../libs/logger";
 import type { RaydiumInstruction } from "../../libs/raydium/enums/raydium-instruction.enum";
 import { INIT_INSTRUCTIONS, SWAP_INSTRUCTIONS } from "../../libs/raydium/enums/raydium-instruction.enum";
@@ -60,7 +61,8 @@ export class TradingService implements OnModuleInit {
 		private readonly _checkStrategiesService: CheckStrategyService,
 		private readonly _dateService: DateService,
 		private readonly _loggerService: LoggerService,
-		private readonly _eventsService: EventsService
+		private readonly _eventsService: EventsService,
+		private readonly _filesService: FilesService
 	) {}
 
 	onModuleInit() {
@@ -131,6 +133,24 @@ export class TradingService implements OnModuleInit {
 		let authority: string;
 		let baseMint: string;
 		let quoteMint: string;
+		let author: string;
+		let isPumpFun: boolean;
+
+		for (const accountKey of transaction.message.accountKeys) {
+			if (accountKey.signer) {
+				author = accountKey.pubkey;
+				if (isPumpFun) {
+					break;
+				}
+			}
+
+			if (accountKey.pubkey === PUMFUN_WALLET) {
+				isPumpFun = true;
+				if (author) {
+					break;
+				}
+			}
+		}
 
 		for (const instruction of instructions) {
 			if (instruction.programId !== RAYDIUM_WALLET || !instruction.data) {
@@ -140,11 +160,10 @@ export class TradingService implements OnModuleInit {
 			const [type] = bs58.decode(instruction.data);
 
 			if (INIT_INSTRUCTIONS.includes(type)) {
-				const isPumpFun = transaction.message.accountKeys.find(({ pubkey }) => pubkey === PUMFUN_WALLET);
-
 				if (!isPumpFun) {
 					return;
 				}
+
 				instructionType = type;
 				poolAddress = instruction.accounts[4];
 				authority = instruction.accounts[5];
@@ -186,6 +205,8 @@ export class TradingService implements OnModuleInit {
 			}
 
 			if (SWAP_INSTRUCTIONS.includes(type)) {
+				this._filesService.appendToFile("transactions.json", `${JSON.stringify(message)},\n`);
+
 				poolAddress = instruction.accounts[1];
 
 				if (!this._swapSubjects[poolAddress]) {
@@ -279,6 +300,7 @@ export class TradingService implements OnModuleInit {
 			baseChange,
 			quoteChange,
 			date,
+			author,
 			price: new Big(quotePrice),
 			signature
 		};
@@ -335,6 +357,8 @@ export class TradingService implements OnModuleInit {
 			this.handleSwap(trading, tradingToken, checkedTransactions);
 
 			this._swapSubjects[poolAddress].next(transaction);
+
+			this._eventsService.emit(EventsEnum.SIGNALED, { trading, transaction }, true);
 
 			await this._tradingTokensService.createTradingToken({
 				...tradingToken,

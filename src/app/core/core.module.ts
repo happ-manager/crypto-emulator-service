@@ -20,7 +20,6 @@ import { HeliusModule } from "../libs/helius";
 import { JwtModule } from "../libs/jwt";
 import { LoggerModule } from "../libs/logger";
 import { PriceModule } from "../libs/price";
-import { TelegramModule } from "../libs/telegram";
 import { LoadersModule } from "../loaders/loaders.module";
 import { SHARED_RESOLVERS } from "../shared/resolvers";
 import { SignalsModule } from "../signals/signals.module";
@@ -41,7 +40,6 @@ import { JWT_CONFIG } from "./configs/jwt.config";
 import { LOGGER_CONFIG } from "./configs/logger.config";
 import { PRICE_CONFIG } from "./configs/price.config";
 import { SERVER_STATIC_CONFIG } from "./configs/server-static.config";
-import { TELEGRAM_CONFIG } from "./configs/telegram.config";
 import { TYPEORM_CONFIG } from "./configs/typeorm.config";
 
 @Module({
@@ -54,7 +52,6 @@ import { TYPEORM_CONFIG } from "./configs/typeorm.config";
 		DevtoolsModule.register(DEV_TOOLS_CONFIG),
 		DexToolsModule.forRoot(DEX_TOOLS_CONFIG),
 		ScheduleModule.forRoot(),
-		TelegramModule.forRoot(TELEGRAM_CONFIG),
 		LoggerModule.forRoot(LOGGER_CONFIG),
 		FilesModule.forRoot(FILES_CONFIG),
 		DateModule.forRoot(DATE_CONFIG),

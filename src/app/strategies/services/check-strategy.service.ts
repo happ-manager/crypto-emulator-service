@@ -130,12 +130,25 @@ export class CheckStrategyService {
 		for (const transaction of transactions) {
 			let transactionValue: number;
 
-			if (condition.field === ConditionFieldEnum.DATE) {
-				transactionValue = transaction.date.unix() - refTransaction.date.unix();
-			} else if (condition.field === ConditionFieldEnum.PRICE) {
-				transactionValue = isPercent
-					? transaction.price.percentDiff(refTransaction.price).toNumber()
-					: transaction.price.minus(refTransaction.price).toNumber();
+			switch (condition.field) {
+				case ConditionFieldEnum.DATE: {
+					transactionValue = transaction.date.unix() - refTransaction.date.unix();
+
+					break;
+				}
+				case ConditionFieldEnum.PRICE: {
+					transactionValue = isPercent
+						? transaction.price.percentDiff(refTransaction.price).toNumber()
+						: transaction.price.minus(refTransaction.price).toNumber();
+
+					break;
+				}
+				case ConditionFieldEnum.AUTHOR: {
+					transactionValue = transaction.author as any as number; // TODO: Check types
+
+					break;
+				}
+				// No default
 			}
 
 			const isChecked = getOperatorValue(transactionValue, conditioValue, condition.operator);

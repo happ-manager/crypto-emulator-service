@@ -1,4 +1,5 @@
 export enum ConditionFieldEnum {
 	PRICE = "PRICE",
-	DATE = "DATE"
+	DATE = "DATE",
+	AUTHOR = "AUTHOR"
 }

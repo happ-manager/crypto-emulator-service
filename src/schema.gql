@@ -105,14 +105,6 @@ input CreateWalletDto {
   address: String!
 }
 
-type CredentialEntity {
-  createdAt: DateTime!
-  id: ID!
-  name: String!
-  solscanHeaders: String!
-  updatedAt: DateTime!
-}
-
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
@@ -394,6 +386,7 @@ type TradingTokenEntity {
 }
 
 type TransactionEntity {
+  author: String
   candle: CandleEntity
   createdAt: DateTime!
   date: IDate!
@@ -481,6 +474,7 @@ type WalletEntity {
 }
 
 enum conditionFieldEnum {
+  AUTHOR
   DATE
   PRICE
 }
@@ -526,6 +520,7 @@ enum milestoneTypeEnum {
 }
 
 enum operatorEnum {
+  EQUAL
   LESS
   LESS_EQUAL
   MORE

@@ -14,6 +14,9 @@ export function getOperatorValue(firstValue: number, secondValue: number, operat
 		case OperatorEnum.LESS_EQUAL: {
 			return firstValue >= secondValue;
 		}
+		case OperatorEnum.EQUAL: {
+			return firstValue === secondValue;
+		}
 		// No default
 	}
 

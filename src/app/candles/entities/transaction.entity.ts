@@ -35,6 +35,10 @@ export class TransactionEntity extends BaseEntity implements ITransaction {
 	@Column({ nullable: true })
 	signature: string;
 
+	@Field({ nullable: true })
+	@Column({ nullable: true })
+	author: string;
+
 	@Field(() => TransactionTypeEnum)
 	@Column("enum", { enum: TransactionTypeEnum, nullable: true })
 	type: TransactionTypeEnum;
