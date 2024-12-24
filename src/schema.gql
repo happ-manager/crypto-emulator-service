@@ -378,14 +378,16 @@ type TradingEntity {
 }
 
 type TradingTokenEntity {
+  baseMint: String!
+  basePrice: IPrice!
   checkedStrategy: JSON
   createdAt: DateTime!
   id: ID!
   poolAddress: String!
-  price: IPrice!
+  quoteMint: String!
+  quotePrice: IPrice!
   signaledAt: IDate!
   token: TokenEntity
-  tokenMint: String!
   trading: TradingEntity!
   updatedAt: DateTime!
   walletAddress: String!

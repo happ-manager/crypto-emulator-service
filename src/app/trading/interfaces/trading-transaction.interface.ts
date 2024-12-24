@@ -1,18 +1,17 @@
 import type { LiquidityPoolKeysV4 } from "@raydium-io/raydium-sdk";
 
-import type { IDate } from "../../libs/date/interfaces/date.interface";
+import type { RaydiumInstruction } from "../../libs/raydium/enums/raydium-instruction.enum";
 import type { IBaseTransaction } from "../../shared/interfaces/base-transaction.interface";
 
 export interface ITradingTransaction extends IBaseTransaction {
-	date: IDate;
-	wsolAmount: number;
-	wsolPrice: number;
-	tokenAmount: number;
-	tokenPrice: number;
-	tokenMint: string;
-	wsolMint: string;
+	instructionType: RaydiumInstruction;
 	poolKeys: LiquidityPoolKeysV4;
 	poolAddress: string;
-	instructionType: number;
+	basePrice: number;
+	quotePrice: number;
+	baseMint: string;
+	quoteMint: string;
+	baseChange: number;
+	quoteChange: number;
 	signature: string;
 }

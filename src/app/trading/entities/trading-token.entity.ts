@@ -32,11 +32,19 @@ export class TradingTokenEntity extends BaseEntity implements ITradingToken {
 
 	@Field()
 	@Column()
-	tokenMint: string;
+	quoteMint: string;
+
+	@Field()
+	@Column()
+	baseMint: string;
 
 	@Field(() => PriceScalar)
 	@PriceColumn()
-	price: IPrice;
+	quotePrice: IPrice;
+
+	@Field(() => PriceScalar)
+	@PriceColumn()
+	basePrice: IPrice;
 
 	@Field(() => DateScalar)
 	@DateColumn()

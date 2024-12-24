@@ -10,9 +10,11 @@ export interface ITradingToken extends IBase {
 	id: string;
 	walletAddress: string;
 	poolAddress: string;
-	tokenMint: string;
+	quoteMint: string;
+	baseMint: string;
 	signaledAt: IDate;
-	price: IPrice;
+	quotePrice: IPrice;
+	basePrice: IPrice;
 	trading: ITrading;
 	token?: IToken;
 	checkedStrategy?: IChecked<IStrategy>;

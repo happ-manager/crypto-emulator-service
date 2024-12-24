@@ -37,9 +37,9 @@ export class TransactionsService {
 
 		const tradingTransactions = this._tradingTransactions.splice(0, this._tradingTransactions.length);
 		const transactionsToCreate: DeepPartial<ITransaction>[] = tradingTransactions.map((tradingTransaction) => ({
-			price: tradingTransaction.tokenPrice,
+			price: tradingTransaction.quotePrice,
 			date: tradingTransaction.date,
-			poolAddress: tradingTransaction.poolAddress,
+			poolAddress: tradingTransaction.poolKeys.id.toString(),
 			signature: tradingTransaction.signature
 		}));
 
