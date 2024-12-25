@@ -25,6 +25,8 @@ export class HeliusService implements OnModuleInit, IRpc {
 	readonly connection = new Connection(this._heliusConfig.stakedRpcUrl, "confirmed");
 	readonly helius = new Helius(this._heliusConfig.apiKey);
 
+	readonly accounts: Record<string, CommitmentTypeEnum> = {};
+
 	constructor(
 		@Inject(HELIUS_CONFIG) private readonly _heliusConfig: IHeliusConfig,
 		private readonly _heliusApiService: HeliusApiService,
@@ -33,7 +35,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 	) {}
 
 	onModuleInit() {
-		setTimeout(this.init.bind(this));
+		// setTimeout(this.init.bind(this));
 	}
 
 	init() {
@@ -51,6 +53,10 @@ export class HeliusService implements OnModuleInit, IRpc {
 			}, 30_000);
 
 			this._eventsService.emit(EventsEnum.HELIUS_OPEN);
+
+			for (const [account, commitment] of Object.entries(this.accounts)) {
+				this.subscribeTransactions([account], [], commitment);
+			}
 		});
 		this._ws.on("message", async (messageBuffer: WebSocket.Data) => {
 			const message: ISolanaMessage = JSON.parse(messageBuffer.toString());
@@ -83,8 +89,6 @@ export class HeliusService implements OnModuleInit, IRpc {
 			return;
 		}
 
-		console.log({ accountInclude, accountExclude, commitment });
-
 		const subscription = {
 			jsonrpc: "2.0",
 			id: 420,
@@ -105,6 +109,16 @@ export class HeliusService implements OnModuleInit, IRpc {
 		};
 
 		this._ws.send(JSON.stringify(subscription));
+
+		for (const account of accountInclude) {
+			console.log(`Subscribe on ${account}`);
+			this.accounts[account] = commitment;
+		}
+
+		for (const account of accountExclude) {
+			console.log(`Unsubscribe from ${account}`);
+			delete this.accounts[account];
+		}
 	}
 
 	getTransactions(poolAddress: string, signature?: string) {

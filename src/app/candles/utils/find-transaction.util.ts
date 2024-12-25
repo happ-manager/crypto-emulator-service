@@ -1,7 +1,7 @@
 import type { IDate } from "../../libs/date/interfaces/date.interface";
-import type { ITransaction } from "../interfaces/transaction.interface";
+import type { IBaseTransaction } from "../../shared/interfaces/base-transaction.interface";
 
-export function findTransaction<T extends ITransaction>(candles: T[], date: IDate): T | null {
+export function findTransaction<T extends IBaseTransaction>(candles: T[], date: IDate): T | null {
 	// Попытка найти точное совпадение
 	const exactCandle = candles.find((candle) => date.isSameOrAfter(candle.date) && date.isSameOrBefore(candle.date));
 	if (exactCandle) {

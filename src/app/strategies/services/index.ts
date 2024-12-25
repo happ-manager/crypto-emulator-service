@@ -10,4 +10,5 @@ export const STRATEGIES_SERVICES = [
 	ConditionsService,
 	ConditionsGroupsService,
 	CheckStrategyService
+	// CheckStrategyNewService
 ];

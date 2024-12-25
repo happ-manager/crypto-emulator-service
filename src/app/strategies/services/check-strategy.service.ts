@@ -153,17 +153,17 @@ export class CheckStrategyService {
 
 			const isChecked = getOperatorValue(transactionValue, conditioValue, condition.operator);
 
-			const groupTransaction = group[groupIndex];
+			const groupTransactions = group[groupIndex];
 
 			if (!isChecked) {
-				if (groupTransaction.length > 0) {
+				if (groupTransactions.length > 0) {
 					group[++groupIndex] = [];
 				}
 				continue;
 			}
 
-			groupTransaction.push(transaction);
-			const [firstTransaction] = groupTransaction;
+			groupTransactions.push(transaction);
+			const [firstTransaction] = groupTransactions;
 			const duration = transaction.date.unix() - firstTransaction.date.unix();
 
 			if (duration >= groupDuration) {

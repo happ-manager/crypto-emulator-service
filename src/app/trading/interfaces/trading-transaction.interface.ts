@@ -1,11 +1,10 @@
-import type { LiquidityPoolKeysV4 } from "@raydium-io/raydium-sdk";
-
 import type { RaydiumInstruction } from "../../libs/raydium/enums/raydium-instruction.enum";
+import type { IPoolKeys } from "../../libs/solana/interfaces/pool-keys.interface";
 import type { IBaseTransaction } from "../../shared/interfaces/base-transaction.interface";
 
 export interface ITradingTransaction extends IBaseTransaction {
 	instructionType: RaydiumInstruction;
-	poolKeys: LiquidityPoolKeysV4;
+	poolKeys: IPoolKeys;
 	poolAddress: string;
 	basePrice: number;
 	quotePrice: number;

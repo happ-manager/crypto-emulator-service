@@ -75,12 +75,9 @@ export class WalletsService {
 		try {
 			const findedWallet = await this._walletsRepository.findOne({ where: { id } });
 			const secret = this._cryptoService.decrypt(findedWallet.secret);
-			const owner = Keypair.fromSecretKey(bs58.decode(secret));
+			const signer = Keypair.fromSecretKey(bs58.decode(secret));
 
-			const signature = await this._solanaService.wrap({
-				amount,
-				owner
-			});
+			const signature = await this._solanaService.wrap({ amount, signer });
 
 			return { signature };
 		} catch (error) {

@@ -1,6 +1,6 @@
-import type { LiquidityPoolKeysV4 } from "@raydium-io/raydium-sdk";
 import type { Commitment, Keypair, PublicKey, TransactionSignature } from "@solana/web3.js";
 
+import type { IPoolKeys } from "./pool-keys.interface";
 import type { IRpc } from "./rpc.interface";
 
 export interface IDex {
@@ -12,9 +12,9 @@ export interface IDexSwap {
 	from: PublicKey;
 	to: PublicKey;
 	amount: number;
-	owner: Keypair;
+	signer: Keypair;
 	rpc: IRpc;
-	poolKeys: LiquidityPoolKeysV4;
+	poolKeys: IPoolKeys;
 	blockhash: string;
 	microLamports: number;
 	units: number;
@@ -25,6 +25,6 @@ export interface IDexSwap {
 
 export interface IDexWrap {
 	amount: number; // Сумма для обмена
-	owner: Keypair; // Ключи пользователя
+	signer: Keypair; // Ключи пользователя
 	rpc: IRpc; // RPC-соединение
 }
