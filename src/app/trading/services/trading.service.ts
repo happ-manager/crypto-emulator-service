@@ -14,10 +14,12 @@ import { EventsEnum } from "../../events/enums/events.enum";
 import { EventsService } from "../../events/services/events.service";
 import { CryptoService } from "../../libs/crypto";
 import { DateService } from "../../libs/date";
-import { FilesService } from "../../libs/files";
 import { LoggerService } from "../../libs/logger";
 import type { RaydiumInstruction } from "../../libs/raydium/enums/raydium-instruction.enum";
-import { INIT_INSTRUCTIONS, SWAP_INSTRUCTIONS } from "../../libs/raydium/enums/raydium-instruction.enum";
+import {
+	INIT_INSTRUCTIONS,
+	SWAP_INSTRUCTIONS
+} from "../../libs/raydium/enums/raydium-instruction.enum";
 import { SolanaPriceService } from "../../libs/solana";
 import { PUMFUN_WALLET, RAYDIUM_WALLET, SOL_WALLET } from "../../libs/solana/constant/wallets.constant";
 import { CommitmentTypeEnum } from "../../libs/solana/enums/commitment-type.enum";
@@ -67,7 +69,6 @@ export class TradingService implements OnModuleInit {
 		private readonly _dateService: DateService,
 		private readonly _loggerService: LoggerService,
 		private readonly _eventsService: EventsService,
-		private readonly _filesService: FilesService,
 		private readonly _walletsService: WalletsService
 	) {}
 
@@ -260,8 +261,6 @@ export class TradingService implements OnModuleInit {
 					updatedAt: date.toDate()
 				};
 
-				this._filesService.appendToFile("init.json", `${JSON.stringify(message)},\n`);
-
 				break;
 			}
 
@@ -338,12 +337,7 @@ export class TradingService implements OnModuleInit {
 		const baseChange = postBaseAmount - preBaseAmount;
 		const quoteChange = postQuoteAmount - preQuoteAmount;
 		const basePrice = this._solanaPriceService.solanaPrice;
-		const quotePrice = (Math.abs(baseChange) * basePrice) / Math.abs(quoteChange);
-
-		if (!quotePrice) {
-			this._loggerService.error(`Wrong price ${quotePrice} for ${signature}`, "handleSolanaMessage");
-			return;
-		}
+		const quotePrice = quoteChange === 0 ? 0 : (Math.abs(baseChange) * basePrice) / Math.abs(quoteChange);
 
 		const tradingTransaction: ITradingTransaction = {
 			instructionType,

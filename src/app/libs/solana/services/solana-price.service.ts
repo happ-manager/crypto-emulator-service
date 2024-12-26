@@ -38,7 +38,7 @@ export class SolanaPriceService implements OnModuleInit {
 		const solPrice = solanaData[solanaKey]?.price;
 
 		if (!solPrice || solPrice < 10) {
-			return 211;
+			return 189;
 		}
 
 		return Number(solPrice);
