@@ -33,18 +33,6 @@ export class TokenEntity extends BaseEntity implements IToken {
 	@Column({ nullable: true })
 	poolAddress?: string;
 
-	@Field({ nullable: true })
-	@Column({ nullable: true })
-	dexToolsPairId?: string;
-
-	@Field(() => Boolean, { defaultValue: false })
-	@Column("boolean", { default: false })
-	verified: boolean;
-
-	@Field(() => Boolean, { defaultValue: false })
-	@Column("boolean", { default: false })
-	disabled: boolean;
-
 	@Field(() => [SignalEntity])
 	@OneToMany(() => SignalEntity, (signal) => signal.token)
 	signals: ISignal[];

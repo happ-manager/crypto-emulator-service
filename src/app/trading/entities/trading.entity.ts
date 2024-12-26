@@ -16,23 +16,23 @@ import { TradingTokenEntity } from "./trading-token.entity";
 @Entity({ name: TRADINGS })
 export class TradingEntity extends BaseEntity implements ITrading {
 	@Field(() => Number, { nullable: true })
-	@Column("integer", { nullable: true })
+	@Column("decimal", { nullable: true })
 	price: number;
 
 	@Field(() => Boolean, { defaultValue: true })
 	@Column("boolean", { default: true })
 	disabled: boolean;
 
-	@Field(() => Number, { nullable: true })
-	@Column("integer", { nullable: true })
+	@Field(() => Number)
+	@Column("integer")
 	tokenTradingDuration: number;
 
-	@Field(() => Number, { nullable: true })
-	@Column("integer", { nullable: true })
+	@Field(() => Number)
+	@Column("integer")
 	microLamports: number;
 
-	@Field(() => Number, { nullable: true })
-	@Column("integer", { nullable: true })
+	@Field(() => Number)
+	@Column("integer")
 	units: number;
 
 	@Field(() => StrategyEntity)

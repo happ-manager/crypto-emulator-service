@@ -21,6 +21,7 @@ import { JwtModule } from "../libs/jwt";
 import { LoggerModule } from "../libs/logger";
 import { PriceModule } from "../libs/price";
 import { LoadersModule } from "../loaders/loaders.module";
+import { PoolsModule } from "../pools/pools.module";
 import { SHARED_RESOLVERS } from "../shared/resolvers";
 import { SignalsModule } from "../signals/signals.module";
 import { StrategiesModule } from "../strategies/strategies.module";
@@ -58,6 +59,7 @@ import { TYPEORM_CONFIG } from "./configs/typeorm.config";
 		EventsModule.forRoot(EVENTS_CONFIG),
 		PriceModule.forRoot(PRICE_CONFIG),
 		HeliusModule.forRoot(HELIUS_CONFIG),
+		PoolsModule,
 		LoadersModule,
 		StrategiesModule,
 		AuthModule,

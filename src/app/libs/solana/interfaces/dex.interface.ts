@@ -1,6 +1,6 @@
-import type { Commitment, Keypair, PublicKey, TransactionSignature } from "@solana/web3.js";
+import type { Commitment, Keypair, TransactionSignature } from "@solana/web3.js";
 
-import type { IPoolKeys } from "./pool-keys.interface";
+import type { IPool } from "../../../pools/interfaces/pool.interface";
 import type { IRpc } from "./rpc.interface";
 
 export interface IDex {
@@ -9,12 +9,12 @@ export interface IDex {
 }
 
 export interface IDexSwap {
-	from: PublicKey;
-	to: PublicKey;
+	from: string;
+	to: string;
 	amount: number;
 	signer: Keypair;
 	rpc: IRpc;
-	poolKeys: IPoolKeys;
+	pool: IPool;
 	blockhash: string;
 	microLamports: number;
 	units: number;

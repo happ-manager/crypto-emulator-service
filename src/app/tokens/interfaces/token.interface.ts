@@ -9,9 +9,6 @@ export interface IToken extends IBase {
 	chain?: string;
 	tokenAddress?: string;
 	poolAddress?: string;
-	dexToolsPairId?: string;
-	verified: boolean;
-	disabled: boolean;
 	signals: ISignal[];
 	tradingTokens: ITradingToken[];
 }

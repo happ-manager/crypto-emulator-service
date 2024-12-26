@@ -72,6 +72,10 @@ input CreateMilestoneDto {
   id: ID!
 }
 
+input CreatePoolDto {
+  address: String!
+}
+
 input CreateSignalDto {
   tokenName: String!
 }
@@ -147,6 +151,7 @@ type Mutation {
   createCondition(condition: CreateConditionDto!): ConditionEntity!
   createConditionsGroup(conditionsGroup: CreateConditionDto!): ConditionsGroupEntity!
   createMilestone(milestone: CreateMilestoneDto!): MilestoneEntity!
+  createPool(pool: CreatePoolDto!): PoolEntity!
   createSignal(signal: CreateSignalDto!): SignalEntity!
   createStrategy(strategy: CreateStrategyDto!): StrategyEntity!
   createToken(token: CreateTokenDto!): TokenEntity!
@@ -160,6 +165,7 @@ type Mutation {
   deleteCondition(id: String!): Void!
   deleteConditionsGroup(id: String!): Void!
   deleteMilestone(id: String!): Void!
+  deletePool(id: String!): Void!
   deleteSignal(id: String!): Void!
   deleteStrategy(id: String!): Void!
   deleteToken(id: String!): Void!
@@ -179,6 +185,7 @@ type Mutation {
   updateCondition(condition: UpdateConditionDto!): ConditionEntity!
   updateConditionsGroup(conditionsGroup: UpdateConditionDto!): ConditionsGroupEntity!
   updateMilestone(milestone: UpdateMilestoneDto!): MilestoneEntity!
+  updatePool(pool: UpdatePoolDto!): PoolEntity!
   updateSignal(signal: UpdateSignalDto!): SignalEntity!
   updateStrategy(strategy: UpdateStrategyDto!): StrategyEntity!
   updateToken(token: UpdateTokenDto!): TokenEntity!
@@ -216,6 +223,12 @@ type PaginatedConditionsGroups {
 
 type PaginatedMilestones {
   data: [MilestoneEntity!]!
+  page: Int!
+  totalCount: Int!
+}
+
+type PaginatedPools {
+  data: [PoolEntity!]!
   page: Int!
   totalCount: Int!
 }
@@ -268,6 +281,39 @@ type PaginatedWallets {
   totalCount: Int!
 }
 
+type PoolEntity {
+  address: String!
+  authority: String!
+  baseDecimals: Float!
+  baseMint: String!
+  baseVault: String!
+  createdAt: DateTime!
+  id: ID!
+  lookupTableAccount: String!
+  lpDecimals: Float!
+  lpMint: String!
+  lpVault: String!
+  marketAsks: String!
+  marketAuthority: String!
+  marketBaseVault: String!
+  marketBids: String!
+  marketEventQueue: String!
+  marketId: String!
+  marketProgramId: String!
+  marketQuoteVault: String!
+  marketVersion: Float!
+  openOrders: String!
+  programId: String!
+  quoteDecimals: Float!
+  quoteMint: String!
+  quoteVault: String!
+  targetOrders: String!
+  tradingToken: TradingTokenEntity
+  updatedAt: DateTime!
+  version: Float!
+  withdrawQueue: String!
+}
+
 type Query {
   candle(id: ID!): CandleEntity!
   candles(poolAddress: String, skip: Int, take: Int): PaginatedCandles!
@@ -284,6 +330,8 @@ type Query {
   getOperators: [operatorEnum!]!
   milestone(id: ID!): MilestoneEntity!
   milestones(skip: Int, take: Int): PaginatedMilestones!
+  pool(id: ID!): PoolEntity!
+  pools(skip: Int, take: Int): PaginatedPools!
   signal(id: ID!): SignalEntity!
   signals(skip: Int, take: Int): PaginatedSignals!
   strategies(skip: Int, take: Int): PaginatedStrategies!
@@ -339,8 +387,6 @@ input TelegramUserDto {
 type TokenEntity {
   chain: String
   createdAt: DateTime!
-  dexToolsPairId: String
-  disabled: Boolean!
   id: ID!
   name: String
   poolAddress: String
@@ -350,30 +396,32 @@ type TokenEntity {
   tokenAddress: String
   tradingTokens: [TradingTokenEntity!]!
   updatedAt: DateTime!
-  verified: Boolean!
 }
 
 type TradingEntity {
   createdAt: DateTime!
   disabled: Boolean!
   id: ID!
-  microLamports: Float
+  microLamports: Float!
   price: Float
   sourceWallet: WalletEntity!
   strategy: StrategyEntity!
   targetWallet: WalletEntity!
-  tokenTradingDuration: Float
+  tokenTradingDuration: Float!
   tradingTokens: [TradingTokenEntity!]
-  units: Float
+  units: Float!
   updatedAt: DateTime!
 }
 
 type TradingTokenEntity {
+  active: Boolean!
+  amount: Float!
   baseMint: String!
   basePrice: IPrice!
   checkedStrategy: JSON
   createdAt: DateTime!
   id: ID!
+  pool: PoolEntity!
   poolAddress: String!
   quoteMint: String!
   quotePrice: IPrice!
@@ -409,6 +457,10 @@ input UpdateConditionDto {
 }
 
 input UpdateMilestoneDto {
+  id: ID!
+}
+
+input UpdatePoolDto {
   id: ID!
 }
 

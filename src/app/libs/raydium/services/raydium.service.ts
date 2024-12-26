@@ -8,6 +8,7 @@ import {
 } from "@solana/spl-token";
 import {
 	ComputeBudgetProgram,
+	PublicKey,
 	SystemProgram,
 	TransactionInstruction,
 	TransactionMessage,
@@ -38,10 +39,8 @@ export class RaydiumService implements IDex {
 	async swap(dexSwap: IDexSwap) {
 		const {
 			signer,
-			from,
-			to,
 			amount,
-			poolKeys,
+			pool,
 			microLamports,
 			units,
 			skipPreflight,
@@ -50,6 +49,9 @@ export class RaydiumService implements IDex {
 			blockhash,
 			rpc
 		} = dexSwap;
+
+		const from = new PublicKey(dexSwap.from);
+		const to = new PublicKey(dexSwap.to);
 
 		const tokenInAccount = getAssociatedTokenAddressSync(from, signer.publicKey);
 		const tokenOutAccount = getAssociatedTokenAddressSync(to, signer.publicKey);
@@ -60,27 +62,27 @@ export class RaydiumService implements IDex {
 			createAssociatedTokenAccountIdempotentInstruction(signer.publicKey, tokenInAccount, signer.publicKey, from),
 			createAssociatedTokenAccountIdempotentInstruction(signer.publicKey, tokenOutAccount, signer.publicKey, to),
 			new TransactionInstruction({
-				programId: poolKeys.programId,
+				programId: new PublicKey(pool.programId),
 				data: encodeData(from, amount),
 				keys: [
 					// system
 					{ pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
 					// amm
-					{ pubkey: poolKeys.id, isSigner: false, isWritable: true },
-					{ pubkey: poolKeys.authority, isSigner: false, isWritable: false },
-					{ pubkey: poolKeys.openOrders, isSigner: false, isWritable: true },
-					{ pubkey: poolKeys.targetOrders, isSigner: false, isWritable: true },
-					{ pubkey: poolKeys.baseVault, isSigner: false, isWritable: true },
-					{ pubkey: poolKeys.quoteVault, isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.address), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.authority), isSigner: false, isWritable: false },
+					{ pubkey: new PublicKey(pool.openOrders), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.targetOrders), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.baseVault), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.quoteVault), isSigner: false, isWritable: true },
 					// serum
-					{ pubkey: poolKeys.marketProgramId, isSigner: false, isWritable: false },
-					{ pubkey: poolKeys.marketId, isSigner: false, isWritable: true },
-					{ pubkey: poolKeys.marketBids, isSigner: false, isWritable: true },
-					{ pubkey: poolKeys.marketAsks, isSigner: false, isWritable: true },
-					{ pubkey: poolKeys.marketEventQueue, isSigner: false, isWritable: true },
-					{ pubkey: poolKeys.marketBaseVault, isSigner: false, isWritable: true },
-					{ pubkey: poolKeys.marketQuoteVault, isSigner: false, isWritable: true },
-					{ pubkey: poolKeys.marketAuthority, isSigner: false, isWritable: false },
+					{ pubkey: new PublicKey(pool.marketProgramId), isSigner: false, isWritable: false },
+					{ pubkey: new PublicKey(pool.marketId), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketBids), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketAsks), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketEventQueue), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketBaseVault), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketQuoteVault), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketAuthority), isSigner: false, isWritable: false },
 					// user
 					{ pubkey: tokenInAccount, isSigner: false, isWritable: true },
 					{ pubkey: tokenOutAccount, isSigner: false, isWritable: true },

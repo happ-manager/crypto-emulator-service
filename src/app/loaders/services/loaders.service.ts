@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
+import { PoolsLoader } from "../../pools/loaders/pools.loader";
 import { SignalsLoader } from "../../signals/loaders/signals.loader";
 import { ConditionsLoader } from "../../strategies/loaders/conditions.loader";
 import { ConditionsGroupsLoader } from "../../strategies/loaders/conditions-groups.loader";
@@ -25,7 +26,8 @@ export class LoadersService {
 		getTradingTokensByTradings: this._tradingTokensLoader.createTradingTokensByTradingsLoader(),
 		getSourceWalletsByTrading: this._walletsLoader.createSourceWalletsByTradingsLoader(),
 		getTargetWalletsByTrading: this._walletsLoader.createTargetWalletsByTradingsLoader(),
-		getTradingsByTradingTokens: this._tradingsLoader.createTradignsByTradingTokensLoader()
+		getTradingsByTradingTokens: this._tradingsLoader.createTradignsByTradingTokensLoader(),
+		getPoolsByTradingTokens: this._poolsLoader.createPoolsByTradingTokensLoader()
 	};
 
 	constructor(
@@ -37,6 +39,7 @@ export class LoadersService {
 		private readonly _conditionsGroupsLoader: ConditionsGroupsLoader,
 		private readonly _tradingTokensLoader: TradingTokensLoader,
 		private readonly _walletsLoader: WalletsLoader,
-		private readonly _tradingsLoader: TradingsLoader
+		private readonly _tradingsLoader: TradingsLoader,
+		private readonly _poolsLoader: PoolsLoader
 	) {}
 }

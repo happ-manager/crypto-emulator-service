@@ -1,6 +1,7 @@
-import { Body, Controller, Param, Post } from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 
+import type { IPool } from "../../pools/interfaces/pool.interface";
 import { TRADING } from "../constants/trading/trading.constant";
 import { TRADING_ENDPOINTS } from "../constants/trading/trading-endpoints.constant";
 import { TradingService } from "../services/trading.service";
@@ -9,7 +10,8 @@ export interface IBody {
 	amount: number;
 	microLamports: number;
 	units: number;
-	wallet: string;
+	walletAddress: string;
+	pool: IPool;
 }
 
 @ApiTags(TRADING)
@@ -18,17 +20,25 @@ export class TradingController {
 	constructor(private readonly _tradingService: TradingService) {}
 
 	@Post(TRADING_ENDPOINTS.BUY)
-	buy(@Param("id") poolAddress: string, @Body() body: IBody) {
-		const { amount, units, wallet, microLamports } = body;
+	async buy(@Body() body: IBody) {
+		const { amount, units, walletAddress, microLamports, pool } = body;
 
-		return this._tradingService.buy(poolAddress, wallet, amount, units, microLamports);
+		await this._tradingService.setVariables(pool, walletAddress);
+
+		const signature = await this._tradingService.buy(pool.address, walletAddress, amount, units, microLamports);
+
+		return { signature };
 	}
 
 	@Post(TRADING_ENDPOINTS.SELL)
-	sell(@Param("id") poolAddress: string, @Body() body: IBody) {
-		const { units, wallet, microLamports } = body;
+	async sell(@Body() body: IBody) {
+		const { units, walletAddress, microLamports, pool, amount } = body;
 
-		return this._tradingService.sell(poolAddress, wallet, units, microLamports);
+		await this._tradingService.setVariables(pool, walletAddress, amount);
+
+		const signature = await this._tradingService.sell(pool.address, walletAddress, units, microLamports);
+
+		return { signature };
 	}
 
 	@Post(TRADING_ENDPOINTS.START)
