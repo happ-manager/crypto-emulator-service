@@ -85,7 +85,7 @@ input CreateTokenDto {
 }
 
 input CreateTradingDto {
-  price: String!
+  price: Float!
 }
 
 input CreateTradingTokenDto {
@@ -282,7 +282,6 @@ type Query {
   getGroupOperators: [groupOperatorEnum!]!
   getMilestoneTypes: [milestoneTypeEnum!]!
   getOperators: [operatorEnum!]!
-  getTransactionTypes: [transactionTypeEnum!]!
   milestone(id: ID!): MilestoneEntity!
   milestones(skip: Int, take: Int): PaginatedMilestones!
   signal(id: ID!): SignalEntity!
@@ -359,7 +358,7 @@ type TradingEntity {
   disabled: Boolean!
   id: ID!
   microLamports: Float
-  price: IPrice!
+  price: Float
   sourceWallet: WalletEntity!
   strategy: StrategyEntity!
   targetWallet: WalletEntity!
@@ -394,7 +393,6 @@ type TransactionEntity {
   poolAddress: String!
   price: IPrice!
   signature: String
-  type: transactionTypeEnum!
   updatedAt: DateTime!
 }
 
@@ -525,11 +523,6 @@ enum operatorEnum {
   LESS_EQUAL
   MORE
   MORE_EQUAL
-}
-
-enum transactionTypeEnum {
-  INIT
-  TRANSFER
 }
 
 enum verificationStatusEnum {

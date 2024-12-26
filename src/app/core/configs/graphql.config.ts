@@ -4,7 +4,6 @@ import type { GqlModuleAsyncOptions, GqlOptionsFactory } from "@nestjs/graphql";
 import { registerEnumType } from "@nestjs/graphql";
 import { join } from "path";
 
-import { TransactionTypeEnum } from "../../candles/enums/transaction-type.enum";
 import { DateModule } from "../../libs/date";
 import { DateScalar } from "../../libs/date/scalars/date.scalar";
 import { PriceModule } from "../../libs/price";
@@ -44,4 +43,3 @@ registerEnumType(MilestoneTypeEnum, { name: "milestoneTypeEnum" });
 registerEnumType(ConditionFieldEnum, { name: "conditionFieldEnum" });
 registerEnumType(OperatorEnum, { name: "operatorEnum" });
 registerEnumType(GroupOperatorEnum, { name: "groupOperatorEnum" });
-registerEnumType(TransactionTypeEnum, { name: "transactionTypeEnum" });

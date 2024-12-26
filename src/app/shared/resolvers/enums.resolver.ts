@@ -1,6 +1,5 @@
 import { Query, Resolver } from "@nestjs/graphql";
 
-import { TransactionTypeEnum } from "../../candles/enums/transaction-type.enum";
 import { ConditionFieldEnum } from "../../strategies/enums/condition-field.enum";
 import { GroupOperatorEnum } from "../../strategies/enums/group-operator.enum";
 import { MilestoneTypeEnum } from "../../strategies/enums/milestone-type.enum";
@@ -32,10 +31,5 @@ export class EnumsResolver {
 	@Query(() => [GroupOperatorEnum])
 	getGroupOperators() {
 		return Object.values(GroupOperatorEnum);
-	}
-
-	@Query(() => [TransactionTypeEnum])
-	getTransactionTypes() {
-		return Object.values(TransactionTypeEnum);
 	}
 }

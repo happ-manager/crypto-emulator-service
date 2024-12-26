@@ -36,14 +36,8 @@ export class TransactionsService {
 		}
 
 		const tradingTransactions = this._tradingTransactions.splice(0, this._tradingTransactions.length);
-		const transactionsToCreate: DeepPartial<ITransaction>[] = tradingTransactions.map((tradingTransaction) => ({
-			price: tradingTransaction.quotePrice,
-			date: tradingTransaction.date,
-			poolAddress: tradingTransaction.poolKeys.id.toString(),
-			signature: tradingTransaction.signature
-		}));
 
-		await this.createTransactions(transactionsToCreate);
+		await this.createTransactions(tradingTransactions);
 	}
 
 	async getTransaction(options?: FindOneOptions<TransactionEntity>) {

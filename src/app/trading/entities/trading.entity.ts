@@ -1,9 +1,6 @@
 import { Field, ObjectType } from "@nestjs/graphql";
 import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
 
-import { PriceColumn } from "../../libs/price/decorators/price-column.decorator";
-import { IPrice } from "../../libs/price/interfaces/price.interface";
-import { PriceScalar } from "../../libs/price/scalars/price.scalar";
 import { BaseEntity } from "../../shared/entities/base.entity";
 import { Paginated } from "../../shared/models/paginated.model";
 import { StrategyEntity } from "../../strategies/entities/strategy.entity";
@@ -18,9 +15,9 @@ import { TradingTokenEntity } from "./trading-token.entity";
 @ObjectType()
 @Entity({ name: TRADINGS })
 export class TradingEntity extends BaseEntity implements ITrading {
-	@Field(() => PriceScalar)
-	@PriceColumn()
-	price: IPrice;
+	@Field(() => Number, { nullable: true })
+	@Column("integer", { nullable: true })
+	price: number;
 
 	@Field(() => Boolean, { defaultValue: true })
 	@Column("boolean", { default: true })

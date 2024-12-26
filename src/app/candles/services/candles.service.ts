@@ -50,7 +50,7 @@ export class CandlesService {
 				{}
 			);
 
-			for (const [date, dateTransactions] of Object.entries(groupedByDate)) {
+			for (const [_, dateTransactions] of Object.entries(groupedByDate)) {
 				// Сортируем транзакции по дате
 				dateTransactions.sort((a, b) => (a.date.isAfter(b.date) ? 1 : -1));
 

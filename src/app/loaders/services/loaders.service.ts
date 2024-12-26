@@ -7,6 +7,7 @@ import { MilestonesLoader } from "../../strategies/loaders/milestones.loader";
 import { StrategiesLoader } from "../../strategies/loaders/strategies.loader";
 import { TokensLoader } from "../../tokens/loaders/tokens.loader";
 import { TradingTokensLoader } from "../../trading/loaders/trading-tokens.loader";
+import { TradingsLoader } from "../../trading/loaders/tradings.loader";
 import { WalletsLoader } from "../../wallets/loaders/wallets.loader";
 import type { ILoaders } from "../interfaces/loaders.interface";
 
@@ -23,7 +24,8 @@ export class LoadersService {
 		getConditionsByConditionsGroup: this._conditionsLoader.createConditionsByConditionsGroupsLoader(),
 		getTradingTokensByTradings: this._tradingTokensLoader.createTradingTokensByTradingsLoader(),
 		getSourceWalletsByTrading: this._walletsLoader.createSourceWalletsByTradingsLoader(),
-		getTargetWalletsByTrading: this._walletsLoader.createTargetWalletsByTradingsLoader()
+		getTargetWalletsByTrading: this._walletsLoader.createTargetWalletsByTradingsLoader(),
+		getTradingsByTradingTokens: this._tradingsLoader.createTradignsByTradingTokensLoader()
 	};
 
 	constructor(
@@ -34,6 +36,7 @@ export class LoadersService {
 		private readonly _conditionsLoader: ConditionsLoader,
 		private readonly _conditionsGroupsLoader: ConditionsGroupsLoader,
 		private readonly _tradingTokensLoader: TradingTokensLoader,
-		private readonly _walletsLoader: WalletsLoader
+		private readonly _walletsLoader: WalletsLoader,
+		private readonly _tradingsLoader: TradingsLoader
 	) {}
 }
