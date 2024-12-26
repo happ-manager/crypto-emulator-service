@@ -35,7 +35,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 	) {}
 
 	onModuleInit() {
-		setTimeout(this.init.bind(this));
+		// setTimeout(this.init.bind(this));
 	}
 
 	init() {
