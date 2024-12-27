@@ -85,4 +85,19 @@ export class WalletsService {
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}
+
+	async unwrapSolana(id: string, amount: number) {
+		try {
+			const findedWallet = await this._walletsRepository.findOne({ where: { id } });
+			const secret = this._cryptoService.decrypt(findedWallet.secret);
+			const signer = Keypair.fromSecretKey(bs58.decode(secret));
+
+			const signature = await this._solanaService.unwrap({ amount, signer });
+
+			return { signature };
+		} catch (error) {
+			this._loggerService.error(error, "unwrapSolana");
+			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
+		}
+	}
 }

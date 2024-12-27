@@ -4,11 +4,10 @@ import type { ITradingToken } from "../../trading/interfaces/trading-token.inter
 
 export interface IToken extends IBase {
 	id: string;
+	chain: string;
+	address: string;
 	name?: string;
 	symbol?: string;
-	chain?: string;
-	tokenAddress?: string;
-	poolAddress?: string;
 	signals: ISignal[];
 	tradingTokens: ITradingToken[];
 }

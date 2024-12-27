@@ -385,15 +385,14 @@ input TelegramUserDto {
 }
 
 type TokenEntity {
-  chain: String
+  address: String!
+  chain: String!
   createdAt: DateTime!
   id: ID!
   name: String
-  poolAddress: String
   signal: SignalEntity
   signals: [SignalEntity!]!
   symbol: String
-  tokenAddress: String
   tradingTokens: [TradingTokenEntity!]!
   updatedAt: DateTime!
 }
@@ -416,20 +415,14 @@ type TradingEntity {
 type TradingTokenEntity {
   active: Boolean!
   amount: Float!
-  baseMint: String!
-  basePrice: IPrice!
-  checkedStrategy: JSON
+  checkedStrategy: JSON!
   createdAt: DateTime!
   id: ID!
   pool: PoolEntity!
-  poolAddress: String!
-  quoteMint: String!
-  quotePrice: IPrice!
   signaledAt: IDate!
-  token: TokenEntity
+  token: TokenEntity!
   trading: TradingEntity!
   updatedAt: DateTime!
-  walletAddress: String!
 }
 
 type TransactionEntity {

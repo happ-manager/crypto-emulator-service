@@ -8,5 +8,6 @@ export const WALLETS_ENDPOINTS = {
 	CREATE_WALLET: "",
 	UPDATE_WALLET: `${DYNAMIC_ID}`,
 	DELETE_WALLET: `${DYNAMIC_ID}`,
-	WRAP_SOLANA: `${DYNAMIC_ID}/wrap-solana`
+	WRAP_SOLANA: `${DYNAMIC_ID}/wrap-solana`,
+	UNWRAP_SOLANA: `${DYNAMIC_ID}/unwrap-solana`
 };

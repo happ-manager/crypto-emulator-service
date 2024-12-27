@@ -9,7 +9,6 @@ import { EventsService } from "../../events/services/events.service";
 import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
-import { sleep } from "../../shared/utils/sleep.util";
 import { ITradingToken } from "../../trading/interfaces/trading-token.interface";
 import { SignalEntity } from "../entities/signal.entity";
 import type { ISignal } from "../interfaces/signal.interface";
@@ -24,26 +23,28 @@ export class SignalsService {
 
 	@OnEvent(EventsEnum.TRADING_TOKENS_CREATED)
 	async onTradingTokensCreate(tradingTokens: ITradingToken[]) {
-		await sleep(10_000);
-
-		const signalsToCreate: DeepPartial<ISignal>[] = tradingTokens.map((tradingToken) => ({
-			source: tradingToken.walletAddress,
-			signaledAt: tradingToken.signaledAt,
-			poolAddress: tradingToken.poolAddress
-		}));
-
-		await this.createSignals(signalsToCreate);
+		// TODO: Signals by trading token
+		// await sleep(10_000);
+		//
+		// const signalsToCreate: DeepPartial<ISignal>[] = tradingTokens.map((tradingToken) => ({
+		// 	source: tradingToken.trading?.targetWallet?.address,
+		// 	signaledAt: tradingToken.signaledAt,
+		// 	poolAddress: tradingToken.pool?.address
+		// }));
+		//
+		// await this.createSignals(signalsToCreate);
 	}
 
 	@OnEvent(EventsEnum.TRADING_TOKEN_CREATED)
 	async onTradingTokenCreate(tradingToken: ITradingToken) {
-		await sleep(10_000);
-
-		await this.createSignal({
-			source: tradingToken.walletAddress,
-			signaledAt: tradingToken.signaledAt,
-			poolAddress: tradingToken.poolAddress
-		});
+		// TODO: Signals by trading token
+		// await sleep(10_000);
+		//
+		// await this.createSignal({
+		// 	source: tradingToken.trading?.targetWallet?.address,
+		// 	signaledAt: tradingToken.signaledAt,
+		// 	poolAddress: tradingToken.pool?.address
+		// });
 	}
 
 	async getSignal(options?: FindOneOptions<ISignal>) {

@@ -13,6 +13,14 @@ import type { IToken } from "../interfaces/token.interface";
 @ObjectType()
 @Entity({ name: TOKENS })
 export class TokenEntity extends BaseEntity implements IToken {
+	@Field()
+	@Column()
+	chain: string;
+
+	@Field()
+	@Column()
+	address: string;
+
 	@Field({ nullable: true })
 	@Column({ nullable: true })
 	name?: string;
@@ -20,18 +28,6 @@ export class TokenEntity extends BaseEntity implements IToken {
 	@Field({ nullable: true })
 	@Column({ nullable: true })
 	symbol?: string;
-
-	@Field({ nullable: true })
-	@Column({ nullable: true })
-	chain?: string;
-
-	@Field({ nullable: true })
-	@Column({ nullable: true })
-	tokenAddress?: string;
-
-	@Field({ nullable: true })
-	@Column({ nullable: true })
-	poolAddress?: string;
 
 	@Field(() => [SignalEntity])
 	@OneToMany(() => SignalEntity, (signal) => signal.token)

@@ -45,4 +45,10 @@ export class WalletsController {
 	async wrapSolana(@Param("id") walletId: string, @Body("amount") amount: string) {
 		return this._walletsService.wrapSolana(walletId, Number(amount));
 	}
+
+	@Post(WALLETS_ENDPOINTS.UNWRAP_SOLANA)
+	@UseGuards(AccessWalletGuard)
+	async unwrapSolana(@Param("id") walletId: string, @Body("amount") amount: string) {
+		return this._walletsService.unwrapSolana(walletId, Number(amount));
+	}
 }

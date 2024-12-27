@@ -48,4 +48,11 @@ export class SolanaService {
 			rpc: this._heliusService
 		});
 	}
+
+	unwrap(dexWrap: Omit<IDexWrap, "rpc">) {
+		return this._raydiumService.unwrap({
+			...dexWrap,
+			rpc: this._heliusService
+		});
+	}
 }

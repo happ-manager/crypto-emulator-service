@@ -14,12 +14,10 @@ import { EventsEnum } from "../../events/enums/events.enum";
 import { EventsService } from "../../events/services/events.service";
 import { CryptoService } from "../../libs/crypto";
 import { DateService } from "../../libs/date";
+import { FilesService } from "../../libs/files";
 import { LoggerService } from "../../libs/logger";
 import type { RaydiumInstruction } from "../../libs/raydium/enums/raydium-instruction.enum";
-import {
-	INIT_INSTRUCTIONS,
-	SWAP_INSTRUCTIONS
-} from "../../libs/raydium/enums/raydium-instruction.enum";
+import { INIT_INSTRUCTIONS, SWAP_INSTRUCTIONS } from "../../libs/raydium/enums/raydium-instruction.enum";
 import { SolanaPriceService } from "../../libs/solana";
 import { PUMFUN_WALLET, RAYDIUM_WALLET, SOL_WALLET } from "../../libs/solana/constant/wallets.constant";
 import { CommitmentTypeEnum } from "../../libs/solana/enums/commitment-type.enum";
@@ -69,7 +67,8 @@ export class TradingService implements OnModuleInit {
 		private readonly _dateService: DateService,
 		private readonly _loggerService: LoggerService,
 		private readonly _eventsService: EventsService,
-		private readonly _walletsService: WalletsService
+		private readonly _walletsService: WalletsService,
+		private readonly _filesService: FilesService
 	) {}
 
 	onModuleInit() {
@@ -92,40 +91,29 @@ export class TradingService implements OnModuleInit {
 				continue;
 			}
 
-			if (!this._signers[trading.sourceWallet.address]) {
-				const decrypted = this._cryptoService.decrypt(trading.sourceWallet.secret);
-				const decoded = bs58.decode(decrypted);
-				this._signers[trading.sourceWallet.address] = Keypair.fromSecretKey(decoded);
-			}
-
 			this.handlePoolCreate(trading);
 
 			for (const tradingToken of trading.tradingTokens) {
-				if (!tradingToken.active) {
-					continue;
-				}
-
-				if (!this._pools[tradingToken.pool.address]) {
-					this._pools[tradingToken.pool.address] = tradingToken.pool;
-				}
-
-				const { data } = await this._transactionsService.getTransactions({
-					where: {
-						poolAddress: tradingToken.poolAddress
-					},
-					order: { date: "asc" }
-				});
-
-				const [initialTransaction] = data;
-
-				if (!initialTransaction) {
-					continue;
-				}
-
-				const checkedTransactions: ICheckedTransactions = { [signalMilestone.id]: initialTransaction };
-				this._transactions[tradingToken.poolAddress] = data;
-				this._tokens[tradingToken.poolAddress] = tradingToken.amount;
-				this.handleSwap(trading, tradingToken, checkedTransactions);
+				// TODO Надо придумать где хранить checkedTransactions.
+				// if (!tradingToken.active) {
+				// 	continue;
+				// }
+				//
+				// const poolAddress = tradingToken.pool.address;
+				//
+				// const { data } = await this._transactionsService.getTransactions({
+				// 	where: { poolAddress },
+				// 	order: { date: "asc" }
+				// });
+				// const [initialTransaction] = data;
+				//
+				// if (!initialTransaction) {
+				// 	continue;
+				// }
+				//
+				// this._transactions[poolAddress] = data;
+				//
+				// this.handleSwap(trading, tradingToken, { [signalMilestone.id]: initialTransaction });
 			}
 		}
 	}
@@ -152,19 +140,22 @@ export class TradingService implements OnModuleInit {
 			return;
 		}
 
-		const accountExclude = [findedTrading.targetWallet.address];
+		const walletAddress = findedTrading.targetWallet.address;
+		const accountExclude = [walletAddress];
 
-		this._createPoolSubjects[findedTrading.targetWallet.address]?.complete();
-		delete this._createPoolSubjects[findedTrading.targetWallet.address];
+		this._createPoolSubjects[walletAddress]?.complete();
+		delete this._createPoolSubjects[walletAddress];
 
 		for (const tradingToken of findedTrading.tradingTokens) {
 			if (!tradingToken.active) {
 				continue;
 			}
 
-			this._swapSubjects[tradingToken.poolAddress]?.complete();
-			delete this._swapSubjects[tradingToken.poolAddress];
-			accountExclude.push(tradingToken.poolAddress);
+			const poolAddress = tradingToken.pool.address;
+
+			accountExclude.push(poolAddress);
+			this._swapSubjects[poolAddress]?.complete();
+			delete this._swapSubjects[poolAddress];
 		}
 
 		this._solanaService.subscribeTransactions([], accountExclude);
@@ -334,24 +325,23 @@ export class TradingService implements OnModuleInit {
 			}
 		}
 
-		const baseChange = postBaseAmount - preBaseAmount;
-		const quoteChange = postQuoteAmount - preQuoteAmount;
+		const amount = postQuoteAmount - preQuoteAmount;
 		const basePrice = this._solanaPriceService.solanaPrice;
-		const quotePrice = quoteChange === 0 ? 0 : (Math.abs(baseChange) * basePrice) / Math.abs(quoteChange);
+		const price = (Math.abs(postBaseAmount) * basePrice) / Math.abs(postQuoteAmount);
+
+		if (!price || !Number.isFinite(price)) {
+			// this._filesService.appendToFile("price.json", `${JSON.stringify(message)},\n`);
+			console.log(`Something wrong with price: ${signature}`);
+			return;
+		}
 
 		const tradingTransaction: ITradingTransaction = {
 			instructionType,
 			pool,
-			poolAddress,
-			baseMint,
-			quoteMint,
-			basePrice,
-			quotePrice,
-			baseChange,
-			quoteChange,
+			amount,
 			date,
 			author,
-			price: new Big(quotePrice),
+			price: Big(price),
 			signature
 		};
 
@@ -374,91 +364,81 @@ export class TradingService implements OnModuleInit {
 			return;
 		}
 
+		if (!this._signers[trading.sourceWallet.address]) {
+			const decrypted = this._cryptoService.decrypt(trading.sourceWallet.secret);
+			const decoded = bs58.decode(decrypted);
+			this._signers[trading.sourceWallet.address] = Keypair.fromSecretKey(decoded);
+		}
+
 		const walletAddress = trading.targetWallet.address;
 		const createPoolSubject = new Subject<ITradingTransaction>();
 
 		this._createPoolSubjects[walletAddress] = createPoolSubject;
 
 		createPoolSubject.subscribe(async (transaction) => {
-			const { poolAddress, quoteMint, baseMint, quotePrice, basePrice, date, pool } = transaction;
+			const { date, pool } = transaction;
+			const poolAddress = pool.address;
 
 			if (this._transactions[poolAddress]) {
 				return;
 			}
 
 			this._transactions[poolAddress] = [transaction];
-			this._pools[poolAddress] = pool;
-			this._tokens[poolAddress] = 0;
-
 			const tradingToken: ITradingToken = {
 				id: v4(),
-				signaledAt: date,
-				amount: 0,
-				walletAddress,
-				poolAddress,
-				basePrice: new Big(basePrice),
-				baseMint,
-				quotePrice: new Big(quotePrice),
-				quoteMint,
-				active: true,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-				trading
-			};
-			const checkedTransactions: ICheckedTransactions = { [signalMilestone.id]: transaction };
-
-			this.handleSwap(trading, tradingToken, checkedTransactions);
-
-			this._swapSubjects[poolAddress].next(transaction);
-
-			this._eventsService.emit(EventsEnum.SIGNALED, { trading, transaction }, true);
-
-			const token: Partial<IToken> = {
-				chain: "solana",
-				poolAddress,
-				tokenAddress: pool.quoteMint
-			};
-
-			await this._tradingTokensService.createTradingToken({
-				...tradingToken,
+				trading,
 				pool,
-				token,
+				amount: 0,
+				signaledAt: date,
+				active: true,
+				token: {
+					chain: "solana",
+					address: pool.quoteMint
+				} as IToken,
 				checkedStrategy: {
 					...trading.strategy,
 					checkedMilestones: [{ ...signalMilestone, checkedTransaction: transaction, delayedTransaction: transaction }]
-				}
-			});
+				},
+				createdAt: date.toDate(),
+				updatedAt: date.toDate()
+			};
+			this.handleSwap(trading, tradingToken, { [signalMilestone.id]: transaction });
+			this._swapSubjects[poolAddress].next(transaction);
+			await this._tradingTokensService.createTradingToken(tradingToken);
 		});
 
-		this._solanaService.subscribeTransactions([trading.targetWallet.address], [], CommitmentTypeEnum.PROCESSED);
+		this._solanaService.subscribeTransactions([walletAddress], [], CommitmentTypeEnum.PROCESSED);
 	}
 
 	handleSwap(trading: ITrading, tradingToken: ITradingToken, checkedTransactions: ICheckedTransactions) {
-		const { poolAddress } = tradingToken;
+		const poolAddress = tradingToken.pool.address;
 
 		if (!this._transactions[poolAddress]) {
 			return;
 		}
 
+		if (!this._pools[poolAddress]) {
+			this._pools[poolAddress] = tradingToken.pool;
+		}
+
+		const swapSubject = new Subject<ITradingTransaction>();
 		const transactions = this._transactions[poolAddress];
 		const sortedMilestones = trading.strategy.milestones.sort((a, b) => a.position - b.position);
 
 		let pendingMilestone: IChecked<IMilestone>;
 		let pendingSignature: string;
 
-		const swapSubject = new Subject<ITradingTransaction>();
-
+		this._tokens[poolAddress] = tradingToken.amount;
 		this._swapSubjects[poolAddress] = swapSubject;
 
 		swapSubject.subscribe(async (transaction) => {
-			const checkedMilestones = sortedMilestones.filter((milestone) => checkedTransactions[milestone.id]);
-
 			if (pendingMilestone || pendingSignature) {
 				if (pendingSignature !== transaction.signature) {
 					return;
 				}
 
-				this._tokens[poolAddress] -= transaction.quoteChange;
+				this._tokens[poolAddress] -= transaction.amount;
+
 				this._tradingTokensService.updateTradingToken(tradingToken.id, { amount: this._tokens[poolAddress] }).then();
 
 				pendingMilestone.delayedTransaction = transaction;
@@ -475,16 +455,17 @@ export class TradingService implements OnModuleInit {
 			}
 
 			const [initTransaction] = transactions;
+			const checkedMilestones = sortedMilestones.filter((milestone) => checkedTransactions[milestone.id]);
 			const tradingNotStarted = checkedMilestones.length < 2; // Первое выполненое условие - "Сигнал". Если их > 1 - значит была "Покупка"
 			const duration = this._dateService.now().diff(initTransaction.date, "s");
 			const isExpired = duration > trading.tokenTradingDuration;
 			const isAllChecked = sortedMilestones.length === checkedMilestones.length;
 
 			if (isAllChecked || (tradingNotStarted && isExpired)) {
-				this._solanaService.subscribeTransactions([], [tradingToken.poolAddress]);
+				this._solanaService.subscribeTransactions([], [poolAddress]);
 				this._tradingTokensService.updateTradingToken(tradingToken.id, { active: false }).then();
-				this._swapSubjects[tradingToken.poolAddress]?.complete();
-				delete this._swapSubjects[tradingToken.poolAddress];
+				this._swapSubjects[poolAddress]?.complete();
+				delete this._swapSubjects[poolAddress];
 				return;
 			}
 
@@ -536,7 +517,6 @@ export class TradingService implements OnModuleInit {
 		const amount = amountInUsd / this._solanaPriceService.solanaPrice;
 
 		if (!signer || !pool) {
-			console.log({ signer, pool });
 			this._loggerService.error(`Something missing`, "buy");
 			return;
 		}
@@ -580,8 +560,10 @@ export class TradingService implements OnModuleInit {
 	}
 
 	async setVariables(pool: IPool, walletAddress: string, amount?: number) {
-		if (!this._pools[pool.address]) {
-			this._pools[pool.address] = pool;
+		const poolAddress = pool.address;
+
+		if (!this._pools[poolAddress]) {
+			this._pools[poolAddress] = pool;
 		}
 
 		if (!this._signers[walletAddress]) {
@@ -592,7 +574,7 @@ export class TradingService implements OnModuleInit {
 		}
 
 		if (amount) {
-			this._tokens[pool.address] = amount;
+			this._tokens[poolAddress] = amount;
 		}
 	}
 }

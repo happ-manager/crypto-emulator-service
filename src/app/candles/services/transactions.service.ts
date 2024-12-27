@@ -35,7 +35,15 @@ export class TransactionsService {
 			return;
 		}
 
-		const tradingTransactions = this._tradingTransactions.splice(0, this._tradingTransactions.length);
+		const tradingTransactions = this._tradingTransactions
+			.splice(0, this._tradingTransactions.length)
+			.map((tradingTransaction) => ({
+				poolAddress: tradingTransaction.pool.address,
+				signature: tradingTransaction.signature,
+				author: tradingTransaction.author,
+				price: tradingTransaction.price,
+				date: tradingTransaction.date
+			}));
 
 		await this.createTransactions(tradingTransactions);
 	}

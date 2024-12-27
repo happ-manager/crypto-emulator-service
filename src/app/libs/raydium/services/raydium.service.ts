@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import {
 	createAssociatedTokenAccountIdempotentInstruction,
+	createCloseAccountInstruction,
 	createSyncNativeInstruction,
 	getAssociatedTokenAddressSync,
 	NATIVE_MINT,
@@ -31,6 +32,17 @@ export class RaydiumService implements IDex {
 				lamports: amount * 1e9
 			}),
 			createSyncNativeInstruction(wsol)
+		];
+
+		return rpc.sendSmartTransaction(instructions, [signer]);
+	}
+
+	async unwrap(dexWrap: IDexWrap) {
+		const { signer, rpc } = dexWrap;
+		const wsol = getAssociatedTokenAddressSync(NATIVE_MINT, signer.publicKey);
+
+		const instructions: TransactionInstruction[] = [
+			createCloseAccountInstruction(wsol, signer.publicKey, signer.publicKey)
 		];
 
 		return rpc.sendSmartTransaction(instructions, [signer]);
