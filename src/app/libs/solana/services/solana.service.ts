@@ -1,5 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { PublicKey } from "@solana/web3.js";
 
 import { EventsEnum } from "../../../events/enums/events.enum";
 import { EventsService } from "../../../events/services/events.service";
@@ -54,5 +56,24 @@ export class SolanaService {
 			...dexWrap,
 			rpc: this._heliusService
 		});
+	}
+
+	async getAmount(walletAddress: string, mintAddress: string): Promise<number> {
+		try {
+			const walletPubKey = new PublicKey(walletAddress);
+			const mintPubKey = new PublicKey(mintAddress);
+
+			const tokenAccount = getAssociatedTokenAddressSync(mintPubKey, walletPubKey);
+
+			const accountInfo = await this._heliusService.connection.getParsedAccountInfo(tokenAccount);
+
+			if (!accountInfo.value) {
+				return 0;
+			}
+
+			return accountInfo.value.data["parsed"].info.tokenAmount.uiAmount;
+		} catch (error) {
+			throw new Error(`Не удалось получить баланс токенов: ${error.message}`);
+		}
 	}
 }

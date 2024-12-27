@@ -7,6 +7,7 @@ import { In, Repository } from "typeorm";
 import { EventsEnum } from "../../events/enums/events.enum";
 import { EventsService } from "../../events/services/events.service";
 import { LoggerService } from "../../libs/logger";
+import { SolanaService } from "../../libs/solana/services/solana.service";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import type { IChecked } from "../../strategies/interfaces/checked.interface";
@@ -27,7 +28,8 @@ export class TradingTokensService {
 	constructor(
 		@InjectRepository(TradingTokenEntity) private readonly _tradingTokensRepository: Repository<TradingTokenEntity>,
 		private readonly _eventsService: EventsService,
-		private readonly _loggerService: LoggerService
+		private readonly _loggerService: LoggerService,
+		private readonly _solanaService: SolanaService
 	) {}
 
 	@OnEvent(EventsEnum.MILESTONE_CONFIRMED)
