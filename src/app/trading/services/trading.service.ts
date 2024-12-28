@@ -85,6 +85,8 @@ export class TradingService implements OnModuleInit {
 				"sourceWallet",
 				"targetWallet",
 				"strategy",
+				"tradingTokens",
+				"tradingTokens.pool",
 				...this._strategiesService.relations.map((relation) => `strategy.${relation}`)
 			]
 		});
@@ -135,7 +137,7 @@ export class TradingService implements OnModuleInit {
 	async stop(id: string) {
 		const findedTrading = await this._tradingsService.getTrading({
 			where: { id },
-			relations: ["targetWallet", "tradingTokens"]
+			relations: ["targetWallet", "tradingTokens", "tradingTokens.pool"]
 		});
 
 		if (!findedTrading) {
