@@ -4,6 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { EventsModule } from "../events/events.module";
 import { DateModule } from "../libs/date";
 import { LoggerModule } from "../libs/logger";
+import { TradingModule } from "../trading/trading.module";
 import { SIGNALS_CONTROLLERS } from "./controllers";
 import { SIGNALS_ENTITIES } from "./entities";
 import { SIGNALS_GUARDS } from "./guards";
@@ -16,7 +17,8 @@ import { SIGNALS_SERVICES } from "./services";
 		TypeOrmModule.forFeature(SIGNALS_ENTITIES),
 		EventsModule.forChild(),
 		DateModule.forChild(),
-		LoggerModule.forChild()
+		LoggerModule.forChild(),
+		TradingModule
 	],
 	controllers: SIGNALS_CONTROLLERS,
 	providers: [...SIGNALS_SERVICES, ...SIGNALS_RESOLVERS, ...SIGNALS_GUARDS, ...SIGNALS_LOADERS],

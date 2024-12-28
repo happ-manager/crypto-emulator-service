@@ -2,34 +2,25 @@ import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
-import { In, Repository } from "typeorm";
+import { Repository } from "typeorm";
 
 import { EventsEnum } from "../../events/enums/events.enum";
 import { EventsService } from "../../events/services/events.service";
 import { LoggerService } from "../../libs/logger";
-import { SolanaService } from "../../libs/solana/services/solana.service";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import type { IChecked } from "../../strategies/interfaces/checked.interface";
-import type { IMilestone } from "../../strategies/interfaces/milestone.interface";
 import type { IStrategy } from "../../strategies/interfaces/strategy.interface";
 import { TradingTokenEntity } from "../entities/trading-token.entity";
-import type { ITrading } from "../interfaces/trading.interface";
+import { IMilestoneProcess } from "../interfaces/milestone-pricess.interface";
 import type { ITradingToken } from "../interfaces/trading-token.interface";
-
-interface IMilestoneProcess {
-	milestone: IChecked<IMilestone>;
-	trading: ITrading;
-	tradingToken: ITradingToken;
-}
 
 @Injectable()
 export class TradingTokensService {
 	constructor(
 		@InjectRepository(TradingTokenEntity) private readonly _tradingTokensRepository: Repository<TradingTokenEntity>,
 		private readonly _eventsService: EventsService,
-		private readonly _loggerService: LoggerService,
-		private readonly _solanaService: SolanaService
+		private readonly _loggerService: LoggerService
 	) {}
 
 	@OnEvent(EventsEnum.MILESTONE_CONFIRMED)
@@ -71,22 +62,6 @@ export class TradingTokensService {
 			return findedTradingToken;
 		} catch (error) {
 			this._loggerService.error(error, "createTradingToken");
-			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
-		}
-	}
-
-	async createTradingTokens(tradingTokens: DeepPartial<ITradingToken>[]) {
-		try {
-			const savedTradingTokens = await this._tradingTokensRepository.save(tradingTokens);
-			const savedIds = savedTradingTokens.map((savedTradingToken) => savedTradingToken.id);
-
-			const createdTokens = await this._tradingTokensRepository.find({ where: { id: In(savedIds) } });
-
-			this._eventsService.emit(EventsEnum.TRADING_TOKENS_CREATED, createdTokens, true);
-
-			return createdTokens;
-		} catch (error) {
-			this._loggerService.error(error, "createTradingTokens");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

@@ -1,5 +1,6 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
+import { Cron } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { In, Repository } from "typeorm";
@@ -10,41 +11,52 @@ import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import { ITradingToken } from "../../trading/interfaces/trading-token.interface";
+import { TradingTokensService } from "../../trading/services/trading-tokens.service";
 import { SignalEntity } from "../entities/signal.entity";
 import type { ISignal } from "../interfaces/signal.interface";
 
 @Injectable()
 export class SignalsService {
+	private readonly _tradingTokens: ITradingToken[] = [];
+
 	constructor(
 		@InjectRepository(SignalEntity) private readonly _signalsRepository: Repository<SignalEntity>,
 		private readonly _eventsService: EventsService,
-		private readonly _loggerService: LoggerService
+		private readonly _loggerService: LoggerService,
+		private readonly _tradingTokensService: TradingTokensService
 	) {}
 
 	@OnEvent(EventsEnum.TRADING_TOKENS_CREATED)
 	async onTradingTokensCreate(tradingTokens: ITradingToken[]) {
-		// TODO: Signals by trading token
-		// await sleep(10_000);
-		//
-		// const signalsToCreate: DeepPartial<ISignal>[] = tradingTokens.map((tradingToken) => ({
-		// 	source: tradingToken.trading?.targetWallet?.address,
-		// 	signaledAt: tradingToken.signaledAt,
-		// 	poolAddress: tradingToken.pool?.address
-		// }));
-		//
-		// await this.createSignals(signalsToCreate);
+		this._tradingTokens.push(...tradingTokens);
 	}
 
 	@OnEvent(EventsEnum.TRADING_TOKEN_CREATED)
 	async onTradingTokenCreate(tradingToken: ITradingToken) {
-		// TODO: Signals by trading token
-		// await sleep(10_000);
-		//
-		// await this.createSignal({
-		// 	source: tradingToken.trading?.targetWallet?.address,
-		// 	signaledAt: tradingToken.signaledAt,
-		// 	poolAddress: tradingToken.pool?.address
-		// });
+		this._tradingTokens.push(tradingToken);
+	}
+
+	@Cron("*/5 * * * * *")
+	async handleTradingTokens() {
+		if (this._tradingTokens.length === 0) {
+			return;
+		}
+
+		const tradingTokens = this._tradingTokens.splice(0, this._tradingTokens.length);
+		const tradingTokensIds = tradingTokens.map((tradingToken) => tradingToken.id);
+
+		const { data } = await this._tradingTokensService.getTradingTokens({
+			where: { id: In(tradingTokensIds) },
+			relations: ["trading", "trading.targetWallet", "pool"]
+		});
+
+		const signals: DeepPartial<ISignal>[] = data.map((tradingToken) => ({
+			source: tradingToken.trading?.targetWallet?.address,
+			signaledAt: tradingToken.signaledAt,
+			poolAddress: tradingToken.pool?.address
+		}));
+
+		await this.createSignals(signals);
 	}
 
 	async getSignal(options?: FindOneOptions<ISignal>) {

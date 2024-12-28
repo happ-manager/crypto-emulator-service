@@ -29,7 +29,7 @@ export class TransactionsService {
 		this._tradingTransactions.push(tradignTransaction);
 	}
 
-	@Cron("*/5 * * * * *") // Это выражение cron для запуска каждые 5 секунд
+	@Cron("*/5 * * * * *")
 	async handleTradingTransactions() {
 		if (this._tradingTransactions.length === 0) {
 			return;

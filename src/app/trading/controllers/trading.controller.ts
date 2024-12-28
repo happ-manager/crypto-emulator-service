@@ -1,18 +1,10 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, InternalServerErrorException, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 
-import type { IPool } from "../../pools/interfaces/pool.interface";
 import { TRADING } from "../constants/trading/trading.constant";
 import { TRADING_ENDPOINTS } from "../constants/trading/trading-endpoints.constant";
+import { ISwapBody } from "../interfaces/swap-body.interface";
 import { TradingService } from "../services/trading.service";
-
-export interface IBody {
-	amount: number;
-	microLamports: number;
-	units: number;
-	walletAddress: string;
-	pool: IPool;
-}
 
 @ApiTags(TRADING)
 @Controller(TRADING_ENDPOINTS.BASE)
@@ -20,23 +12,31 @@ export class TradingController {
 	constructor(private readonly _tradingService: TradingService) {}
 
 	@Post(TRADING_ENDPOINTS.BUY)
-	async buy(@Body() body: IBody) {
-		const { amount, units, walletAddress, microLamports, pool } = body;
+	async buy(@Body() body: ISwapBody) {
+		const { walletAddress, pool, amount, computeUnits } = body;
 
-		await this._tradingService.setVariables(pool, walletAddress);
+		const signer = this._tradingService.signers[walletAddress];
 
-		const signature = await this._tradingService.buy(pool.address, walletAddress, amount, units, microLamports);
+		if (!signer) {
+			throw new InternalServerErrorException("Трейдиг должен быть включен");
+		}
+
+		const signature = await this._tradingService.buy(pool, signer, amount, computeUnits);
 
 		return { signature };
 	}
 
 	@Post(TRADING_ENDPOINTS.SELL)
-	async sell(@Body() body: IBody) {
-		const { units, walletAddress, microLamports, pool, amount } = body;
+	async sell(@Body() body: ISwapBody) {
+		const { walletAddress, pool, amount, computeUnits } = body;
 
-		await this._tradingService.setVariables(pool, walletAddress, amount);
+		const signer = this._tradingService.signers[walletAddress];
 
-		const signature = await this._tradingService.sell(pool.address, walletAddress, units, microLamports);
+		if (!signer) {
+			throw new InternalServerErrorException("Трейдиг должен быть включен");
+		}
+
+		const signature = await this._tradingService.sell(pool, signer, amount, computeUnits);
 
 		return { signature };
 	}

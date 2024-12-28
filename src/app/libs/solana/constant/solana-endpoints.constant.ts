@@ -1,4 +1,5 @@
 export const SOLANA_ENDPOINTS = {
 	BASE: `solana`,
-	AMOUNT: `amount`
+	GET_AMOUNT: `amount`,
+	GET_ASSET: `asset`
 };

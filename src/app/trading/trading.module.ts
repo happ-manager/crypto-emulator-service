@@ -1,15 +1,12 @@
 import { Module } from "@nestjs/common";
-import { ScheduleModule } from "@nestjs/schedule";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { CandlesModule } from "../candles/candles.module";
 import { EventsModule } from "../events/events.module";
-import { CryptoModule } from "../libs/crypto";
 import { DateModule } from "../libs/date";
 import { FilesModule } from "../libs/files";
 import { LoggerModule } from "../libs/logger";
 import { SolanaModule } from "../libs/solana";
-import { PoolsModule } from "../pools/pools.module";
 import { StrategiesModule } from "../strategies/strategies.module";
 import { WalletsModule } from "../wallets/wallets.module";
 import { TRADING_CONTROLLERS } from "./controllers";
@@ -26,12 +23,9 @@ import { TRADING_SERVICES } from "./services";
 		FilesModule.forChild(),
 		DateModule.forChild(),
 		EventsModule.forChild(),
-		CryptoModule.forChild(),
 		CandlesModule,
 		SolanaModule,
 		StrategiesModule,
-		ScheduleModule,
-		PoolsModule,
 		WalletsModule
 	],
 	controllers: TRADING_CONTROLLERS,

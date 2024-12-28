@@ -35,7 +35,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 	) {}
 
 	onModuleInit() {
-		setTimeout(this.init.bind(this));
+		// setTimeout(this.init.bind(this));
 	}
 
 	init() {
@@ -68,7 +68,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 				return;
 			}
 
-			this._eventsService.emit(EventsEnum.HELIUS_MESSAGE, message);
+			this._eventsService.emit(EventsEnum.SOLANA_MESSAGE, message);
 		});
 		this._ws.on("error", (error) => {
 			this._loggerService.error(`Ошибка WebSocket: ${error.message}`, "init");
@@ -123,6 +123,10 @@ export class HeliusService implements OnModuleInit, IRpc {
 
 	getTransactions(poolAddress: string, signature?: string) {
 		return this._heliusApiService.getTransactions(poolAddress, signature);
+	}
+
+	getAsset(mintAddress: string) {
+		return this._heliusApiService.getAsset(mintAddress);
 	}
 
 	sendSmartTransaction(instructions: TransactionInstruction[], signers: Signer[]): Promise<TransactionSignature> {

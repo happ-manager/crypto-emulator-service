@@ -1,61 +1,137 @@
 import { Injectable } from "@nestjs/common";
-import { OnEvent } from "@nestjs/event-emitter";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+import {
+	createAssociatedTokenAccountIdempotentInstruction,
+	createCloseAccountInstruction,
+	createSyncNativeInstruction,
+	getAssociatedTokenAddressSync,
+	NATIVE_MINT,
+	TOKEN_PROGRAM_ID
+} from "@solana/spl-token";
+import type { Keypair, SendOptions } from "@solana/web3.js";
+import { ComputeBudgetProgram, TransactionInstruction } from "@solana/web3.js";
+import { TransactionMessage, VersionedTransaction } from "@solana/web3.js";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
 
 import { EventsEnum } from "../../../events/enums/events.enum";
 import { EventsService } from "../../../events/services/events.service";
+import type { IPool } from "../../../pools/interfaces/pool.interface";
 import { HeliusService } from "../../helius/services/helius.service";
-import { RaydiumService } from "../../raydium/services/raydium.service";
+import { encodeData } from "../../raydium/utils/encode-data.util";
+import { SEND_OPTIONS } from "../constant/send-options.constant";
 import type { CommitmentTypeEnum } from "../enums/commitment-type.enum";
-import type { IDexSwap, IDexWrap } from "../interfaces/dex.interface";
-import { ISolanaMessage } from "../interfaces/solana-message.interface";
+import type { IComputeUnits } from "../interfaces/compute-units.interface";
 import { SolanaBlockhashService } from "./solana-blockhash.service";
 
 @Injectable()
 export class SolanaService {
 	constructor(
 		private readonly _solanaBlockhashService: SolanaBlockhashService,
-		private readonly _eventsService: EventsService,
-		private readonly _raydiumService: RaydiumService,
-		private readonly _heliusService: HeliusService
+		private readonly _heliusService: HeliusService,
+		private readonly _eventsService: EventsService
 	) {}
-
-	@OnEvent(EventsEnum.HELIUS_MESSAGE)
-	handleHeliusMessage(message: ISolanaMessage) {
-		if (!message?.params?.result?.transaction || message.params.result.transaction.meta.err) {
-			return;
-		}
-
-		this._eventsService.emit(EventsEnum.SOLANA_MESSAGE, message);
-	}
 
 	subscribeTransactions(accountInclude: string[], accountExclude: string[], commitmentType?: CommitmentTypeEnum) {
 		this._heliusService.subscribeTransactions(accountInclude, accountExclude, commitmentType);
-
-		this._eventsService.emit(EventsEnum.SOLANA_SEND, { accountInclude, accountExclude, commitmentType }, true);
 	}
 
-	swap(dexSwap: Omit<IDexSwap, "rpc" | "blockhash">) {
-		return this._raydiumService.swap({
-			...dexSwap,
-			rpc: this._heliusService,
-			blockhash: this._solanaBlockhashService.blockhash
+	async swap(
+		from: PublicKey,
+		to: PublicKey,
+		amount: number,
+		signer: Keypair,
+		pool: IPool,
+		computeUnits: IComputeUnits,
+		sendOptions: SendOptions = SEND_OPTIONS
+	) {
+		const { microLamports, units } = computeUnits;
+		const tokenInAccount = getAssociatedTokenAddressSync(from, signer.publicKey);
+		const tokenOutAccount = getAssociatedTokenAddressSync(to, signer.publicKey);
+
+		const instructions: TransactionInstruction[] = [
+			ComputeBudgetProgram.setComputeUnitPrice({ microLamports }),
+			ComputeBudgetProgram.setComputeUnitLimit({ units }),
+			createAssociatedTokenAccountIdempotentInstruction(signer.publicKey, tokenInAccount, signer.publicKey, from),
+			createAssociatedTokenAccountIdempotentInstruction(signer.publicKey, tokenOutAccount, signer.publicKey, to),
+			new TransactionInstruction({
+				programId: new PublicKey(pool.programId),
+				data: encodeData(from, amount),
+				keys: [
+					// system
+					{ pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+					// amm
+					{ pubkey: new PublicKey(pool.address), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.authority), isSigner: false, isWritable: false },
+					{ pubkey: new PublicKey(pool.openOrders), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.targetOrders), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.baseVault), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.quoteVault), isSigner: false, isWritable: true },
+					// serum
+					{ pubkey: new PublicKey(pool.marketProgramId), isSigner: false, isWritable: false },
+					{ pubkey: new PublicKey(pool.marketId), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketBids), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketAsks), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketEventQueue), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketBaseVault), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketQuoteVault), isSigner: false, isWritable: true },
+					{ pubkey: new PublicKey(pool.marketAuthority), isSigner: false, isWritable: false },
+					// user
+					{ pubkey: tokenInAccount, isSigner: false, isWritable: true },
+					{ pubkey: tokenOutAccount, isSigner: false, isWritable: true },
+					{ pubkey: signer.publicKey, isSigner: true, isWritable: false }
+				]
+			})
+		];
+
+		return this.sendRawTransaction(instructions, signer, sendOptions);
+	}
+
+	wrap(signer: Keypair, amount: number) {
+		const wsol = getAssociatedTokenAddressSync(NATIVE_MINT, signer.publicKey);
+		const instructions: TransactionInstruction[] = [
+			createAssociatedTokenAccountIdempotentInstruction(signer.publicKey, wsol, signer.publicKey, NATIVE_MINT),
+			SystemProgram.transfer({
+				fromPubkey: signer.publicKey,
+				toPubkey: wsol,
+				lamports: amount * 1e9
+			}),
+			createSyncNativeInstruction(wsol)
+		];
+
+		return this.sendRawTransaction(instructions, signer, {
+			skipPreflight: true,
+			preflightCommitment: "processed",
+			maxRetries: 1
 		});
 	}
 
-	wrap(dexWrap: Omit<IDexWrap, "rpc">) {
-		return this._raydiumService.wrap({
-			...dexWrap,
-			rpc: this._heliusService
+	unwrap(signer: Keypair) {
+		const wsol = getAssociatedTokenAddressSync(NATIVE_MINT, signer.publicKey);
+		const instructions: TransactionInstruction[] = [
+			createCloseAccountInstruction(wsol, signer.publicKey, signer.publicKey)
+		];
+
+		return this.sendRawTransaction(instructions, signer, {
+			skipPreflight: true,
+			preflightCommitment: "processed",
+			maxRetries: 1
 		});
 	}
 
-	unwrap(dexWrap: Omit<IDexWrap, "rpc">) {
-		return this._raydiumService.unwrap({
-			...dexWrap,
-			rpc: this._heliusService
+	async sendRawTransaction(instructions: TransactionInstruction[], signer: Keypair, sendOptions: SendOptions) {
+		const transactionMessage = new TransactionMessage({
+			instructions,
+			payerKey: signer.publicKey,
+			recentBlockhash: this._solanaBlockhashService.blockhash
 		});
+		const transaction = new VersionedTransaction(transactionMessage.compileToV0Message());
+
+		transaction.sign([signer]);
+
+		const signature = await this._heliusService.connection.sendRawTransaction(transaction.serialize(), sendOptions);
+
+		this._eventsService.emit(EventsEnum.SEND_SOLANA_TRANSACTION, signature);
+
+		return signature;
 	}
 
 	async getAmount(walletAddress: string, mintAddress: string): Promise<number> {
@@ -75,5 +151,9 @@ export class SolanaService {
 		} catch (error) {
 			throw new Error(`Не удалось получить баланс токенов: ${error.message}`);
 		}
+	}
+
+	async getAsset(mintAddress: string) {
+		return this._heliusService.getAsset(mintAddress);
 	}
 }

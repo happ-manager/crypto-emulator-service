@@ -77,7 +77,7 @@ export class WalletsService {
 			const secret = this._cryptoService.decrypt(findedWallet.secret);
 			const signer = Keypair.fromSecretKey(bs58.decode(secret));
 
-			const signature = await this._solanaService.wrap({ amount, signer });
+			const signature = await this._solanaService.wrap(signer, amount);
 
 			return { signature };
 		} catch (error) {
@@ -86,18 +86,24 @@ export class WalletsService {
 		}
 	}
 
-	async unwrapSolana(id: string, amount: number) {
+	async unwrapSolana(id: string) {
 		try {
 			const findedWallet = await this._walletsRepository.findOne({ where: { id } });
 			const secret = this._cryptoService.decrypt(findedWallet.secret);
 			const signer = Keypair.fromSecretKey(bs58.decode(secret));
 
-			const signature = await this._solanaService.unwrap({ amount, signer });
+			const signature = await this._solanaService.unwrap(signer);
 
 			return { signature };
 		} catch (error) {
 			this._loggerService.error(error, "unwrapSolana");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
+	}
+
+	async getKeypair(secret: string) {
+		const decrypted = this._cryptoService.decrypt(secret);
+		const decoded = bs58.decode(decrypted);
+		return Keypair.fromSecretKey(decoded);
 	}
 }

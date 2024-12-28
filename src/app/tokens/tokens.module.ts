@@ -5,6 +5,7 @@ import { EventsModule } from "../events/events.module";
 import { DateModule } from "../libs/date";
 import { DexToolsModule } from "../libs/dex-tools";
 import { LoggerModule } from "../libs/logger";
+import { SolanaModule } from "../libs/solana";
 import { TOKENS_CONTROLLERS } from "./controllers";
 import { TOKENS_ENTITIES } from "./entities";
 import { TOKENS_GUARDS } from "./guards";
@@ -18,7 +19,8 @@ import { TOKENS_SERVICES } from "./services";
 		DexToolsModule.forChild(),
 		EventsModule.forChild(),
 		DateModule.forChild(),
-		LoggerModule.forChild()
+		LoggerModule.forChild(),
+		SolanaModule
 	],
 	controllers: TOKENS_CONTROLLERS,
 	providers: [...TOKENS_SERVICES, ...TOKENS_RESOLVERS, ...TOKENS_GUARDS, ...TOKENS_LOADERS],
