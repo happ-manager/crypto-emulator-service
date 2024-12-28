@@ -357,7 +357,7 @@ export class TradingService implements OnModuleInit {
 			this._swapSubjects[poolAddress].next(tradingTransaction);
 		}
 
-		this._eventsService.emit(EventsEnum.TRADING_TRANSACTION, tradingTransaction);
+		this._eventsService.emit(EventsEnum.TRADING_TRANSACTION, tradingTransaction, true);
 	}
 
 	handlePoolCreate(trading: ITrading) {
