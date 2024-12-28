@@ -1,5 +1,6 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
+import { Cron } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { IsNull } from "typeorm";
@@ -23,7 +24,7 @@ export class TokensService {
 		private readonly _solanaService: SolanaService
 	) {}
 
-	@OnEvent(EventsEnum.TRADING_TOKEN_CREATED)
+	@Cron("*/30 * * * * *")
 	async handleTokensWithoutNames() {
 		const { data } = await this.getTokens({
 			where: {
@@ -42,6 +43,11 @@ export class TokensService {
 
 			await this.updateToken(token.id, { name, symbol });
 		}
+	}
+
+	@OnEvent(EventsEnum.TRADING_TOKEN_CREATED)
+	async onTradingTokenCreated() {
+		await this.handleTokensWithoutNames();
 	}
 
 	async getToken(options?: FindOneOptions<IToken>) {

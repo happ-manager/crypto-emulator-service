@@ -497,8 +497,7 @@ export class TradingService implements OnModuleInit {
 				const signer = this._signers[sourceWallet.address];
 
 				if (checkedMilestone.type === MilestoneTypeEnum.BUY) {
-					const amount = price / this._solanaPriceService.solanaPrice;
-					pendingSignature = await this.buy(pool, signer, amount, computeUnits);
+					pendingSignature = await this.buy(pool, signer, price, computeUnits);
 				}
 
 				if (checkedMilestone.type === MilestoneTypeEnum.SELL) {
@@ -519,7 +518,9 @@ export class TradingService implements OnModuleInit {
 		this._solanaService.subscribeTransactions([poolAddress], [], CommitmentTypeEnum.PROCESSED);
 	}
 
-	buy(pool: IPool, signer: Keypair, amount: number, computeUnits: IComputeUnits, sendOptions?: SendOptions) {
+	buy(pool: IPool, signer: Keypair, amountInUsd: number, computeUnits: IComputeUnits, sendOptions?: SendOptions) {
+		const amount = amountInUsd / this._solanaPriceService.solanaPrice;
+
 		return this._solanaService.swap(
 			new PublicKey(pool.baseMint),
 			new PublicKey(pool.quoteMint),
