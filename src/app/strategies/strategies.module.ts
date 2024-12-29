@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
+import { CandlesModule } from "../candles/candles.module";
 import { EventsModule } from "../events/events.module";
 import { DateModule } from "../libs/date";
 import { LoggerModule } from "../libs/logger";
@@ -18,7 +19,8 @@ import { STRATEGIES_SERVICES } from "./services";
 		EventsModule.forChild(),
 		LoggerModule.forChild(),
 		PriceModule.forChild(),
-		DateModule.forChild()
+		DateModule.forChild(),
+		CandlesModule
 	],
 	providers: [...STRATEGIES_SERVICES, ...STRATEGIES_RESOLVERS, ...STRATEGIEST_LOADERS],
 	exports: [...STRATEGIEST_LOADERS, ...STRATEGIES_SERVICES]
