@@ -6,20 +6,26 @@ import { ConditionFieldEnum } from "../enums/condition-field.enum";
 import type { ICheckedTransactions } from "../interfaces/checked.interface";
 import type { ICondition } from "../interfaces/condition.interface";
 import type { IConditionsGroup } from "../interfaces/conditions-group.interface";
-import type { IMilestone } from "../interfaces/milestone.interface";
+import type { IMilestoneProps } from "../interfaces/milestone.interface";
 import { getCheckedTransaction } from "../utils/get-checked-transaction.util";
 import { getGroupOperatorValue } from "../utils/get-group-operator-value.util";
 import { getOperatorValue } from "../utils/get-operator-value.util";
+import { PredefinedStrategiesService } from "./predefined-strategies/predefined-strategies.service";
 
 @Injectable()
 export class CheckStrategyService {
-	constructor(private readonly _loggerService: LoggerService) {}
+	constructor(
+		private readonly _predefinedStrategiesService: PredefinedStrategiesService,
+		private readonly _loggerService: LoggerService
+	) {}
 
-	getCheckedMilestone(
-		milestone: IMilestone,
-		transactions: IBaseTransaction[],
-		checkedTransactions: ICheckedTransactions
-	) {
+	getCheckedMilestone(props: IMilestoneProps) {
+		const { strategy, milestone, transactions, checkedTransactions } = props;
+
+		if (strategy.predefinedStrategy) {
+			return this._predefinedStrategiesService.getCheckedMilestone(props);
+		}
+
 		if (checkedTransactions[milestone.id]) {
 			return { ...milestone, checkedTransaction: checkedTransactions[milestone.id] };
 		}

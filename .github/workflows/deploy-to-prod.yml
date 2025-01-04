@@ -19,6 +19,10 @@ jobs:
       - name: Decode and create prod environment file
         run: echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.prod.ts
 
+      - name: Decode and create CA certificate file
+        run: |
+          echo "${{ secrets.CA_CERTIFICATE_BASE64 }}" | base64 -d > ./ca-certificate.crt
+
       - name: Build Docker image
         run: docker build -t happ-crypto-api .
 

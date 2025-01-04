@@ -6,6 +6,7 @@ import { Paginated } from "../../shared/models/paginated.model";
 import { TradingEntity } from "../../trading/entities/trading.entity";
 import type { ITrading } from "../../trading/interfaces/trading.interface";
 import { STRATEGIES } from "../constants/strategies/strategies.constant";
+import { PredefinedStrategyEnum } from "../enums/predefined-strategy.enum";
 import type { IMilestone } from "../interfaces/milestone.interface";
 import type { IStrategy } from "../interfaces/strategy.interface";
 import { MilestoneEntity } from "./milestone.entity";
@@ -20,6 +21,10 @@ export class StrategyEntity extends BaseEntity implements IStrategy {
 	@Field({ nullable: true })
 	@Column({ nullable: true })
 	description?: string;
+
+	@Field(() => PredefinedStrategyEnum, { nullable: true })
+	@Column({ type: "enum", enum: PredefinedStrategyEnum, nullable: true })
+	predefinedStrategy?: PredefinedStrategyEnum;
 
 	@Field(() => [TradingEntity])
 	@OneToMany(() => TradingEntity, (trading) => trading.strategy)

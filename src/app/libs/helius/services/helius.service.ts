@@ -1,10 +1,8 @@
 import type { OnModuleInit } from "@nestjs/common";
 import { Inject } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
-import type { Signer, TransactionInstruction, TransactionSignature } from "@solana/web3.js";
 import { Connection } from "@solana/web3.js";
 import { Helius } from "helius-sdk";
-import type { HeliusSendOptions } from "helius-sdk/dist/src/types";
 import * as WebSocket from "ws";
 
 import { EventsEnum } from "../../../events/enums/events.enum";
@@ -13,7 +11,6 @@ import { LoggerService } from "../../logger";
 import type { CommitmentTypeEnum } from "../../solana/enums/commitment-type.enum";
 import type { IRpc } from "../../solana/interfaces/rpc.interface";
 import type { ISolanaMessage } from "../../solana/interfaces/solana-message.interface";
-import type { ISolanaTransaction } from "../../solana/interfaces/solana-transaction.interface";
 import { HELIUS_CONFIG } from "../injection-tokens/helius-config.injection-token";
 import { IHeliusConfig } from "../interfaces/helius-config.interface";
 import { HeliusApiService } from "./helius-api.service";
@@ -35,7 +32,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 	) {}
 
 	onModuleInit() {
-		// setTimeout(this.init.bind(this));
+		setTimeout(this.init.bind(this));
 	}
 
 	init() {
@@ -52,7 +49,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 				this._ws.ping();
 			}, 30_000);
 
-			this._eventsService.emit(EventsEnum.HELIUS_OPEN);
+			this._eventsService.emit(EventsEnum.HELIUS_OPEN, null, true);
 
 			for (const [account, commitment] of Object.entries(this.accounts)) {
 				this.subscribeTransactions([account], [], commitment);
@@ -71,16 +68,16 @@ export class HeliusService implements OnModuleInit, IRpc {
 			this._eventsService.emit(EventsEnum.SOLANA_MESSAGE, message);
 		});
 		this._ws.on("error", (error) => {
-			this._loggerService.error(`Ошибка WebSocket: ${error.message}`, "init");
+			this._loggerService.error(`Helius ошибка: ${error.message}`, "HeliusService");
 
-			this._eventsService.emit(EventsEnum.HELIUS_ERROR, error);
+			this._eventsService.emit(EventsEnum.HELIUS_ERROR, error.message, true);
 		});
-		this._ws.on("close", (err) => {
-			this._loggerService.error(err.toString(), "WebSocket соединение закрыто");
+		this._ws.on("close", (errorCode) => {
+			this._loggerService.error(`Helius соединение закрыто: ${errorCode}`, "HeliusService");
 
-			this._eventsService.emit(EventsEnum.HELIUS_CLOSE);
+			this._eventsService.emit(EventsEnum.HELIUS_CLOSE, errorCode, true);
 
-			setTimeout(this.init.bind(this), 2000);
+			this.init();
 		});
 	}
 
@@ -121,22 +118,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 		}
 	}
 
-	getTransactions(poolAddress: string, signature?: string) {
-		return this._heliusApiService.getTransactions(poolAddress, signature);
-	}
-
 	getAsset(mintAddress: string) {
 		return this._heliusApiService.getAsset(mintAddress);
-	}
-
-	sendSmartTransaction(instructions: TransactionInstruction[], signers: Signer[]): Promise<TransactionSignature> {
-		return this.helius.rpc.sendSmartTransaction(instructions, signers, [], {
-			skipPreflight: true,
-			preflightCommitment: "processed"
-		});
-	}
-
-	sendTransaction(transaction: ISolanaTransaction, options?: HeliusSendOptions): Promise<TransactionSignature> {
-		return this.helius.rpc.sendTransaction(transaction, options);
 	}
 }

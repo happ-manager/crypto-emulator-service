@@ -9,7 +9,7 @@ import type { ITrading } from "./trading.interface";
 export interface ITradingToken extends IBase {
 	id: string;
 	amount: number;
-	active: boolean;
+	disabled: boolean;
 	signaledAt: IDate;
 	trading: ITrading;
 	token: IToken;

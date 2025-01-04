@@ -29,9 +29,9 @@ export class TradingTokenEntity extends BaseEntity implements ITradingToken {
 	@DateColumn()
 	signaledAt: IDate;
 
-	@Field(() => Boolean, { defaultValue: true })
-	@Column("boolean", { default: true })
-	active: boolean;
+	@Field(() => Boolean, { defaultValue: false })
+	@Column("boolean", { default: false })
+	disabled: boolean;
 
 	@Field(() => TradingEntity)
 	@ManyToOne(() => TradingEntity, (trading) => trading.tradingTokens, { onDelete: "CASCADE" })

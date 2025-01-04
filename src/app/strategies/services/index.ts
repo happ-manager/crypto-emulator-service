@@ -1,8 +1,8 @@
 import { CheckStrategyService } from "./check-strategy.service";
 import { ConditionsService } from "./conditions.service";
 import { ConditionsGroupsService } from "./conditions-groups.service";
-import { FibonacciService } from "./fibonacci.service";
 import { MilestonesService } from "./milestones.service";
+import { PREDEFINED_STRATEGIES_SERVICES } from "./predefined-strategies";
 import { StrategiesService } from "./strategies.service";
 
 export const STRATEGIES_SERVICES = [
@@ -11,5 +11,5 @@ export const STRATEGIES_SERVICES = [
 	ConditionsService,
 	ConditionsGroupsService,
 	CheckStrategyService,
-	FibonacciService
+	...PREDEFINED_STRATEGIES_SERVICES
 ];

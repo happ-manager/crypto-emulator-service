@@ -74,11 +74,12 @@ export class EmulatorService {
 				const sortedMilestones = strategy.milestones.sort((a, b) => a.position - b.position);
 
 				for (const milestone of sortedMilestones) {
-					const checkedMilestone = this._checkStrategyService.getCheckedMilestone(
+					const checkedMilestone = this._checkStrategyService.getCheckedMilestone({
+						strategy,
 						milestone,
 						transactions,
 						checkedTransactions
-					);
+					});
 
 					if (!checkedMilestone) {
 						continue;

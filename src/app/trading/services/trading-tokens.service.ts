@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
+import { In } from "typeorm";
 import { Repository } from "typeorm";
 
 import { EventsEnum } from "../../events/enums/events.enum";
@@ -22,6 +23,10 @@ export class TradingTokensService {
 		private readonly _eventsService: EventsService,
 		private readonly _loggerService: LoggerService
 	) {}
+
+	get repository() {
+		return this._tradingTokensRepository;
+	}
 
 	@OnEvent(EventsEnum.MILESTONE_CONFIRMED)
 	async onMilestoneConfirmed(milestoneProcess: IMilestoneProcess) {
@@ -77,6 +82,25 @@ export class TradingTokensService {
 			return updatedTradingToken;
 		} catch (error) {
 			this._loggerService.error(error, "updateTradingToken");
+			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
+		}
+	}
+
+	async updateTradingTokens(ids: string[], tradingToken: DeepPartial<ITradingToken>) {
+		if (ids.length === 0) {
+			return;
+		}
+
+		try {
+			await this._tradingTokensRepository.update(ids, { ...tradingToken });
+
+			const updatedTradingTokens = await this._tradingTokensRepository.find({ where: { id: In(ids) } });
+
+			this._eventsService.emit(EventsEnum.TRADING_TOKENS_UPDATED, updatedTradingTokens);
+
+			return updatedTradingTokens;
+		} catch (error) {
+			this._loggerService.error(error, "updateTradingTokens");
 			throw new InternalServerErrorException(ErrorsEnum.InternalServerError);
 		}
 	}

@@ -25,7 +25,7 @@ export class TransactionsResolver {
 				...(poolAddress ? { poolAddress } : {})
 			},
 			order: {
-				date: "desc"
+				date: "asc"
 			}
 		});
 	}

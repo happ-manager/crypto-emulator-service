@@ -328,6 +328,7 @@ type Query {
   getGroupOperators: [groupOperatorEnum!]!
   getMilestoneTypes: [milestoneTypeEnum!]!
   getOperators: [operatorEnum!]!
+  getPredefinedStrategies: [predefinedStrategyEnum!]!
   milestone(id: ID!): MilestoneEntity!
   milestones(skip: Int, take: Int): PaginatedMilestones!
   pool(id: ID!): PoolEntity!
@@ -368,6 +369,7 @@ type StrategyEntity {
   id: ID!
   milestones: [MilestoneEntity!]!
   name: String!
+  predefinedStrategy: predefinedStrategyEnum
   tradings: [TradingEntity!]!
   updatedAt: DateTime!
 }
@@ -413,10 +415,10 @@ type TradingEntity {
 }
 
 type TradingTokenEntity {
-  active: Boolean!
   amount: Float!
   checkedStrategy: JSON!
   createdAt: DateTime!
+  disabled: Boolean!
   id: ID!
   pool: PoolEntity!
   signaledAt: IDate!
@@ -568,6 +570,10 @@ enum operatorEnum {
   LESS_EQUAL
   MORE
   MORE_EQUAL
+}
+
+enum predefinedStrategyEnum {
+  IMPULSE
 }
 
 enum verificationStatusEnum {

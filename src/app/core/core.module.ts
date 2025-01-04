@@ -12,9 +12,9 @@ import { CandlesModule } from "../candles/candles.module";
 import { ChannelsModule } from "../channels/channels.module";
 import { EmulatorModule } from "../emulator/emulator.module";
 import { EventsModule } from "../events/events.module";
+import { HealthModule } from "../health/health.module";
 import { CryptoModule } from "../libs/crypto";
 import { DateModule } from "../libs/date";
-import { DexToolsModule } from "../libs/dex-tools";
 import { FilesModule } from "../libs/files";
 import { HeliusModule } from "../libs/helius";
 import { JwtModule } from "../libs/jwt";
@@ -32,7 +32,6 @@ import { WalletsModule } from "../wallets/wallets.module";
 import { CRYPTO_CONFIG } from "./configs/crypto.config";
 import { DATE_CONFIG } from "./configs/date.config";
 import { DEV_TOOLS_CONFIG } from "./configs/dev-tools.config";
-import { DEX_TOOLS_CONFIG } from "./configs/dex-tools.config";
 import { EVENTS_CONFIG } from "./configs/events.config";
 import { FILES_CONFIG } from "./configs/files.config";
 import { GRAPHQL_CONFIG } from "./configs/graphql.config";
@@ -51,7 +50,6 @@ import { TYPEORM_CONFIG } from "./configs/typeorm.config";
 		ServeStaticModule.forRoot(SERVER_STATIC_CONFIG),
 		GraphQLModule.forRootAsync<ApolloDriverConfig>(GRAPHQL_CONFIG),
 		DevtoolsModule.register(DEV_TOOLS_CONFIG),
-		DexToolsModule.forRoot(DEX_TOOLS_CONFIG),
 		ScheduleModule.forRoot(),
 		LoggerModule.forRoot(LOGGER_CONFIG),
 		FilesModule.forRoot(FILES_CONFIG),
@@ -59,6 +57,7 @@ import { TYPEORM_CONFIG } from "./configs/typeorm.config";
 		EventsModule.forRoot(EVENTS_CONFIG),
 		PriceModule.forRoot(PRICE_CONFIG),
 		HeliusModule.forRoot(HELIUS_CONFIG),
+		HealthModule,
 		PoolsModule,
 		LoadersModule,
 		StrategiesModule,

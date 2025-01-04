@@ -3,7 +3,6 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { EventsModule } from "../events/events.module";
 import { DateModule } from "../libs/date";
-import { DexToolsModule } from "../libs/dex-tools";
 import { LoggerModule } from "../libs/logger";
 import { SolanaModule } from "../libs/solana";
 import { TOKENS_CONTROLLERS } from "./controllers";
@@ -16,7 +15,6 @@ import { TOKENS_SERVICES } from "./services";
 @Module({
 	imports: [
 		TypeOrmModule.forFeature(TOKENS_ENTITIES),
-		DexToolsModule.forChild(),
 		EventsModule.forChild(),
 		DateModule.forChild(),
 		LoggerModule.forChild(),
