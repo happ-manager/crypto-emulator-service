@@ -333,7 +333,15 @@ export class TradingService implements OnModuleInit {
 			}
 		}
 
-		const amount = postQuoteAmount - preQuoteAmount;
+		const baseChange = postBaseAmount - preBaseAmount;
+		const baseChangeToken = postQuoteAmount - preQuoteAmount;
+
+		if (INIT_INSTRUCTIONS.includes(instructionType) && (baseChange < 10 || baseChangeToken < 10_000)) {
+			console.log('traitor');
+			return;
+		}
+
+			const amount = postQuoteAmount - preQuoteAmount;
 		const basePrice = this._solanaPriceService.solanaPrice;
 		const price = (Math.abs(postBaseAmount) * basePrice) / Math.abs(postQuoteAmount);
 
