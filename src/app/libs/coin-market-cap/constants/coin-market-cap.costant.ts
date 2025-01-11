@@ -1,3 +1,0 @@
-export const COIN_MARKET_CAP = {
-	AUTH_HEADER: "X-CMC_PRO_API_KEY"
-};

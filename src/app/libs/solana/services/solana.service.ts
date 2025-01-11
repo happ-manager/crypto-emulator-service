@@ -16,19 +16,30 @@ import { EventsEnum } from "../../../events/enums/events.enum";
 import { EventsService } from "../../../events/services/events.service";
 import type { IPool } from "../../../pools/interfaces/pool.interface";
 import { HeliusService } from "../../helius/services/helius.service";
+import { LoggerService } from "../../logger";
 import { encodeData } from "../../raydium/utils/encode-data.util";
 import { SEND_OPTIONS } from "../constant/send-options.constant";
 import type { CommitmentTypeEnum } from "../enums/commitment-type.enum";
 import type { IComputeUnits } from "../interfaces/compute-units.interface";
 import { SolanaBlockhashService } from "./solana-blockhash.service";
+import { SolanaPriceService } from "./solana-price.service";
 
 @Injectable()
 export class SolanaService {
 	constructor(
 		private readonly _solanaBlockhashService: SolanaBlockhashService,
+		private readonly _solanaPriceService: SolanaPriceService,
 		private readonly _heliusService: HeliusService,
-		private readonly _eventsService: EventsService
+		private readonly _eventsService: EventsService,
+		private readonly _loggerService: LoggerService
 	) {}
+
+	async init() {
+		this._loggerService.log("Solana is running", "SolanaService");
+
+		await this._solanaPriceService.startPriceCheck(5000);
+		await this._solanaBlockhashService.startBlockhashCheck(60_000);
+	}
 
 	subscribeTransactions(accountInclude: string[], accountExclude: string[], commitmentType?: CommitmentTypeEnum) {
 		this._heliusService.subscribeTransactions(accountInclude, accountExclude, commitmentType);

@@ -1,1 +1,0 @@
-export const MESSARI_CONFIG = "MESSARI_CONFIG";

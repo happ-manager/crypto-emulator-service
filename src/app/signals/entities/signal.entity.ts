@@ -1,9 +1,6 @@
 import { Field, ObjectType } from "@nestjs/graphql";
 import { Column, Entity, ManyToOne } from "typeorm";
 
-import { DateColumn } from "../../libs/date/decorators/date-column.decorator";
-import { IDate } from "../../libs/date/interfaces/date.interface";
-import { DateScalar } from "../../libs/date/scalars/date.scalar";
 import { BaseEntity } from "../../shared/entities/base.entity";
 import { Paginated } from "../../shared/models/paginated.model";
 import { TokenEntity } from "../../tokens/entities/token.entity";
@@ -30,9 +27,9 @@ export class SignalEntity extends BaseEntity implements ISignal {
 	@Column({ nullable: true })
 	poolAddress?: string;
 
-	@Field(() => DateScalar)
-	@DateColumn()
-	signaledAt: IDate;
+	@Field(() => Date)
+	@Column("timestamptz")
+	signaledAt: Date;
 
 	@Field(() => TokenEntity, { nullable: true })
 	@ManyToOne(() => TokenEntity, (token) => token.signals, { nullable: true, onDelete: "SET NULL" })

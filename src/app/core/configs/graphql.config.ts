@@ -4,10 +4,6 @@ import type { GqlModuleAsyncOptions, GqlOptionsFactory } from "@nestjs/graphql";
 import { registerEnumType } from "@nestjs/graphql";
 import { join } from "path";
 
-import { DateModule } from "../../libs/date";
-import { DateScalar } from "../../libs/date/scalars/date.scalar";
-import { PriceModule } from "../../libs/price";
-import { PriceScalar } from "../../libs/price/scalars/price.scalar";
 import { LoadersModule } from "../../loaders/loaders.module";
 import { LoadersService } from "../../loaders/services/loaders.service";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
@@ -21,18 +17,14 @@ import { PredefinedStrategyEnum } from "../../strategies/enums/predefined-strate
 import { VerificationStatusEnum } from "../../users/enums/verification-status.enum";
 
 export const GRAPHQL_CONFIG: GqlModuleAsyncOptions<ApolloDriverConfig, GqlOptionsFactory<ApolloDriverConfig>> = {
-	imports: [LoadersModule, DateModule.forChild(), PriceModule.forChild()], // Убедитесь, что DateModule импортирован
-	inject: [LoadersService, DateScalar, PriceScalar],
-	useFactory: (loadersService: LoadersService, dateScalar: DateScalar, priceScalar: PriceScalar) => ({
+	imports: [LoadersModule],
+	inject: [LoadersService],
+	useFactory: (loadersService: LoadersService) => ({
 		playground: false,
 		sortSchema: true,
 		plugins: [ApolloServerPluginLandingPageLocalDefault()],
 		autoSchemaFile: join(process.cwd(), "src/schema.gql"),
-		context: ({ req }): IGqlContext => ({ req, loaders: loadersService.loaders }),
-		resolvers: {
-			IDate: dateScalar,
-			IPrice: priceScalar
-		}
+		context: ({ req }): IGqlContext => ({ req, loaders: loadersService.loaders })
 	}),
 	driver: ApolloDriver
 };

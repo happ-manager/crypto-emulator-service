@@ -1,1 +1,0 @@
-export const TELEGRAM_CLIENT = "TELEGRAM_CLIENT";

@@ -4,6 +4,7 @@ import { In } from "typeorm";
 import type { ITransaction } from "../../candles/interfaces/transaction.interface";
 import { TransactionsService } from "../../candles/services/transactions.service";
 import { findTransaction } from "../../candles/utils/find-transaction.util";
+import { percentDiff, percentOf } from "../../shared/utils/price.util";
 import { SignalsService } from "../../signals/services/signals.service";
 import type { IAnalyticsBody } from "../interfaces/analytics-body.interface";
 
@@ -33,7 +34,7 @@ export class AnalyticsService {
 				order: { date: "asc" }
 			});
 
-			const transactions = data.filter((transaction) => transaction.price.gt(0));
+			const transactions = data.filter((transaction) => transaction.price > 0);
 
 			const entryTransaction = findTransaction(transactions, signal.signaledAt);
 			const [firstTransaction] = transactions;
@@ -53,30 +54,30 @@ export class AnalyticsService {
 			}
 
 			const maxTransaction = transactions.reduce(
-				(max, transaction) => (max.price.gt(transaction.price) ? max : transaction),
+				(max, transaction) => (max.price > transaction.price ? max : transaction),
 				entryTransaction
 			);
 			const transactionsBeforeMax = transactions.slice(0, transactions.indexOf(maxTransaction) + 1);
 			const minTransaction = transactionsBeforeMax.reduce(
-				(min, transaction) => (min.price.lt(transaction.price) ? min : transaction),
+				(min, transaction) => (min.price < transaction.price ? min : transaction),
 				maxTransaction
 			);
 
-			const minPercent = minTransaction.price.percentDiff(entryTransaction.price);
-			const maxPercent = maxTransaction.price.percentDiff(entryTransaction.price);
+			const minPercent = percentDiff(minTransaction.price, entryTransaction.price);
+			const maxPercent = percentDiff(maxTransaction.price, entryTransaction.price);
 
 			const percentTransactions: Record<string, ITransaction | null> = {};
 
-			const transactionsFromMin = [...transactionsBeforeMax].sort((a, b) => (a.price.lte(b.price) ? 1 : -1));
-			const transactionsFromMax = [...transactionsBeforeMax].sort((a, b) => (a.price.gte(b.price) ? 1 : -1));
+			const transactionsFromMin = [...transactionsBeforeMax].sort((a, b) => (a.price <= b.price ? 1 : -1));
+			const transactionsFromMax = [...transactionsBeforeMax].sort((a, b) => (a.price >= b.price ? 1 : -1));
 
-			for (let percent = minPercent.toNumber(); percent <= maxPercent.toNumber(); percent++) {
-				const price = entryTransaction.price.percentOf(percent);
+			for (let percent = minPercent; percent <= maxPercent; percent++) {
+				const price = percentOf(entryTransaction.price, percent);
 
 				percentTransactions[percent.toString()] =
 					percent > 0
-						? transactionsFromMax.find((transaction) => transaction.price.gte(price))
-						: transactionsFromMin.find((transaction) => transaction.price.lte(price));
+						? transactionsFromMax.find((transaction) => transaction.price >= price)
+						: transactionsFromMin.find((transaction) => transaction.price <= price);
 			}
 
 			results.push({

@@ -7,5 +7,6 @@ export interface ITransaction extends IBase, IBaseTransaction {
 	poolAddress: string;
 	signature: string;
 	author: string;
+	nextPrice: number;
 	candle?: ICandle;
 }

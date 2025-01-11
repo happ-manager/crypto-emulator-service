@@ -3,7 +3,6 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { CandlesModule } from "../candles/candles.module";
 import { EventsModule } from "../events/events.module";
-import { DateModule } from "../libs/date";
 import { FilesModule } from "../libs/files";
 import { LoggerModule } from "../libs/logger";
 import { SolanaModule } from "../libs/solana";
@@ -21,7 +20,6 @@ import { TRADING_SERVICES } from "./services";
 		TypeOrmModule.forFeature(TRADING_ENTITIES),
 		LoggerModule.forChild(),
 		FilesModule.forChild(),
-		DateModule.forChild(),
 		EventsModule.forChild(),
 		CandlesModule,
 		SolanaModule,

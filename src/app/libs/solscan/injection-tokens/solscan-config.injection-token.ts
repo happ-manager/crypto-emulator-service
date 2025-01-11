@@ -1,1 +1,0 @@
-export const SOLSCAN_CONFIG = "SOLSCAN_CONFIG";

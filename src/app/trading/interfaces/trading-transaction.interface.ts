@@ -7,4 +7,5 @@ export interface ITradingTransaction extends IBaseTransaction {
 	instructionType: RaydiumInstruction;
 	amount: number;
 	signature: string;
+	nextPrice: number;
 }

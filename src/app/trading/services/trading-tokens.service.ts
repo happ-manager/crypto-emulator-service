@@ -1,8 +1,7 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
-import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
-import { In } from "typeorm";
+import type { DeepPartial, FindManyOptions, FindOneOptions, FindOptionsWhere } from "typeorm";
 import { Repository } from "typeorm";
 
 import { EventsEnum } from "../../events/enums/events.enum";
@@ -10,8 +9,7 @@ import { EventsService } from "../../events/services/events.service";
 import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
-import type { IChecked } from "../../strategies/interfaces/checked.interface";
-import type { IStrategy } from "../../strategies/interfaces/strategy.interface";
+import type { ICheckedStrategy } from "../../strategies/interfaces/checked.interface";
 import { TradingTokenEntity } from "../entities/trading-token.entity";
 import { IMilestoneProcess } from "../interfaces/milestone-pricess.interface";
 import type { ITradingToken } from "../interfaces/trading-token.interface";
@@ -30,7 +28,7 @@ export class TradingTokensService {
 
 	@OnEvent(EventsEnum.MILESTONE_CONFIRMED)
 	async onMilestoneConfirmed(milestoneProcess: IMilestoneProcess) {
-		const { milestone, tradingToken, trading } = milestoneProcess;
+		const { milestone, tradingToken } = milestoneProcess;
 
 		const findedToken = await this._tradingTokensRepository.findOneBy({ id: tradingToken.id });
 
@@ -38,8 +36,8 @@ export class TradingTokensService {
 			return;
 		}
 
-		const checkedStrategy: IChecked<IStrategy> = {
-			...(findedToken.checkedStrategy || trading.strategy),
+		const checkedStrategy: ICheckedStrategy = {
+			...findedToken.checkedStrategy,
 			checkedMilestones: [...(findedToken.checkedStrategy?.checkedMilestones || []), milestone]
 		};
 
@@ -86,15 +84,11 @@ export class TradingTokensService {
 		}
 	}
 
-	async updateTradingTokens(ids: string[], tradingToken: DeepPartial<ITradingToken>) {
-		if (ids.length === 0) {
-			return;
-		}
-
+	async updateTradingTokens(criteria: FindOptionsWhere<ITradingToken>, tradingToken: DeepPartial<ITradingToken>) {
 		try {
-			await this._tradingTokensRepository.update(ids, { ...tradingToken });
+			await this._tradingTokensRepository.update(criteria, { ...tradingToken });
 
-			const updatedTradingTokens = await this._tradingTokensRepository.find({ where: { id: In(ids) } });
+			const updatedTradingTokens = await this._tradingTokensRepository.find({ where: criteria });
 
 			this._eventsService.emit(EventsEnum.TRADING_TOKENS_UPDATED, updatedTradingTokens);
 

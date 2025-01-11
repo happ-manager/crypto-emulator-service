@@ -11,11 +11,11 @@ export function getDelayedTransaction(
 
 	// Вычисляем границы промежутка времени
 	const startTime = baseTransaction.date;
-	const endTime = baseTransaction.date.add(delay, "millisecond");
+	const endTime = new Date(baseTransaction.date.getTime() + delay);
 
 	// Фильтруем транзакции, которые попадают в этот промежуток
 	const transactionsInDelay = transactions.filter(
-		(transaction) => transaction.date.isAfter(startTime) && transaction.date.isSameOrBefore(endTime)
+		(transaction) => transaction.date > startTime && transaction.date <= endTime
 	);
 
 	// Если есть транзакции в промежутке, возвращаем последнюю из них

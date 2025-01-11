@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { EventsModule } from "../events/events.module";
-import { DateModule } from "../libs/date";
 import { LoggerModule } from "../libs/logger";
 import { TradingModule } from "../trading/trading.module";
 import { SIGNALS_CONTROLLERS } from "./controllers";
@@ -16,7 +15,6 @@ import { SIGNALS_SERVICES } from "./services";
 	imports: [
 		TypeOrmModule.forFeature(SIGNALS_ENTITIES),
 		EventsModule.forChild(),
-		DateModule.forChild(),
 		LoggerModule.forChild(),
 		TradingModule
 	],

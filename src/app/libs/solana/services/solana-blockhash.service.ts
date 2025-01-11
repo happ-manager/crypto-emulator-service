@@ -1,13 +1,10 @@
-import type { OnModuleInit } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
 
 import { HeliusService } from "../../helius/services/helius.service";
 import { LoggerService } from "../../logger";
 
-const SOLANA_BLOCKHASH_INTERVAL = 60_000;
-
 @Injectable()
-export class SolanaBlockhashService implements OnModuleInit {
+export class SolanaBlockhashService {
 	blockhash: string = "";
 
 	constructor(
@@ -15,8 +12,16 @@ export class SolanaBlockhashService implements OnModuleInit {
 		private readonly _heliusService: HeliusService
 	) {}
 
-	onModuleInit() {
-		setTimeout(async () => {
+	async startBlockhashCheck(interval: number) {
+		const blockhash = await this.getBlockhash();
+
+		if (!blockhash) {
+			return;
+		}
+
+		this.blockhash = blockhash;
+
+		return setInterval(async () => {
 			const blockhash = await this.getBlockhash();
 
 			if (!blockhash) {
@@ -24,20 +29,7 @@ export class SolanaBlockhashService implements OnModuleInit {
 			}
 
 			this.blockhash = blockhash;
-			this.startBlockhashCheck();
-		});
-	}
-
-	startBlockhashCheck() {
-		setInterval(async () => {
-			const blockhash = await this.getBlockhash();
-
-			if (!blockhash) {
-				return;
-			}
-
-			this.blockhash = blockhash;
-		}, SOLANA_BLOCKHASH_INTERVAL);
+		}, interval);
 	}
 
 	async getBlockhash() {

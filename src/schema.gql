@@ -9,14 +9,14 @@ type AuthTokensDto {
 }
 
 type CandleEntity {
-  closeDate: IDate!
-  closePrice: IPrice!
+  closeDate: DateTime!
+  closePrice: Float!
   createdAt: DateTime!
   id: ID!
-  maxPrice: IPrice!
-  minPrice: IPrice!
-  openDate: IDate!
-  openPrice: IPrice!
+  maxPrice: Float!
+  minPrice: Float!
+  openDate: DateTime!
+  openPrice: Float!
   poolAddress: String!
   transactions: [TransactionEntity!]!
   updatedAt: DateTime!
@@ -118,12 +118,6 @@ input EmailAuthDto {
   email: String!
   password: String!
 }
-
-"""DateTime custom scalar for Dayjs with DateService"""
-scalar IDate
-
-"""Custom scalar for prices using Big.js"""
-scalar IPrice
 
 """
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
@@ -355,7 +349,7 @@ type SignalEntity {
   createdAt: DateTime!
   id: ID!
   poolAddress: String
-  signaledAt: IDate!
+  signaledAt: DateTime!
   source: String!
   token: TokenEntity
   tokenAddress: String
@@ -421,7 +415,7 @@ type TradingTokenEntity {
   disabled: Boolean!
   id: ID!
   pool: PoolEntity!
-  signaledAt: IDate!
+  signaledAt: DateTime!
   token: TokenEntity!
   trading: TradingEntity!
   updatedAt: DateTime!
@@ -431,10 +425,11 @@ type TransactionEntity {
   author: String
   candle: CandleEntity
   createdAt: DateTime!
-  date: IDate!
+  date: DateTime!
   id: ID!
+  nextPrice: Float!
   poolAddress: String!
-  price: IPrice!
+  price: Float!
   signature: String
   updatedAt: DateTime!
 }
@@ -521,7 +516,9 @@ type WalletEntity {
 enum conditionFieldEnum {
   AUTHOR
   DATE
+  DATE_DIFF
   PRICE
+  PRICE_DIFF
 }
 
 enum errorsEnum {

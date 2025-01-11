@@ -6,7 +6,7 @@ import type { ICheckedTransactions } from "./checked.interface";
 import type { IConditionsGroup } from "./conditions-group.interface";
 import type { IStrategy } from "./strategy.interface";
 
-export interface IMilestoneProps {
+export interface ICheckedProps {
 	strategy: IStrategy;
 	milestone: IMilestone;
 	transactions: IBaseTransaction[];

@@ -1,1 +1,0 @@
-export const DEX_TOOLS_CONFIG = "DEX_TOOLS_CONFIG";

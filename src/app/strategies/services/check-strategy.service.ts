@@ -1,187 +1,93 @@
 import { Injectable } from "@nestjs/common";
 
-import { LoggerService } from "../../libs/logger";
 import type { IBaseTransaction } from "../../shared/interfaces/base-transaction.interface";
-import { ConditionFieldEnum } from "../enums/condition-field.enum";
-import type { ICheckedTransactions } from "../interfaces/checked.interface";
-import type { ICondition } from "../interfaces/condition.interface";
-import type { IConditionsGroup } from "../interfaces/conditions-group.interface";
-import type { IMilestoneProps } from "../interfaces/milestone.interface";
-import { getCheckedTransaction } from "../utils/get-checked-transaction.util";
-import { getGroupOperatorValue } from "../utils/get-group-operator-value.util";
+import { GroupOperatorEnum } from "../enums/group-operator.enum";
+import type { ICheckedProps } from "../interfaces/milestone.interface";
+import { getConditionValue } from "../utils/get-condition-value.util";
 import { getOperatorValue } from "../utils/get-operator-value.util";
+import { getTransactionValue } from "../utils/get-transaction-value.util";
 import { PredefinedStrategiesService } from "./predefined-strategies/predefined-strategies.service";
 
 @Injectable()
 export class CheckStrategyService {
-	constructor(
-		private readonly _predefinedStrategiesService: PredefinedStrategiesService,
-		private readonly _loggerService: LoggerService
-	) {}
+	constructor(private readonly _predefinedStrategiesService: PredefinedStrategiesService) {}
 
-	getCheckedMilestone(props: IMilestoneProps) {
+	getCheckedTransaction(props: ICheckedProps): IBaseTransaction {
 		const { strategy, milestone, transactions, checkedTransactions } = props;
 
 		if (strategy.predefinedStrategy) {
-			return this._predefinedStrategiesService.getCheckedMilestone(props);
+			return this._predefinedStrategiesService.getCheckedTransaction(props);
 		}
 
-		if (checkedTransactions[milestone.id]) {
-			return { ...milestone, checkedTransaction: checkedTransactions[milestone.id] };
+		if (checkedTransactions.has(milestone.id)) {
+			return checkedTransactions.get(milestone.id);
 		}
 
-		const refId = milestone.refMilestone?.id;
-
-		if (!refId) {
-			this._loggerService.error("У группы должна быть ссылка", "getCheckedMilestone");
-			return;
-		}
-
-		const refTransaction = checkedTransactions[refId];
-
-		if (!refTransaction) {
-			return;
-		}
-
-		const milestoneTransactions = transactions.filter((transaction) =>
-			transaction.date.isSameOrAfter(refTransaction.date)
-		);
-
-		const conditionsGroups = milestone.conditionsGroups.map((group) =>
-			this.getCheckedConditionsGroup(group, milestoneTransactions, checkedTransactions)
-		);
-
-		const checkedConditionsGroups = getGroupOperatorValue(conditionsGroups, milestone.groupOperator);
-
-		if (checkedConditionsGroups.length === 0) {
-			return;
-		}
-
-		const checkedTransaction = getCheckedTransaction(checkedConditionsGroups, milestone.groupOperator);
-
-		checkedTransactions[milestone.id] = checkedTransaction;
-
-		return { ...milestone, checkedConditionsGroups, checkedTransaction };
-	}
-
-	getCheckedConditionsGroup(
-		conditionsGroup: IConditionsGroup,
-		transactions: IBaseTransaction[],
-		checkedTransactions: ICheckedTransactions
-	) {
-		const refId = conditionsGroup.refMilestone?.id || conditionsGroup.refConditionsGroup?.id;
-
-		if (!refId) {
-			this._loggerService.error("Для условия нужная транзакция", "getCheckedConditionsGroup");
-			return;
-		}
-
-		const refTransaction = checkedTransactions[refId];
-
-		if (!refTransaction) {
-			return;
-		}
-
-		const groupTransactions = transactions.filter((transaction) => transaction.date.isSameOrAfter(refTransaction.date));
-
-		const conditions = conditionsGroup.conditions.map((condition) =>
-			this.getCheckedConditon(condition, groupTransactions, checkedTransactions, conditionsGroup.duration)
-		);
-
-		const checkedConditions = getGroupOperatorValue(conditions, conditionsGroup.groupOperator);
-
-		if (checkedConditions.length === 0) {
-			return;
-		}
-
-		const checkedTransaction = getCheckedTransaction(checkedConditions, conditionsGroup.groupOperator);
-
-		checkedTransactions[conditionsGroup.id] = checkedTransaction;
-
-		return { ...conditionsGroup, checkedConditions, checkedTransaction };
-	}
-
-	getCheckedConditon(
-		condition: ICondition,
-		transactions: IBaseTransaction[],
-		checkedTransactions: ICheckedTransactions,
-		groupDuration: number
-	) {
-		const refId = condition.refMilestone?.id || condition.refConditionsGroup?.id;
-
-		if (!refId) {
-			this._loggerService.error("Для условия нужная транзакция", "getCheckedConditon");
-			return;
-		}
-
-		const refTransaction = checkedTransactions[refId];
-
-		if (!refTransaction) {
-			return;
-		}
-
-		const isPercent = condition.value.includes("%");
-		const conditioValue = Number.parseInt(condition.value);
-
-		if (typeof conditioValue !== "number") {
-			this._loggerService.error("Неправильный формат значения", "getCheckedConditon");
-			return;
-		}
-
-		// Нам нужна только безпрерывна последовательность подходящих транзакций. Если между успешными транзакциями была неподходящяя - они будут в разных массивах
-		const group: IBaseTransaction[][] = [[]];
-		let groupIndex = 0;
-		let checkedTransaction: IBaseTransaction;
+		const transactionsToCheck: IBaseTransaction[] = [];
+		let isConditionsGroupsChecked = false;
 
 		for (const transaction of transactions) {
-			let transactionValue: number;
+			for (const conditionsGroup of milestone.conditionsGroups) {
+				if (checkedTransactions.has(conditionsGroup.id)) {
+					continue;
+				}
 
-			switch (condition.field) {
-				case ConditionFieldEnum.DATE: {
-					transactionValue = transaction.date.unix() - refTransaction.date.unix();
+				let isConditionsChecked = false;
 
+				for (const condition of conditionsGroup.conditions) {
+					const refId = condition.refMilestone?.id || condition.refConditionsGroup?.id;
+					const refTransaction = checkedTransactions.get(refId);
+
+					if (!refTransaction) {
+						continue;
+					}
+
+					const conditionValue = getConditionValue(condition);
+					const transactionValue = getTransactionValue(condition, transaction, refTransaction);
+					const isConditionChecked = getOperatorValue(transactionValue, condition.operator, conditionValue);
+
+					if (isConditionChecked) {
+						isConditionsChecked = true;
+					} else if (conditionsGroup.groupOperator === GroupOperatorEnum.AND) {
+						isConditionsChecked = false;
+						break;
+					}
+				}
+
+				if (!isConditionsChecked) {
+					isConditionsGroupsChecked = false;
+					transactionsToCheck.splice(0, transactionsToCheck.length);
+
+					if (milestone.groupOperator === GroupOperatorEnum.AND) {
+						break;
+					}
+
+					continue;
+				}
+
+				transactionsToCheck.push(transaction);
+
+				const [firstTransaction] = transactionsToCheck;
+				const duration = transaction.date.getTime() - firstTransaction.date.getTime();
+
+				if (duration < conditionsGroup.duration) {
+					isConditionsGroupsChecked = false;
+					continue;
+				}
+
+				isConditionsGroupsChecked = true;
+				checkedTransactions.set(conditionsGroup.id, transaction);
+
+				if (milestone.groupOperator === GroupOperatorEnum.OR) {
 					break;
 				}
-				case ConditionFieldEnum.PRICE: {
-					transactionValue = isPercent
-						? transaction.price.percentDiff(refTransaction.price).toNumber()
-						: transaction.price.minus(refTransaction.price).toNumber();
-
-					break;
-				}
-				case ConditionFieldEnum.AUTHOR: {
-					transactionValue = transaction.author as any as number; // TODO: Check types
-
-					break;
-				}
-				// No default
 			}
 
-			const isChecked = getOperatorValue(transactionValue, conditioValue, condition.operator);
-
-			const groupTransactions = group[groupIndex];
-
-			if (!isChecked) {
-				if (groupTransactions.length > 0) {
-					group[++groupIndex] = [];
-				}
+			if (!isConditionsGroupsChecked) {
 				continue;
 			}
 
-			groupTransactions.push(transaction);
-			const [firstTransaction] = groupTransactions;
-			const duration = transaction.date.unix() - firstTransaction.date.unix();
-
-			if (duration >= groupDuration) {
-				checkedTransaction = transaction;
-				break;
-			}
+			return transaction;
 		}
-
-		if (!checkedTransaction) {
-			return;
-		}
-
-		return { ...condition, checkedTransaction };
 	}
 }

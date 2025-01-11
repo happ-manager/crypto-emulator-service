@@ -1,4 +1,3 @@
-import type { OnModuleInit } from "@nestjs/common";
 import { Inject } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
 import { Connection } from "@solana/web3.js";
@@ -14,28 +13,30 @@ import type { ISolanaMessage } from "../../solana/interfaces/solana-message.inte
 import { HELIUS_CONFIG } from "../injection-tokens/helius-config.injection-token";
 import { IHeliusConfig } from "../interfaces/helius-config.interface";
 import { HeliusApiService } from "./helius-api.service";
+import { WarmupService } from "./warmup.service";
 
 @Injectable()
-export class HeliusService implements OnModuleInit, IRpc {
+export class HeliusService implements IRpc {
 	private _ws: WebSocket;
 
 	readonly connection = new Connection(this._heliusConfig.stakedRpcUrl, "confirmed");
 	readonly helius = new Helius(this._heliusConfig.apiKey);
 
-	readonly accounts: Record<string, CommitmentTypeEnum> = {};
+	readonly accounts: Map<string, CommitmentTypeEnum> = new Map();
 
 	constructor(
 		@Inject(HELIUS_CONFIG) private readonly _heliusConfig: IHeliusConfig,
 		private readonly _heliusApiService: HeliusApiService,
 		private readonly _eventsService: EventsService,
-		private readonly _loggerService: LoggerService
+		private readonly _loggerService: LoggerService,
+		private readonly _warmupService: WarmupService
 	) {}
 
-	onModuleInit() {
-		setTimeout(this.init.bind(this));
-	}
-
 	init() {
+		this._warmupService.startWarmup(this.connection, 1000);
+
+		this._loggerService.log("Helius is running", "HeliusService");
+
 		this._ws = new WebSocket(this._heliusConfig.enhancedWebsocketUrl);
 
 		this._ws.on("open", () => {
@@ -51,7 +52,7 @@ export class HeliusService implements OnModuleInit, IRpc {
 
 			this._eventsService.emit(EventsEnum.HELIUS_OPEN, null, true);
 
-			for (const [account, commitment] of Object.entries(this.accounts)) {
+			for (const [account, commitment] of this.accounts.entries()) {
 				this.subscribeTransactions([account], [], commitment);
 			}
 		});
@@ -109,12 +110,12 @@ export class HeliusService implements OnModuleInit, IRpc {
 
 		for (const account of accountInclude) {
 			console.log(`Subscribe on ${account}`);
-			this.accounts[account] = commitment;
+			this.accounts.set(account, commitment);
 		}
 
 		for (const account of accountExclude) {
 			console.log(`Unsubscribe from ${account}`);
-			delete this.accounts[account];
+			this.accounts.delete(account);
 		}
 	}
 

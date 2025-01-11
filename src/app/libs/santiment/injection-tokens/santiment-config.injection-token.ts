@@ -1,1 +1,0 @@
-export const SANTIMENT_CONFIG = "SANTIMENT_CONFIG";

@@ -1,12 +1,6 @@
 import { Field, ObjectType } from "@nestjs/graphql";
 import { Column, Entity, Index, OneToMany } from "typeorm";
 
-import { DateColumn } from "../../libs/date/decorators/date-column.decorator";
-import { IDate } from "../../libs/date/interfaces/date.interface";
-import { DateScalar } from "../../libs/date/scalars/date.scalar";
-import { PriceColumn } from "../../libs/price/decorators/price-column.decorator";
-import { IPrice } from "../../libs/price/interfaces/price.interface";
-import { PriceScalar } from "../../libs/price/scalars/price.scalar";
 import { BaseEntity } from "../../shared/entities/base.entity";
 import { Paginated } from "../../shared/models/paginated.model";
 import { CANDLES } from "../constants/candles/candles.constant";
@@ -22,29 +16,29 @@ export class CandleEntity extends BaseEntity implements ICandle {
 	@Index()
 	poolAddress: string;
 
-	@Field(() => DateScalar)
-	@DateColumn()
-	openDate: IDate;
+	@Field(() => Date)
+	@Column("timestamptz")
+	openDate: Date;
 
-	@Field(() => PriceScalar)
-	@PriceColumn()
-	openPrice: IPrice;
+	@Field(() => Number)
+	@Column("decimal")
+	openPrice: number;
 
-	@Field(() => DateScalar)
-	@DateColumn()
-	closeDate: IDate;
+	@Field(() => Date)
+	@Column("timestamptz")
+	closeDate: Date;
 
-	@Field(() => PriceScalar)
-	@PriceColumn()
-	closePrice: IPrice;
+	@Field(() => Number)
+	@Column("decimal")
+	closePrice: number;
 
-	@Field(() => PriceScalar)
-	@PriceColumn()
-	minPrice: IPrice;
+	@Field(() => Number)
+	@Column("decimal")
+	minPrice: number;
 
-	@Field(() => PriceScalar)
-	@PriceColumn()
-	maxPrice: IPrice;
+	@Field(() => Number)
+	@Column("decimal")
+	maxPrice: number;
 
 	@Field(() => [TransactionEntity])
 	@OneToMany(() => TransactionEntity, (transaction) => transaction.candle)

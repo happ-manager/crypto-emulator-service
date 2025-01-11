@@ -1,25 +1,14 @@
 import { HttpService } from "@nestjs/axios";
-import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
+import type { Connection } from "@solana/web3.js";
 import { firstValueFrom } from "rxjs";
 
-import { HeliusService } from "./helius.service";
-
 @Injectable()
-export class WarmupService implements OnModuleInit, OnModuleDestroy {
-	private healthCheckInterval: ReturnType<typeof setInterval>;
+export class WarmupService {
+	constructor(private readonly _httpService: HttpService) {}
 
-	constructor(
-		private readonly _heliusService: HeliusService,
-		private readonly _httpService: HttpService
-	) {}
-
-	onModuleInit() {
-		setTimeout(this.startHealthCheck.bind(this), 1000);
-	}
-
-	startHealthCheck() {
-		this.healthCheckInterval = setInterval(async () => {
+	startWarmup(connection: Connection, interval: number) {
+		return setInterval(async () => {
 			try {
 				const data = {
 					jsonrpc: "2.0",
@@ -30,9 +19,7 @@ export class WarmupService implements OnModuleInit, OnModuleDestroy {
 				const config = {
 					headers: { "Content-Type": "application/json" }
 				};
-				const response = await firstValueFrom(
-					this._httpService.post(this._heliusService.connection.rpcEndpoint, data, config)
-				);
+				const response = await firstValueFrom(this._httpService.post(connection.rpcEndpoint, data, config));
 
 				if (response.data.error) {
 					throw new Error(JSON.stringify(response.data.error));
@@ -40,14 +27,6 @@ export class WarmupService implements OnModuleInit, OnModuleDestroy {
 			} catch {
 				// this._loggerService.error(`Error in getHealth request: ${error.message}`);
 			}
-		}, 1000);
-	}
-
-	onModuleDestroy() {
-		if (!this.healthCheckInterval) {
-			return;
-		}
-
-		clearInterval(this.healthCheckInterval);
+		}, interval);
 	}
 }

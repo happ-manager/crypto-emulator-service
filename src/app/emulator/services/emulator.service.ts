@@ -6,9 +6,8 @@ import { findTransaction } from "../../candles/utils/find-transaction.util";
 import { LoggerService } from "../../libs/logger";
 import { SignalsService } from "../../signals/services/signals.service";
 import { MilestoneTypeEnum } from "../../strategies/enums/milestone-type.enum";
-import type { IChecked, ICheckedTransactions } from "../../strategies/interfaces/checked.interface";
+import type { IChecked, ICheckedStrategy, ICheckedTransactions } from "../../strategies/interfaces/checked.interface";
 import type { IMilestone } from "../../strategies/interfaces/milestone.interface";
-import type { IStrategy } from "../../strategies/interfaces/strategy.interface";
 import { CheckStrategyService } from "../../strategies/services/check-strategy.service";
 import { StrategiesService } from "../../strategies/services/strategies.service";
 import type { IEmulateBody } from "../interfaces/emulator-body.interface";
@@ -50,10 +49,10 @@ export class EmulatorService {
 				where: { poolAddress: signal.poolAddress },
 				order: { date: "asc" }
 			});
-			const checkedStrategies: IChecked<IStrategy>[] = [];
+			const checkedStrategies: ICheckedStrategy[] = [];
 
 			for (const strategy of findedStrategies.data) {
-				const checkedTransactions: ICheckedTransactions = {};
+				const checkedTransactions: ICheckedTransactions = new Map();
 				const signalMilestone = strategy.milestones.find((milestone) => milestone.type === MilestoneTypeEnum.SIGNAL);
 
 				if (!signalMilestone) {
@@ -68,32 +67,31 @@ export class EmulatorService {
 					continue;
 				}
 
-				checkedTransactions[signalMilestone.id] = signalTransaction;
+				checkedTransactions.set(signalMilestone.id, signalTransaction);
 
 				const checkedMilestones: IChecked<IMilestone>[] = [];
 				const sortedMilestones = strategy.milestones.sort((a, b) => a.position - b.position);
 
 				for (const milestone of sortedMilestones) {
-					const checkedMilestone = this._checkStrategyService.getCheckedMilestone({
+					const checkedTransaction = this._checkStrategyService.getCheckedTransaction({
 						strategy,
 						milestone,
 						transactions,
 						checkedTransactions
 					});
 
-					if (!checkedMilestone) {
+					if (!checkedTransaction) {
 						continue;
 					}
 
-					const delayedTransaction = getDelayedTransaction(transactions, checkedMilestone.checkedTransaction, delay);
+					const delayedTransaction = getDelayedTransaction(transactions, checkedTransaction, delay);
 
-					checkedTransactions[checkedMilestone.id] = delayedTransaction;
-
-					checkedMilestones.push({ ...checkedMilestone, delayedTransaction });
+					checkedTransactions.set(milestone.id, delayedTransaction);
+					checkedMilestones.push({ ...milestone, delayedTransaction });
 				}
 
 				const { checkedTransaction, delayedTransaction } = checkedMilestones.reduce((a, b) =>
-					a.checkedTransaction.date.isAfter(b.checkedTransaction.date) ? a : b
+					a.checkedTransaction.date > b.checkedTransaction.date ? a : b
 				);
 
 				checkedStrategies.push({ ...strategy, checkedMilestones, checkedTransaction, delayedTransaction });

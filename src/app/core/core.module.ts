@@ -14,12 +14,11 @@ import { EmulatorModule } from "../emulator/emulator.module";
 import { EventsModule } from "../events/events.module";
 import { HealthModule } from "../health/health.module";
 import { CryptoModule } from "../libs/crypto";
-import { DateModule } from "../libs/date";
 import { FilesModule } from "../libs/files";
 import { HeliusModule } from "../libs/helius";
 import { JwtModule } from "../libs/jwt";
 import { LoggerModule } from "../libs/logger";
-import { PriceModule } from "../libs/price";
+import { SolanaModule } from "../libs/solana";
 import { LoadersModule } from "../loaders/loaders.module";
 import { PoolsModule } from "../pools/pools.module";
 import { SHARED_RESOLVERS } from "../shared/resolvers";
@@ -30,7 +29,6 @@ import { TradingModule } from "../trading/trading.module";
 import { UsersModule } from "../users/users.module";
 import { WalletsModule } from "../wallets/wallets.module";
 import { CRYPTO_CONFIG } from "./configs/crypto.config";
-import { DATE_CONFIG } from "./configs/date.config";
 import { DEV_TOOLS_CONFIG } from "./configs/dev-tools.config";
 import { EVENTS_CONFIG } from "./configs/events.config";
 import { FILES_CONFIG } from "./configs/files.config";
@@ -38,9 +36,9 @@ import { GRAPHQL_CONFIG } from "./configs/graphql.config";
 import { HELIUS_CONFIG } from "./configs/helius.config";
 import { JWT_CONFIG } from "./configs/jwt.config";
 import { LOGGER_CONFIG } from "./configs/logger.config";
-import { PRICE_CONFIG } from "./configs/price.config";
 import { SERVER_STATIC_CONFIG } from "./configs/server-static.config";
 import { TYPEORM_CONFIG } from "./configs/typeorm.config";
+import { CORE_SERVICES } from "./services";
 
 @Module({
 	imports: [
@@ -53,10 +51,9 @@ import { TYPEORM_CONFIG } from "./configs/typeorm.config";
 		ScheduleModule.forRoot(),
 		LoggerModule.forRoot(LOGGER_CONFIG),
 		FilesModule.forRoot(FILES_CONFIG),
-		DateModule.forRoot(DATE_CONFIG),
 		EventsModule.forRoot(EVENTS_CONFIG),
-		PriceModule.forRoot(PRICE_CONFIG),
 		HeliusModule.forRoot(HELIUS_CONFIG),
+		SolanaModule,
 		HealthModule,
 		PoolsModule,
 		LoadersModule,
@@ -72,6 +69,6 @@ import { TYPEORM_CONFIG } from "./configs/typeorm.config";
 		TradingModule,
 		WalletsModule
 	],
-	providers: SHARED_RESOLVERS
+	providers: [...CORE_SERVICES, ...SHARED_RESOLVERS]
 })
 export class CoreModule {}

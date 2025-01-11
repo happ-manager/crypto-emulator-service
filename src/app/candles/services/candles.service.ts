@@ -1,6 +1,5 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
-import { Cron } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { In, Repository } from "typeorm";
@@ -29,7 +28,7 @@ export class CandlesService {
 		this._transactions.push(...transactions);
 	}
 
-	@Cron("*/5 * * * * *")
+	// @Cron("*/5 * * * * *") // TODO: Подумать как конвертировать транзакции в свечи
 	async handleTransactions() {
 		if (this._transactions.length === 0) {
 			return;
@@ -45,25 +44,24 @@ export class CandlesService {
 
 		for (const [poolAddress, poolTransactions] of Object.entries(groupedByPool)) {
 			// Группируем транзакции по секундам
-			const groupedByDate: Record<string, ITransaction[]> = poolTransactions.reduce(
-				(pre, cur) => ({ ...pre, [cur.date.format()]: [...(pre[cur.date.format()] || []), cur] }),
-				{}
-			);
+			const groupedByDate: Record<string, ITransaction[]> = poolTransactions.reduce((pre, cur) => {
+				const formattedDate = cur.date.toISOString(); // Форматируем дату в ISO-строку
+				return {
+					...pre,
+					[formattedDate]: [...(pre[formattedDate] || []), cur]
+				};
+			}, {});
 
 			for (const [_, dateTransactions] of Object.entries(groupedByDate)) {
 				// Сортируем транзакции по дате
-				dateTransactions.sort((a, b) => (a.date.isAfter(b.date) ? 1 : -1));
+				dateTransactions.sort((a, b) => (a.date > b.date ? 1 : -1));
 
 				const [firstTransaction] = dateTransactions;
 				const lastTransaction = dateTransactions.at(-1);
 
-				const minPrice = dateTransactions
-					.map((t) => t.price)
-					.reduce((min, current) => (current.lt(min) ? current : min));
+				const minPrice = dateTransactions.map((t) => t.price).reduce((min, current) => (current < min ? current : min));
 
-				const maxPrice = dateTransactions
-					.map((t) => t.price)
-					.reduce((max, current) => (current.gt(max) ? current : max));
+				const maxPrice = dateTransactions.map((t) => t.price).reduce((max, current) => (current > max ? current : max));
 
 				candlesToCreate.push({
 					poolAddress,

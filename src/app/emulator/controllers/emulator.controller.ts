@@ -3,7 +3,6 @@ import { ApiTags } from "@nestjs/swagger";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
 
-import { ExcelService } from "../../libs/excel";
 import { EMULATOR } from "../constants/emulator.constant";
 import { IEmulateBody } from "../interfaces/emulator-body.interface";
 import { EmulatorService } from "../services/emulator.service";
@@ -11,10 +10,7 @@ import { EmulatorService } from "../services/emulator.service";
 @ApiTags(EMULATOR)
 @Controller(EMULATOR)
 export class EmulatorController {
-	constructor(
-		private readonly _emulatorService: EmulatorService,
-		private readonly _excelService: ExcelService
-	) {}
+	constructor(private readonly _emulatorService: EmulatorService) {}
 
 	@Post("emulate")
 	async emulate(@Body() body: IEmulateBody) {
