@@ -24,13 +24,13 @@ jobs:
           echo "${{ secrets.CA_CERTIFICATE_BASE64 }}" | base64 -d > ./ca-certificate.crt
 
       - name: Build Docker image
-        run: docker build -t auth-service .
+        run: docker build -t trading-service .
 
       - name: Save Docker image
-        run: docker save -o auth-service.tar auth-service
+        run: docker save -o trading-service.tar trading-service
 
       - name: Set permissions for Docker image file
-        run: chmod 644 auth-service.tar
+        run: chmod 644 trading-service.tar
 
       - name: Copy Docker image via SCP
         uses: appleboy/scp-action@master
