@@ -1,13 +1,12 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { In } from "typeorm";
 import { Repository } from "typeorm";
 
-import { EventsEnum } from "../../events/enums/events.enum";
-import { EventsService } from "../../events/services/events.service";
-import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
+import { EventsEnum } from "../../shared/enums/events.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import { ConditionsGroupEntity } from "../entities/conditions-group.entity";
 import type { ICondition } from "../interfaces/condition.interface";
@@ -16,12 +15,13 @@ import { ConditionsService } from "./conditions.service";
 
 @Injectable()
 export class ConditionsGroupsService {
+	private readonly _loggerService = new Logger("ConditionsGroupsService");
+
 	constructor(
 		@InjectRepository(ConditionsGroupEntity)
 		private readonly _conditionsGroupsRepository: Repository<ConditionsGroupEntity>,
-		private readonly _eventsService: EventsService,
-		private readonly _conditionsService: ConditionsService,
-		private readonly _loggerService: LoggerService
+		private readonly _eventsService: EventEmitter2,
+		private readonly _conditionsService: ConditionsService
 	) {}
 
 	async recreateConditionsGroups(conditionsGroups: DeepPartial<IConditionsGroup>[]) {

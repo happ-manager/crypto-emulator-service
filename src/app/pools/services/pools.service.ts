@@ -1,22 +1,22 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { Repository } from "typeorm";
 
-import { EventsEnum } from "../../events/enums/events.enum";
-import { EventsService } from "../../events/services/events.service";
-import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
+import { EventsEnum } from "../../shared/enums/events.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import { PoolEntity } from "../entities/pool.entity";
 import type { IPool } from "../interfaces/pool.interface";
 
 @Injectable()
 export class PoolsService {
+	private readonly _loggerService = new Logger("PoolsService");
+
 	constructor(
 		@InjectRepository(PoolEntity) private readonly _poolsRepository: Repository<PoolEntity>,
-		private readonly _eventsService: EventsService,
-		private readonly _loggerService: LoggerService
+		private readonly _eventsService: EventEmitter2
 	) {}
 
 	async getPool(options?: FindOneOptions<IPool>) {

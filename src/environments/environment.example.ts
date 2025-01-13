@@ -1,36 +1,12 @@
 export const environment = {
 	production: false,
+	dev: false,
 	port: 0,
-	assetsUrl: "",
-	telegram: {
-		disabled: false,
-		appId: 0,
-		appHash: "",
-		stringSession: ""
-	},
-	dexTools: {
-		key: ""
-	},
-	coinMarketCap: {
-		key: ""
-	},
-	coinGecko: {
-		key: ""
-	},
-	solscan: {
-		key: ""
-	},
-	aws: {
-		region: "",
-		endpoint: "",
-		accessKeyId: "",
-		secretAccessKey: "",
-		bucketName: ""
-	},
 	database: {
 		certificate: false,
 		host: "",
 		port: 0,
+		schema: "",
 		username: "",
 		password: "",
 		name: ""
@@ -41,12 +17,9 @@ export const environment = {
 	jwt: {
 		secret: ""
 	},
-	trojan: {
-		botUsername: "",
-		botId: 0
-	},
-	solana: {},
-	aggregator: {
-		apiUrl: ""
+	helius: {
+		apiKey: "",
+		stakedRpcUrl: "",
+		enhancedWebsocketUrl: ""
 	}
 };

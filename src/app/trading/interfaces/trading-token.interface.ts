@@ -1,7 +1,6 @@
 import type { IPool } from "../../pools/interfaces/pool.interface";
 import type { IBase } from "../../shared/interfaces/base.interface";
 import type { ICheckedStrategy } from "../../strategies/interfaces/checked.interface";
-import type { IToken } from "../../tokens/interfaces/token.interface";
 import type { ITrading } from "./trading.interface";
 
 export interface ITradingToken extends IBase {
@@ -10,7 +9,6 @@ export interface ITradingToken extends IBase {
 	disabled: boolean;
 	signaledAt: Date;
 	trading: ITrading;
-	token: IToken;
 	pool: IPool;
 	checkedStrategy: ICheckedStrategy;
 }

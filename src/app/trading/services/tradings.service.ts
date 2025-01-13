@@ -1,19 +1,21 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { Repository } from "typeorm";
 
-import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
+import { EventsEnum } from "../../shared/enums/events.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import { TradingEntity } from "../entities/trading.entity";
 import type { ITrading } from "../interfaces/trading.interface";
 
 @Injectable()
 export class TradingsService {
+	private readonly _loggerService = new Logger("TradingsService");
 	constructor(
 		@InjectRepository(TradingEntity) private readonly _tradingsRepository: Repository<TradingEntity>,
-		private readonly _loggerService: LoggerService
+		private readonly _eventsService: EventEmitter2
 	) {}
 
 	async getTrading(options?: FindOneOptions<TradingEntity>) {
@@ -30,6 +32,8 @@ export class TradingsService {
 		try {
 			const savedTrading = await this._tradingsRepository.save(trading);
 
+			this._eventsService.emit(EventsEnum.TRADING_CREATED, savedTrading, true);
+
 			return await this._tradingsRepository.findOne({ where: { id: savedTrading.id } });
 		} catch (error) {
 			this._loggerService.error(error, "createTrading");
@@ -39,7 +43,10 @@ export class TradingsService {
 
 	async updateTrading(id: string, trading: DeepPartial<ITrading>) {
 		try {
-			await this._tradingsRepository.save({ id, ...trading });
+			const savedTrading = await this._tradingsRepository.save({ id, ...trading });
+
+			this._eventsService.emit(EventsEnum.TRADING_UPDATED, savedTrading, true);
+
 			return await this._tradingsRepository.findOne({ where: { id } });
 		} catch (error) {
 			this._loggerService.error(error, "updateTrading");
@@ -50,6 +57,9 @@ export class TradingsService {
 	async deleteTrading(id: string) {
 		try {
 			await this._tradingsRepository.delete(id);
+
+			this._eventsService.emit(EventsEnum.TRADING_DELETED, id, true);
+
 			return { deleted: true };
 		} catch (error) {
 			this._loggerService.error(error, "deleteTrading");

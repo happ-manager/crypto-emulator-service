@@ -1,13 +1,11 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
-import { OnEvent } from "@nestjs/event-emitter";
+import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions, FindOptionsWhere } from "typeorm";
 import { Repository } from "typeorm";
 
-import { EventsEnum } from "../../events/enums/events.enum";
-import { EventsService } from "../../events/services/events.service";
-import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
+import { EventsEnum } from "../../shared/enums/events.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import type { ICheckedStrategy } from "../../strategies/interfaces/checked.interface";
 import { TradingTokenEntity } from "../entities/trading-token.entity";
@@ -16,10 +14,10 @@ import type { ITradingToken } from "../interfaces/trading-token.interface";
 
 @Injectable()
 export class TradingTokensService {
+	private readonly _loggerService = new Logger("TradingTokensService");
 	constructor(
 		@InjectRepository(TradingTokenEntity) private readonly _tradingTokensRepository: Repository<TradingTokenEntity>,
-		private readonly _eventsService: EventsService,
-		private readonly _loggerService: LoggerService
+		private readonly _eventsService: EventEmitter2
 	) {}
 
 	get repository() {

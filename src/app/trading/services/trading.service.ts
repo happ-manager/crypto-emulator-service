@@ -1,6 +1,6 @@
 /* eslint-disable prefer-destructuring */
-import { Injectable } from "@nestjs/common";
-import { OnEvent } from "@nestjs/event-emitter";
+import { Injectable, Logger } from "@nestjs/common";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { Cron } from "@nestjs/schedule";
 import { MAINNET_PROGRAM_ID, Market } from "@raydium-io/raydium-sdk";
 import type { Keypair, SendOptions } from "@solana/web3.js";
@@ -10,26 +10,22 @@ import { Subject } from "rxjs";
 import { In } from "typeorm";
 import { v4 } from "uuid";
 
-import { TransactionsService } from "../../candles/services/transactions.service";
-import { EventsEnum } from "../../events/enums/events.enum";
-import { EventsService } from "../../events/services/events.service";
-import { LoggerService } from "../../libs/logger";
-import type { RaydiumInstruction } from "../../libs/raydium/enums/raydium-instruction.enum";
-import { INIT_INSTRUCTIONS, SWAP_INSTRUCTIONS } from "../../libs/raydium/enums/raydium-instruction.enum";
 import { SolanaPriceService } from "../../libs/solana";
 import { PUMFUN_WALLET, RAYDIUM_WALLET, SOL_WALLET } from "../../libs/solana/constant/wallets.constant";
 import { CommitmentTypeEnum } from "../../libs/solana/enums/commitment-type.enum";
+import type { RaydiumInstruction } from "../../libs/solana/enums/raydium-instruction.enum";
+import { INIT_INSTRUCTIONS, SWAP_INSTRUCTIONS } from "../../libs/solana/enums/raydium-instruction.enum";
 import type { IComputeUnits } from "../../libs/solana/interfaces/compute-units.interface";
 import { ISolanaMessage } from "../../libs/solana/interfaces/solana-message.interface";
 import { SolanaService } from "../../libs/solana/services/solana.service";
 import type { IPool } from "../../pools/interfaces/pool.interface";
+import { EventsEnum } from "../../shared/enums/events.enum";
 import type { IBaseTransaction } from "../../shared/interfaces/base-transaction.interface";
 import { MilestoneTypeEnum } from "../../strategies/enums/milestone-type.enum";
 import type { IChecked, ICheckedTransactions } from "../../strategies/interfaces/checked.interface";
 import type { IMilestone } from "../../strategies/interfaces/milestone.interface";
 import { CheckStrategyService } from "../../strategies/services/check-strategy.service";
 import { StrategiesService } from "../../strategies/services/strategies.service";
-import type { IToken } from "../../tokens/interfaces/token.interface";
 import { WalletsService } from "../../wallets/services/wallets.service";
 import type { ITrading } from "../interfaces/trading.interface";
 import type { ITradingToken } from "../interfaces/trading-token.interface";
@@ -39,6 +35,8 @@ import { TradingsService } from "./tradings.service";
 
 @Injectable()
 export class TradingService {
+	private readonly _loggerService = new Logger("TradingService");
+
 	private readonly _createPoolSubjects: Map<string, Subject<ITradingTransaction>> = new Map();
 	private readonly _swapSubjects: Map<string, Subject<ITradingTransaction>> = new Map();
 	private readonly _transactions: Map<string, IBaseTransaction[]> = new Map();
@@ -49,6 +47,8 @@ export class TradingService {
 
 	private readonly _signatures: Set<string> = new Set();
 
+	private readonly _transactionsService: any;
+
 	constructor(
 		private readonly _solanaService: SolanaService,
 		private readonly _solanaPriceService: SolanaPriceService,
@@ -56,9 +56,7 @@ export class TradingService {
 		private readonly _tradingTokensService: TradingTokensService,
 		private readonly _strategiesService: StrategiesService,
 		private readonly _checkStrategiesService: CheckStrategyService,
-		private readonly _transactionsService: TransactionsService,
-		private readonly _loggerService: LoggerService,
-		private readonly _eventsService: EventsService,
+		private readonly _eventsService: EventEmitter2,
 		private readonly _walletsService: WalletsService
 	) {}
 
@@ -383,8 +381,6 @@ export class TradingService {
 		} else if (SWAP_INSTRUCTIONS.includes(instructionType)) {
 			this._swapSubjects.get(poolAddress).next(tradingTransaction);
 		}
-
-		this._eventsService.emit(EventsEnum.TRADING_TRANSACTION, tradingTransaction, true);
 	}
 
 	handlePoolCreate(trading: ITrading) {
@@ -423,10 +419,6 @@ export class TradingService {
 				amount: 0,
 				signaledAt: date,
 				disabled: false,
-				token: {
-					chain: "solana",
-					address: pool.quoteMint
-				} as IToken,
 				checkedStrategy: {
 					...trading.strategy,
 					checkedMilestones: [{ ...signalMilestone, checkedTransaction: transaction, delayedTransaction: transaction }]
@@ -543,8 +535,6 @@ export class TradingService {
 				break;
 			}
 		});
-
-		this._solanaService.subscribeTransactions([poolAddress], [], CommitmentTypeEnum.PROCESSED);
 	}
 
 	buy(pool: IPool, signer: Keypair, amountInUsd: number, computeUnits: IComputeUnits, sendOptions?: SendOptions) {
@@ -587,8 +577,6 @@ export class TradingService {
 				this._transactions.delete(account);
 			}
 		}
-
-		this._solanaService.subscribeTransactions([], accounts);
 
 		const criteria = { pool: { address: In(accounts) } };
 

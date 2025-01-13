@@ -1,4 +1,5 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import {
 	createAssociatedTokenAccountIdempotentInstruction,
 	createCloseAccountInstruction,
@@ -12,26 +13,24 @@ import { ComputeBudgetProgram, TransactionInstruction } from "@solana/web3.js";
 import { TransactionMessage, VersionedTransaction } from "@solana/web3.js";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 
-import { EventsEnum } from "../../../events/enums/events.enum";
-import { EventsService } from "../../../events/services/events.service";
 import type { IPool } from "../../../pools/interfaces/pool.interface";
+import { EventsEnum } from "../../../shared/enums/events.enum";
 import { HeliusService } from "../../helius/services/helius.service";
-import { LoggerService } from "../../logger";
-import { encodeData } from "../../raydium/utils/encode-data.util";
 import { SEND_OPTIONS } from "../constant/send-options.constant";
 import type { CommitmentTypeEnum } from "../enums/commitment-type.enum";
 import type { IComputeUnits } from "../interfaces/compute-units.interface";
+import { encodeData } from "../utils/encode-data.util";
 import { SolanaBlockhashService } from "./solana-blockhash.service";
 import { SolanaPriceService } from "./solana-price.service";
 
 @Injectable()
 export class SolanaService {
+	private readonly _loggerService = new Logger("SolanaService");
 	constructor(
 		private readonly _solanaBlockhashService: SolanaBlockhashService,
 		private readonly _solanaPriceService: SolanaPriceService,
 		private readonly _heliusService: HeliusService,
-		private readonly _eventsService: EventsService,
-		private readonly _loggerService: LoggerService
+		private readonly _eventsService: EventEmitter2
 	) {}
 
 	async init() {
@@ -140,7 +139,7 @@ export class SolanaService {
 
 		const signature = await this._heliusService.connection.sendRawTransaction(transaction.serialize(), sendOptions);
 
-		this._eventsService.emit(EventsEnum.SEND_SOLANA_TRANSACTION, signature);
+		this._eventsService.emit(EventsEnum.SOLANA_TRANSACTION, signature);
 
 		return signature;
 	}

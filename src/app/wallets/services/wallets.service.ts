@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
@@ -6,7 +6,6 @@ import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { Repository } from "typeorm";
 
 import { CryptoService } from "../../libs/crypto";
-import { LoggerService } from "../../libs/logger";
 import { SolanaService } from "../../libs/solana/services/solana.service";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
 import { getPage } from "../../shared/utils/get-page.util";
@@ -15,9 +14,10 @@ import type { IWallet } from "../interfaces/wallet.interface";
 
 @Injectable()
 export class WalletsService {
+	private readonly _loggerService = new Logger("WalletsService");
+
 	constructor(
 		@InjectRepository(WalletEntity) private readonly _walletsRepository: Repository<WalletEntity>,
-		private readonly _loggerService: LoggerService,
 		private readonly _cryptoService: CryptoService,
 		private readonly _solanaService: SolanaService
 	) {}

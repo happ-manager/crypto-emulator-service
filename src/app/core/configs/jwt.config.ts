@@ -1,6 +1,6 @@
-import { environment } from "../../../environments/environment";
-import type { IJwtConfig } from "../../libs/jwt";
+import type { JwtModuleOptions } from "@nestjs/jwt";
+import { environment } from "src/environments/environment";
 
-export const JWT_CONFIG: IJwtConfig = {
+export const JWT_CONFIG: JwtModuleOptions = {
 	secret: environment.jwt.secret
 };

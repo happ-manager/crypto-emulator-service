@@ -1,7 +1,7 @@
 import type { TokenBalance } from "@solana/web3.js";
 
-import { RaydiumInstruction } from "../../libs/raydium/enums/raydium-instruction.enum";
 import { WSOL_WALLET } from "../../libs/solana/constant/wallets.constant";
+import { RaydiumInstruction } from "../../libs/solana/enums/raydium-instruction.enum";
 
 export interface ITokenBalances {
 	wsolMint: string;

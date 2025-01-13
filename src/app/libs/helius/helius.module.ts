@@ -5,14 +5,12 @@ import type { Observable } from "rxjs";
 import { Subject } from "rxjs";
 import { first, interval, lastValueFrom, map, race } from "rxjs";
 
-import { EventsModule } from "../../events/events.module";
-import { LoggerModule } from "../logger";
 import { HELIUS_CONFIG } from "./injection-tokens/helius-config.injection-token";
 import type { IHeliusConfig } from "./interfaces/helius-config.interface";
 import { HELIUS_SERVICES } from "./services";
 
 @Module({
-	imports: [HttpModule, EventsModule.forChild(), LoggerModule.forChild()],
+	imports: [HttpModule],
 	providers: HELIUS_SERVICES,
 	exports: HELIUS_SERVICES
 })

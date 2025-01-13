@@ -3,7 +3,6 @@ import { Parent, ResolveField, Resolver } from "@nestjs/graphql";
 import { Loaders } from "../../../loaders/decorators/loaders.decorator";
 import { ILoaders } from "../../../loaders/interfaces/loaders.interface";
 import { PoolEntity } from "../../../pools/entities/pool.entity";
-import { TokenEntity } from "../../../tokens/entities/token.entity";
 import { TradingEntity } from "../../entities/trading.entity";
 import { TradingTokenEntity } from "../../entities/trading-token.entity";
 
@@ -12,11 +11,6 @@ export class TradingTokenResolver {
 	@ResolveField(() => PoolEntity)
 	async pool(@Parent() tradingToken: TradingTokenEntity, @Loaders() loaders: ILoaders) {
 		return loaders.getPoolsByTradingTokens.load(tradingToken.id);
-	}
-
-	@ResolveField(() => TokenEntity)
-	async token(@Parent() tradingToken: TradingTokenEntity, @Loaders() loaders: ILoaders) {
-		return loaders.getTokensByTradingTokens.load(tradingToken.id);
 	}
 
 	@ResolveField(() => TradingEntity)

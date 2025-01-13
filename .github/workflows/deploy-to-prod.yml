@@ -1,4 +1,4 @@
-name: Build and Deploy Api
+name: Deploy to prod
 
 on:
   push:
@@ -24,13 +24,13 @@ jobs:
           echo "${{ secrets.CA_CERTIFICATE_BASE64 }}" | base64 -d > ./ca-certificate.crt
 
       - name: Build Docker image
-        run: docker build -t happ-crypto-api .
+        run: docker build -t auth-service .
 
       - name: Save Docker image
-        run: docker save -o happ-crypto-api.tar happ-crypto-api
+        run: docker save -o auth-service.tar auth-service
 
       - name: Set permissions for Docker image file
-        run: chmod 644 happ-crypto-api.tar
+        run: chmod 644 auth-service.tar
 
       - name: Copy Docker image via SCP
         uses: appleboy/scp-action@master
@@ -39,8 +39,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           overwrite: true
-          source: "happ-crypto-api.tar"
-          target: "/home/happ/crypto/docker-images"
+          source: "trading-service.tar"
+          target: "/home/docker-images"
 
   deploy:
     runs-on: ubuntu-latest
@@ -55,7 +55,6 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             set -e
-            docker load -i /home/happ/crypto/docker-images/happ-crypto-api.tar
-            cd /home/happ/crypto
-            docker-compose down --remove-orphans
-            docker-compose up -d --force-recreate
+            docker load -i /home/docker-images/trading-service.tar
+            cd /home
+            docker-compose up -d --build --no-deps trading-service

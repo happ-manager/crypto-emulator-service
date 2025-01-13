@@ -1,3 +1,3 @@
-import { CoreService } from "./core.service";
+import { InitService } from "./init.service";
 
-export const CORE_SERVICES = [CoreService];
+export const CORE_SERVICES = [InitService];

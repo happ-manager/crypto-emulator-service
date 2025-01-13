@@ -1,13 +1,12 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { In } from "typeorm";
 import { Repository } from "typeorm";
 
-import { EventsEnum } from "../../events/enums/events.enum";
-import { EventsService } from "../../events/services/events.service";
-import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
+import { EventsEnum } from "../../shared/enums/events.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import { MilestoneEntity } from "../entities/milestone.entity";
 import type { IConditionsGroup } from "../interfaces/conditions-group.interface";
@@ -16,12 +15,13 @@ import { ConditionsGroupsService } from "./conditions-groups.service";
 
 @Injectable()
 export class MilestonesService {
+	private readonly _loggerService = new Logger("MilestonesService");
+
 	constructor(
 		@InjectRepository(MilestoneEntity)
 		private readonly _milestonesRepository: Repository<MilestoneEntity>,
-		private readonly _eventsService: EventsService,
-		private readonly _conditionsGroupsService: ConditionsGroupsService,
-		private readonly _loggerService: LoggerService
+		private readonly _eventsService: EventEmitter2,
+		private readonly _conditionsGroupsService: ConditionsGroupsService
 	) {}
 
 	async recreateMilestones(milestones: DeepPartial<IMilestone>[]) {
@@ -101,6 +101,9 @@ export class MilestonesService {
 	async deleteMilestone(id: string) {
 		try {
 			await this._milestonesRepository.delete(id);
+
+			this._eventsService.emit(EventsEnum.MILESTONE_DELETED, id);
+
 			return { deleted: true };
 		} catch (error) {
 			this._loggerService.error(error, "deleteMilestone");

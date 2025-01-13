@@ -1,10 +1,11 @@
 import type { ValidationOptions } from "class-validator";
 import { registerDecorator } from "class-validator";
 
-import { CryptoJs } from "../../libs/crypto/crypto-js.class";
+import { environment } from "../../../environments/environment";
 import { ErrorsEnum } from "../enums/errors.enum";
+import { CryptoJs } from "../utils/crypto-js.util";
 
-const crypto = new CryptoJs("");
+const crypto = new CryptoJs(environment.crypto.secret);
 
 export function IsCryptedLength(length: number, validationOptions?: ValidationOptions) {
 	return function (object: Object, propertyName: string) {

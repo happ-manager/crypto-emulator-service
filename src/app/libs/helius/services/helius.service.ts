@@ -1,12 +1,11 @@
-import { Inject } from "@nestjs/common";
+import { Inject, Logger } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Connection } from "@solana/web3.js";
 import { Helius } from "helius-sdk";
 import * as WebSocket from "ws";
 
-import { EventsEnum } from "../../../events/enums/events.enum";
-import { EventsService } from "../../../events/services/events.service";
-import { LoggerService } from "../../logger";
+import { EventsEnum } from "../../../shared/enums/events.enum";
 import type { CommitmentTypeEnum } from "../../solana/enums/commitment-type.enum";
 import type { IRpc } from "../../solana/interfaces/rpc.interface";
 import type { ISolanaMessage } from "../../solana/interfaces/solana-message.interface";
@@ -17,6 +16,7 @@ import { WarmupService } from "./warmup.service";
 
 @Injectable()
 export class HeliusService implements IRpc {
+	private readonly _loggerService = new Logger("HeliusService");
 	private _ws: WebSocket;
 
 	readonly connection = new Connection(this._heliusConfig.stakedRpcUrl, "confirmed");
@@ -27,8 +27,7 @@ export class HeliusService implements IRpc {
 	constructor(
 		@Inject(HELIUS_CONFIG) private readonly _heliusConfig: IHeliusConfig,
 		private readonly _heliusApiService: HeliusApiService,
-		private readonly _eventsService: EventsService,
-		private readonly _loggerService: LoggerService,
+		private readonly _eventsService: EventEmitter2,
 		private readonly _warmupService: WarmupService
 	) {}
 

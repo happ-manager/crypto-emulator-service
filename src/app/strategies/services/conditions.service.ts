@@ -1,24 +1,24 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { In } from "typeorm";
 import { Repository } from "typeorm";
 
-import { EventsEnum } from "../../events/enums/events.enum";
-import { EventsService } from "../../events/services/events.service";
-import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
+import { EventsEnum } from "../../shared/enums/events.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import { ConditionEntity } from "../entities/condition.entity";
 import type { ICondition } from "../interfaces/condition.interface";
 
 @Injectable()
 export class ConditionsService {
+	private readonly _loggerService = new Logger("ConditionsService");
+
 	constructor(
 		@InjectRepository(ConditionEntity)
 		private readonly _conditionsRepository: Repository<ConditionEntity>,
-		private readonly _eventsService: EventsService,
-		private readonly _loggerService: LoggerService
+		private readonly _eventsService: EventEmitter2
 	) {}
 
 	async getCondition(options?: FindOneOptions<ConditionEntity>) {

@@ -1,16 +1,14 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 
 import { HeliusService } from "../../helius/services/helius.service";
-import { LoggerService } from "../../logger";
 
 @Injectable()
 export class SolanaBlockhashService {
+	private readonly _loggerService = new Logger("SolanaBlockhashService");
+
 	blockhash: string = "";
 
-	constructor(
-		private readonly _loggerService: LoggerService,
-		private readonly _heliusService: HeliusService
-	) {}
+	constructor(private readonly _heliusService: HeliusService) {}
 
 	async startBlockhashCheck(interval: number) {
 		const blockhash = await this.getBlockhash();

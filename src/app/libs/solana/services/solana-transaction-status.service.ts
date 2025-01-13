@@ -1,20 +1,19 @@
-import { Injectable } from "@nestjs/common";
-import { OnEvent } from "@nestjs/event-emitter";
+import { Injectable, Logger } from "@nestjs/common";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 
-import { EventsEnum } from "../../../events/enums/events.enum";
-import { EventsService } from "../../../events/services/events.service";
+import { EventsEnum } from "../../../shared/enums/events.enum";
 import { HeliusService } from "../../helius/services/helius.service";
-import { LoggerService } from "../../logger";
 
 @Injectable()
 export class SolanaTransactiosnStatusService {
+	private readonly _loggerService = new Logger("SolanaTransactiosnStatusService");
+
 	constructor(
 		private readonly _heliusService: HeliusService,
-		private readonly _eventsService: EventsService,
-		private readonly _loggerService: LoggerService
+		private readonly _eventsService: EventEmitter2
 	) {}
 
-	@OnEvent(EventsEnum.SEND_SOLANA_TRANSACTION)
+	@OnEvent(EventsEnum.SOLANA_TRANSACTION)
 	async onSendSolanaTransaction(signature: string) {
 		try {
 			const result = await this._heliusService.connection.getSignatureStatus(signature, {

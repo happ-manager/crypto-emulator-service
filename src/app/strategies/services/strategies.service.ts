@@ -1,13 +1,12 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { DeepPartial, FindManyOptions, FindOneOptions } from "typeorm";
 import { In } from "typeorm";
 import { Repository } from "typeorm";
 
-import { EventsEnum } from "../../events/enums/events.enum";
-import { EventsService } from "../../events/services/events.service";
-import { LoggerService } from "../../libs/logger";
 import { ErrorsEnum } from "../../shared/enums/errors.enum";
+import { EventsEnum } from "../../shared/enums/events.enum";
 import { getPage } from "../../shared/utils/get-page.util";
 import { StrategyEntity } from "../entities/strategy.entity";
 import type { IMilestone } from "../interfaces/milestone.interface";
@@ -16,6 +15,8 @@ import { MilestonesService } from "./milestones.service";
 
 @Injectable()
 export class StrategiesService {
+	private readonly _loggerService = new Logger("StrategiesService");
+
 	readonly relations = [
 		"milestones",
 		"milestones.refMilestone",
@@ -30,9 +31,8 @@ export class StrategiesService {
 	constructor(
 		@InjectRepository(StrategyEntity)
 		private readonly _strategiesRepository: Repository<StrategyEntity>,
-		private readonly _eventsService: EventsService,
-		private readonly _milestonesService: MilestonesService,
-		private readonly _loggerService: LoggerService
+		private readonly _eventsService: EventEmitter2,
+		private readonly _milestonesService: MilestonesService
 	) {}
 
 	async recreateStrategy(strategy: DeepPartial<IStrategy>) {
@@ -116,6 +116,9 @@ export class StrategiesService {
 	async deleteStrategy(id: string) {
 		try {
 			await this._strategiesRepository.delete(id);
+
+			this._eventsService.emit(EventsEnum.STRATEGY_DELETED, id);
+
 			return { deleted: true };
 		} catch (error) {
 			this._loggerService.error(error, "deleteStrategy");
