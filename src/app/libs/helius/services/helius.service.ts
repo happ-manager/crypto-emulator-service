@@ -34,12 +34,12 @@ export class HeliusService implements IRpc {
 	init() {
 		this._warmupService.startWarmup(this.connection, 1000);
 
-		this._loggerService.log("Helius is running", "HeliusService");
+		this._loggerService.log("Helius is running");
 
 		this._ws = new WebSocket(this._heliusConfig.enhancedWebsocketUrl);
 
 		this._ws.on("open", () => {
-			this._loggerService.log("Helius соединение установлено.", "HeliusService");
+			this._loggerService.log("Helius соединение установлено.");
 
 			setInterval(() => {
 				if (this._ws.readyState !== WebSocket.OPEN) {

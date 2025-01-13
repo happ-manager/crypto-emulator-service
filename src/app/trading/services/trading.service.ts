@@ -70,7 +70,7 @@ export class TradingService {
 	}
 
 	async init() {
-		this._loggerService.log("Trading is running", "LoggerService");
+		this._loggerService.log("Trading is running");
 
 		const tradings = await this._tradingsService.getTradings({ where: { disabled: false } });
 

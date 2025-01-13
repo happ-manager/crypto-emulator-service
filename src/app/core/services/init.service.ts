@@ -19,8 +19,6 @@ export class InitService implements OnModuleInit {
 	}
 
 	async init() {
-		return;
-
 		await this._solanaService.init();
 		this._heliusService.init();
 

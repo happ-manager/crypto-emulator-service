@@ -34,7 +34,7 @@ export class SolanaService {
 	) {}
 
 	async init() {
-		this._loggerService.log("Solana is running", "SolanaService");
+		this._loggerService.log("Solana is running");
 
 		await this._solanaPriceService.startPriceCheck(5000);
 		await this._solanaBlockhashService.startBlockhashCheck(60_000);

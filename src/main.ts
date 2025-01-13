@@ -1,6 +1,5 @@
 import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
-import { Transport } from "@nestjs/microservices";
 
 import { CoreModule } from "./app/core/core.module";
 import { swagger } from "./app/core/swagger";
@@ -11,11 +10,9 @@ async function bootstrap() {
 	const app = await NestFactory.create(CoreModule);
 
 	app.enableCors();
-	app.connectMicroservice({ transport: Transport.TCP });
 
 	swagger(app);
 
-	await app.startAllMicroservices();
 	await app.listen(environment.port);
 }
 
