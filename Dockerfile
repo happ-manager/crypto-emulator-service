@@ -12,6 +12,9 @@ ENV NPM_TOKEN=${NPM_TOKEN}
 # Установка зависимостей
 RUN npm ci --only=production
 
+# Устанавливаем NestJS CLI глобально
+RUN npm install -g @nestjs/cli
+
 # Копируем остальной код
 COPY . .
 
