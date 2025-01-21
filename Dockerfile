@@ -4,13 +4,11 @@ WORKDIR /app
 
 # Копируем только необходимые файлы для установки зависимостей
 COPY package*.json ./
+COPY .npmrc ./
 
 # Экспортируем NPM_TOKEN как переменную окружения
 ARG NPM_TOKEN
 ENV NPM_TOKEN=${NPM_TOKEN}
-
-# Печатаем для отладки, чтобы убедиться, что токен передается
-RUN echo "Using NPM_TOKEN: ${NPM_TOKEN}"
 
 # Установка зависимостей
 RUN npm ci
