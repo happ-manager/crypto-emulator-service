@@ -1,5 +1,3 @@
-import { TradingController } from "./trading.controller";
-import { TradingTokensController } from "./trading-tokens.controller";
-import { TradingsController } from "./tradings.controller";
+import { AutoTradingController } from "./auto-trading.controller";
 
-export const TRADING_CONTROLLERS = [TradingsController, TradingController, TradingTokensController];
+export const AUTO_TRADING_CONTROLLERS = [AutoTradingController];

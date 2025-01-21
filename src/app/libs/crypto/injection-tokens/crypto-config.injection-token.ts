@@ -1,1 +1,0 @@
-export const CRYPTO_CONFIG = "CRYPTO_CONFIG";

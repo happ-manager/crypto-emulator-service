@@ -2,58 +2,12 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type ConditionEntity {
-  conditionsGroup: ConditionsGroupEntity!
-  createdAt: DateTime!
-  field: conditionFieldEnum!
-  id: ID!
-  operator: operatorEnum!
-  refConditionsGroup: ConditionsGroupEntity
-  refMilestone: MilestoneEntity
-  updatedAt: DateTime!
-  value: String!
-}
-
-type ConditionsGroupEntity {
-  conditions: [ConditionEntity!]!
-  createdAt: DateTime!
-  description: String
-  duration: Int!
-  groupOperator: groupOperatorEnum!
-  id: ID!
-  milestone: MilestoneEntity!
-  name: String
-  refConditionsGroup: ConditionsGroupEntity
-  refMilestone: MilestoneEntity
-  updatedAt: DateTime!
-}
-
-input CreateConditionDto {
-  id: ID!
-}
-
-input CreateMilestoneDto {
-  id: ID!
-}
-
-input CreatePoolDto {
-  address: String!
-}
-
-input CreateStrategyDto {
-  name: String!
-}
-
 input CreateTradingDto {
-  price: Float!
+	price: Float!
 }
 
 input CreateTradingTokenDto {
-  id: String!
-}
-
-input CreateWalletDto {
-  address: String!
+	id: String!
 }
 
 """
@@ -66,284 +20,100 @@ The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://
 """
 scalar JSON
 
-type MilestoneEntity {
-  conditionsGroups: [ConditionsGroupEntity!]!
-  createdAt: DateTime!
-  description: String
-  groupOperator: groupOperatorEnum!
-  id: ID!
-  name: String
-  position: Int!
-  refMilestone: MilestoneEntity
-  strategy: StrategyEntity!
-  type: milestoneTypeEnum!
-  updatedAt: DateTime!
-  value: String
-}
-
 type Mutation {
-  createCondition(condition: CreateConditionDto!): ConditionEntity!
-  createConditionsGroup(conditionsGroup: CreateConditionDto!): ConditionsGroupEntity!
-  createMilestone(milestone: CreateMilestoneDto!): MilestoneEntity!
-  createPool(pool: CreatePoolDto!): PoolEntity!
-  createStrategy(strategy: CreateStrategyDto!): StrategyEntity!
-  createTrading(trading: CreateTradingDto!): TradingEntity!
-  createTradingToken(tradingToken: CreateTradingTokenDto!): TradingTokenEntity!
-  createWallet(wallet: CreateWalletDto!): WalletEntity!
-  deleteCondition(id: String!): Void!
-  deleteConditionsGroup(id: String!): Void!
-  deleteMilestone(id: String!): Void!
-  deletePool(id: String!): Void!
-  deleteStrategy(id: String!): Void!
-  deleteTrading(id: String!): Void!
-  deleteTradingToken(id: String!): Void!
-  deleteWallet(id: String!): Void!
-  updateCondition(condition: UpdateConditionDto!): ConditionEntity!
-  updateConditionsGroup(conditionsGroup: UpdateConditionDto!): ConditionsGroupEntity!
-  updateMilestone(milestone: UpdateMilestoneDto!): MilestoneEntity!
-  updatePool(pool: UpdatePoolDto!): PoolEntity!
-  updateStrategy(strategy: UpdateStrategyDto!): StrategyEntity!
-  updateTrading(trading: UpdateTradingDto!): TradingEntity!
-  updateTradingToken(tradingToken: UpdateTradingTokenDto!): TradingTokenEntity!
-  updateWallet(wallet: UpdateWalletDto!): WalletEntity!
-}
-
-type PaginatedConditions {
-  data: [ConditionEntity!]!
-  page: Int!
-  totalCount: Int!
-}
-
-type PaginatedConditionsGroups {
-  data: [ConditionsGroupEntity!]!
-  page: Int!
-  totalCount: Int!
-}
-
-type PaginatedMilestones {
-  data: [MilestoneEntity!]!
-  page: Int!
-  totalCount: Int!
-}
-
-type PaginatedPools {
-  data: [PoolEntity!]!
-  page: Int!
-  totalCount: Int!
-}
-
-type PaginatedStrategies {
-  data: [StrategyEntity!]!
-  page: Int!
-  totalCount: Int!
+	createTrading(trading: CreateTradingDto!): TradingEntity!
+	createTradingToken(tradingToken: CreateTradingTokenDto!): TradingTokenEntity!
+	deleteTrading(id: String!): Void!
+	deleteTradingToken(id: String!): Void!
+	updateTrading(trading: UpdateTradingDto!): TradingEntity!
+	updateTradingToken(tradingToken: UpdateTradingTokenDto!): TradingTokenEntity!
 }
 
 type PaginatedTradingTokens {
-  data: [TradingTokenEntity!]!
-  page: Int!
-  totalCount: Int!
+	data: [TradingTokenEntity!]!
+	page: Int!
+	totalCount: Int!
 }
 
 type PaginatedTradings {
-  data: [TradingEntity!]!
-  page: Int!
-  totalCount: Int!
-}
-
-type PaginatedWallets {
-  data: [WalletEntity!]!
-  page: Int!
-  totalCount: Int!
-}
-
-type PoolEntity {
-  address: String!
-  authority: String!
-  baseDecimals: Float!
-  baseMint: String!
-  baseVault: String!
-  createdAt: DateTime!
-  id: ID!
-  lookupTableAccount: String!
-  lpDecimals: Float!
-  lpMint: String!
-  lpVault: String!
-  marketAsks: String!
-  marketAuthority: String!
-  marketBaseVault: String!
-  marketBids: String!
-  marketEventQueue: String!
-  marketId: String!
-  marketProgramId: String!
-  marketQuoteVault: String!
-  marketVersion: Float!
-  openOrders: String!
-  programId: String!
-  quoteDecimals: Float!
-  quoteMint: String!
-  quoteVault: String!
-  targetOrders: String!
-  tradingToken: TradingTokenEntity
-  updatedAt: DateTime!
-  version: Float!
-  withdrawQueue: String!
+	data: [TradingEntity!]!
+	page: Int!
+	totalCount: Int!
 }
 
 type Query {
-  condition(id: ID!): ConditionEntity!
-  conditions(skip: Int, take: Int): PaginatedConditions!
-  conditionsGroup(id: ID!): ConditionsGroupEntity!
-  conditionsGroups(skip: Int, take: Int): PaginatedConditionsGroups!
-  getErrors: [errorsEnum!]!
-  milestone(id: ID!): MilestoneEntity!
-  milestones(skip: Int, take: Int): PaginatedMilestones!
-  pool(id: ID!): PoolEntity!
-  pools(skip: Int, take: Int): PaginatedPools!
-  strategies(skip: Int, take: Int): PaginatedStrategies!
-  strategy(id: ID!): StrategyEntity!
-  trading(id: ID!): TradingEntity!
-  tradingToken(id: ID!): TradingTokenEntity!
-  tradingTokens(skip: Int, take: Int, tradingId: String): PaginatedTradingTokens!
-  tradings(skip: Int, take: Int): PaginatedTradings!
-  wallet(id: ID!): WalletEntity!
-  wallets(skip: Int, take: Int): PaginatedWallets!
-}
-
-type StrategyEntity {
-  createdAt: DateTime!
-  description: String
-  id: ID!
-  milestones: [MilestoneEntity!]!
-  name: String!
-  predefinedStrategy: predefinedStrategyEnum
-  tradings: [TradingEntity!]!
-  updatedAt: DateTime!
+	getErrors: [errorsEnum!]!
+	trading(id: ID!): TradingEntity!
+	tradingToken(id: ID!): TradingTokenEntity!
+	tradingTokens(skip: Int, take: Int, tradingId: String): PaginatedTradingTokens!
+	tradings(skip: Int, take: Int): PaginatedTradings!
 }
 
 type TradingEntity {
-  createdAt: DateTime!
-  disabled: Boolean!
-  id: ID!
-  microLamports: Float!
-  price: Float
-  sourceWallet: WalletEntity!
-  strategy: StrategyEntity!
-  targetWallet: WalletEntity!
-  tokenTradingDuration: Float!
-  tradingTokens: [TradingTokenEntity!]
-  units: Float!
-  updatedAt: DateTime!
+	createdAt: DateTime!
+	disabled: Boolean!
+	id: ID!
+	microLamports: Float!
+	price: Float
+	sourceWalletId: String
+	strategyId: String
+	targetWalletId: String
+	tokenTradingDuration: Float!
+	tradingTokens: [TradingTokenEntity!]
+	units: Float!
+	updatedAt: DateTime!
 }
 
 type TradingTokenEntity {
-  amount: Float!
-  checkedStrategy: JSON!
-  createdAt: DateTime!
-  disabled: Boolean!
-  id: ID!
-  pool: PoolEntity!
-  signaledAt: DateTime!
-  trading: TradingEntity!
-  updatedAt: DateTime!
-}
-
-input UpdateConditionDto {
-  id: ID!
-}
-
-input UpdateMilestoneDto {
-  id: ID!
-}
-
-input UpdatePoolDto {
-  id: ID!
-}
-
-input UpdateStrategyDto {
-  id: ID!
+	amount: Float!
+	checkedStrategy: JSON!
+	createdAt: DateTime!
+	disabled: Boolean!
+	id: ID!
+	poolAddress: String
+	signaledAt: DateTime!
+	trading: TradingEntity!
+	updatedAt: DateTime!
 }
 
 input UpdateTradingDto {
-  id: ID!
+	id: ID!
 }
 
 input UpdateTradingTokenDto {
-  id: ID!
+	id: ID!
 }
 
-input UpdateWalletDto {
-  id: ID!
-}
-
-"""Represents NULL values"""
+"""
+Represents NULL values
+"""
 scalar Void
 
-type WalletEntity {
-  address: String!
-  createdAt: DateTime!
-  id: ID!
-  name: String!
-  sourceTradings: [TradingEntity!]!
-  targetTradings: [TradingEntity!]!
-  updatedAt: DateTime!
-}
-
-enum conditionFieldEnum {
-  AUTHOR
-  DATE
-  DATE_DIFF
-  PRICE
-  PRICE_DIFF
-}
-
 enum errorsEnum {
-  AuthorizationHeaderIsMissing
-  Forbidden
-  InternalServerError
-  InvalidEncryption
-  InvalidEncryptionLength
-  InvalidEnum
-  InvalidPassword
-  InvalidToken
-  InvalidVerificationCode
-  IsArray
-  IsDate
-  IsEmail
-  IsNotEmpty
-  IsNumber
-  IsObject
-  IsString
-  Max
-  MaxLength
-  Min
-  MinLength
-  NotFound
-  TokenIsMissing
-  UserAlreadyExist
-  UserNotExist
-  UserNotFound
-  UserNotVerified
-}
-
-enum groupOperatorEnum {
-  AND
-  OR
-}
-
-enum milestoneTypeEnum {
-  BUY
-  SELL
-  SIGNAL
-}
-
-enum operatorEnum {
-  EQUAL
-  LESS
-  LESS_EQUAL
-  MORE
-  MORE_EQUAL
-}
-
-enum predefinedStrategyEnum {
-  IMPULSE
+	AuthorizationHeaderIsMissing
+	Forbidden
+	InternalServerError
+	InvalidEncryption
+	InvalidEncryptionLength
+	InvalidEnum
+	InvalidPassword
+	InvalidToken
+	InvalidVerificationCode
+	IsArray
+	IsDate
+	IsEmail
+	IsNotEmpty
+	IsNumber
+	IsObject
+	IsString
+	Max
+	MaxLength
+	Min
+	MinLength
+	NotFound
+	TokenIsMissing
+	UserAlreadyExist
+	UserNotExist
+	UserNotFound
+	UserNotVerified
 }

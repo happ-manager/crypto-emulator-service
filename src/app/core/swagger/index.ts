@@ -1,13 +1,11 @@
 import type { INestApplication } from "@nestjs/common";
 
-import { poolsSwagger } from "../../pools/swagger/pools.swagger";
-import { strategiesSwagger } from "../../strategies/swagger/strategies.swagger";
-import { walletsSwagger } from "../../wallets/swagger/wallets.swagger";
+import { exchangeSwagger } from "../../exchange/swagger/exchange.swagger";
+import { tradingSwagger } from "../../trading/swagger/trading.swagger";
 import { appSwagger } from "./app.swagger";
 
 export function swagger(app: INestApplication) {
 	appSwagger(app);
-	poolsSwagger(app);
-	walletsSwagger(app);
-	strategiesSwagger(app);
+	tradingSwagger(app);
+	exchangeSwagger(app);
 }

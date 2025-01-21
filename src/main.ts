@@ -10,6 +10,7 @@ async function bootstrap() {
 	const app = await NestFactory.create(CoreModule);
 
 	app.enableCors();
+	app.setGlobalPrefix(PREFIX);
 
 	swagger(app);
 

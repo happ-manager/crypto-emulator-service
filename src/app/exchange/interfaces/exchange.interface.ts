@@ -1,7 +1,4 @@
-import type { IStrategy } from "@happ-manager/crypto-api";
-
-export interface ITradingProps {
-	strategy: IStrategy;
+export interface IExchangeProps {
 	sourceWallet: string;
 	targetWallet: string;
 	secret: string;
