@@ -26,7 +26,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }} -t trading-service .
+          docker build --build-arg NPM_TOKEN="${{ secrets.NPM_TOKEN }}" -t trading-service .
 
       - name: Save Docker image
         run: docker save -o trading-service.tar trading-service
