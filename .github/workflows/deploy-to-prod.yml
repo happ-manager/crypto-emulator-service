@@ -1,5 +1,3 @@
-name: Deploy to prod
-
 on:
   push:
     branches:
@@ -13,39 +11,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v2
-
       - name: Decode and create environment files
         run: |
           echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.ts
           echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.prod.ts
 
-      - name: Decode and create CA certificate file
-        run: echo "${{ secrets.PROD_CA_CERTIFICATE_BASE64 }}" | base64 -d > ./ca-certificate.crt
-
       - name: Build Docker image
-        run: |
-          docker build --build-arg NPM_TOKEN="${{ secrets.NPM_TOKEN }}" -t trading-service .
+        run: docker build --build-arg NPM_TOKEN="${{ secrets.NPM_TOKEN }}" -t trading-service .
 
       - name: Save Docker image
         run: docker save -o trading-service.tar trading-service
-
-      - name: Upload Docker image as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: trading-service
-          path: trading-service.tar
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: trading-service
 
       - name: Set permissions for Docker image file
         run: chmod 644 trading-service.tar
@@ -60,6 +35,11 @@ jobs:
           source: "trading-service.tar"
           target: "/home/docker-images"
 
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
         with:
