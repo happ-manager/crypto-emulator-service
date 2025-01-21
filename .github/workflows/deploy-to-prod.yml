@@ -16,9 +16,6 @@ jobs:
           echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.ts
           echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.prod.ts
 
-      - name: Check NPM_TOKEN
-        run: echo "${{ secrets.NPM_TOKEN }}"
-
       - name: Build Docker image
         run: docker build --build-arg NPM_TOKEN="${{ secrets.NPM_TOKEN }}" -t trading-service .
 
