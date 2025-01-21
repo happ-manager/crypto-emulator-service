@@ -9,6 +9,9 @@ COPY package*.json ./
 ARG NPM_TOKEN
 ENV NPM_TOKEN=${NPM_TOKEN}
 
+# Печатаем для отладки, чтобы убедиться, что токен передается
+RUN echo "Using NPM_TOKEN: ${NPM_TOKEN}"
+
 # Установка зависимостей
 RUN npm ci
 
