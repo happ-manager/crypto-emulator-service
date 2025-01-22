@@ -32,6 +32,9 @@ COPY --from=builder /app/node_modules ./node_modules
 # Копируем собранный код
 COPY --from=builder /app/dist ./dist
 
+# Копируем сертификат
+COPY --from=builder /app/ca-certificate.crt ./ca-certificate.crt
+
 # Настраиваем порт
 EXPOSE 3000
 
