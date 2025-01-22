@@ -1,5 +1,6 @@
 import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import * as bodyParser from "body-parser";
 
 import { CoreModule } from "./app/core/core.module";
 import { swagger } from "./app/core/swagger";
@@ -8,6 +9,10 @@ import { environment } from "./environments/environment";
 
 async function bootstrap() {
 	const app = await NestFactory.create(CoreModule);
+
+	// Устанавливаем лимит на размер тела запроса (например, 100 MB)
+	app.use(bodyParser.json({ limit: "100mb" }));
+	app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
 
 	app.enableCors();
 	app.setGlobalPrefix(PREFIX);

@@ -11,17 +11,50 @@ import {
 import { Injectable, Logger } from "@nestjs/common";
 import { In } from "typeorm";
 
+import { TransactionEntity } from "../../data/entities/transaction.entity";
 import { TransactionsService } from "../../data/services/transactions.service";
 import { findTransaction } from "../../shared/utils/find-transaction.util";
 import type { IEmulateBody } from "../interfaces/emulator-body.interface";
 import { getDelayedTransaction } from "../utils/get-delayed-transaction.util";
 
-function splitArray(arr: unknown[], chunkSize: number) {
-	const result = [];
-	for (let i = 0; i < arr.length; i += chunkSize) {
-		result.push(arr.slice(i, i + chunkSize));
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+	const chunks: T[][] = [];
+	for (let i = 0; i < array.length; i += chunkSize) {
+		chunks.push(array.slice(i, i + chunkSize));
 	}
-	return result;
+	return chunks;
+}
+
+async function executeInParallel<T>(tasks: (() => Promise<T>)[], parallelLimit: number): Promise<T[]> {
+	const results: T[] = [];
+	const executing: Promise<void>[] = [];
+
+	for (const [index, task] of tasks.entries()) {
+		// Обертываем выполнение задачи для логирования
+		const promise = (async () => {
+			const start = Date.now();
+			const result = await task(); // Выполняем задачу
+			const end = Date.now();
+			console.log(`Task ${index + 1} completed in ${end - start}ms`);
+			results.push(result); // Сохраняем результат
+		})();
+
+		// Добавляем задачу в список выполняющихся
+		executing.push(promise);
+
+		if (executing.length >= parallelLimit) {
+			// Дожидаемся завершения одной из выполняющихся задач
+			await Promise.race(executing);
+		}
+
+		// Убираем завершенные задачи из списка
+		// Это делается только после их завершения
+		executing.filter((p) => p !== promise);
+	}
+
+	// Дожидаемся выполнения всех оставшихся задач
+	await Promise.all(executing);
+	return results;
 }
 
 @Injectable()
@@ -30,10 +63,18 @@ export class EmulatorService {
 
 	constructor(private readonly _transactionsService: TransactionsService) {}
 
+	async onModuleInit() {
+		// const data = await this._transactionsService.getTransactions({
+		// 	take: 100
+		// });
+		//
+		// console.log(data);
+	}
+
 	async emulateBySignals(body: IEmulateBody) {
 		const { signals, strategies, delay } = body;
 
-		const signalsChunks: ISignal[][] = splitArray(signals, 100);
+		const signalsChunks: ISignal[][] = chunkArray(signals, 100);
 		const checkedSignals = [];
 
 		for (const signalsChunk of signalsChunks) {
@@ -109,7 +150,18 @@ export class EmulatorService {
 	async emulateByStrategies(body: IEmulateBody) {
 		const { signals, strategies, delay } = body;
 
-		const signalsChunks: ISignal[][] = splitArray(signals, 100);
+		const transactions = await this.getTransactions(signals);
+		const poolTransactions = new Map<string, IBaseTransaction[]>();
+
+		for (const transaction of transactions) {
+			if (poolTransactions.has(transaction.poolAddress)) {
+				poolTransactions.get(transaction.poolAddress).push(transaction);
+				continue;
+			}
+
+			poolTransactions.set(transaction.poolAddress, [transaction]);
+		}
+
 		const checkedStrategies: any[] = [];
 
 		for (const strategy of strategies) {
@@ -122,64 +174,84 @@ export class EmulatorService {
 
 			const checkedSignals = [];
 
-			for (const signalsChunk of signalsChunks) {
-				const data = await this._transactionsService.getTransactions({
-					where: { poolAddress: In(signalsChunk.map((signal) => signal.poolAddress)) },
-					order: { date: "asc" }
-				});
+			for (const signal of signals) {
+				const transactions = poolTransactions.get(signal.poolAddress);
 
-				const poolTransactions: Record<string, IBaseTransaction[]> = {};
+				const signalTransaction = findTransaction(transactions, new Date(signal.signaledAt));
 
-				for (const transaction of data) {
-					if (poolTransactions[transaction.poolAddress]) {
-						poolTransactions[transaction.poolAddress].push(transaction);
+				if (!signalTransaction) {
+					this._loggerService.log("Не получаеся найти транзакцию сигнала");
+					continue;
+				}
+
+				const checkedTransactions: ICheckedTransactions = new Map();
+				checkedTransactions.set(signalMilestone.id, signalTransaction);
+
+				const checkedMilestones: IChecked<IMilestone>[] = [];
+				const sortedMilestones = strategy.milestones.sort((a, b) => a.position - b.position);
+
+				for (const milestone of sortedMilestones) {
+					const checkedTransaction = getCheckedTransaction({
+						strategy,
+						milestone,
+						transactions,
+						checkedTransactions
+					});
+
+					if (!checkedTransaction) {
 						continue;
 					}
 
-					poolTransactions[transaction.poolAddress] = [transaction];
+					const delayedTransaction: any = getDelayedTransaction(transactions, checkedTransaction, delay);
+
+					checkedTransactions.set(milestone.id, delayedTransaction);
+					checkedMilestones.push({ ...milestone, checkedTransaction, delayedTransaction });
 				}
 
-				for (const signal of signalsChunk) {
-					const transactions = poolTransactions[signal.poolAddress];
-
-					const signalTransaction = findTransaction(transactions, new Date(signal.signaledAt));
-
-					if (!signalTransaction) {
-						this._loggerService.log("Не получаеся найти транзакцию сигнала");
-						continue;
-					}
-
-					const checkedTransactions: ICheckedTransactions = new Map();
-					checkedTransactions.set(signalMilestone.id, signalTransaction);
-
-					const checkedMilestones: IChecked<IMilestone>[] = [];
-					const sortedMilestones = strategy.milestones.sort((a, b) => a.position - b.position);
-
-					for (const milestone of sortedMilestones) {
-						const checkedTransaction = getCheckedTransaction({
-							strategy,
-							milestone,
-							transactions,
-							checkedTransactions
-						});
-
-						if (!checkedTransaction) {
-							continue;
-						}
-
-						const delayedTransaction: any = getDelayedTransaction(transactions, checkedTransaction, delay);
-
-						checkedTransactions.set(milestone.id, delayedTransaction);
-						checkedMilestones.push({ ...milestone, checkedTransaction, delayedTransaction });
-					}
-
-					checkedSignals.push({ signal, checkedMilestones });
-				}
+				checkedSignals.push({ signal, checkedMilestones });
 			}
 
 			checkedStrategies.push({ strategy, checkedSignals });
 		}
 
 		return checkedStrategies;
+	}
+
+	// Обновленный `getTransactions`
+	async getTransactions(signals: ISignal[]): Promise<TransactionEntity[]> {
+		const chunkSize = 100; // Размер одного блока сигналов
+		const parallelLimit = 10; // Максимальное количество параллельных запросов
+
+		// Разбиваем сигналы на чанки
+		const signalsChunks = chunkArray(signals, chunkSize);
+
+		// Формируем задачи для каждого чанка
+		const tasks = signalsChunks.map(
+			(signalsChunk) => async () =>
+				this._transactionsService.getTransactions({
+					where: { poolAddress: In(signalsChunk.map((signal) => signal.poolAddress)) },
+					order: { date: "asc" }
+				})
+		);
+
+		// Выполняем запросы параллельно с ограничением
+		const allResults = await executeInParallel(tasks, parallelLimit);
+
+		return allResults.flat();
+	}
+
+	async getTransactionsSimple(signals: ISignal[]): Promise<TransactionEntity[]> {
+		const poolAddresses = signals.map((signal) => signal.poolAddress);
+		console.log(`Запрашиваем данные для ${poolAddresses.length} адресов`);
+
+		const start = Date.now();
+		const transactions = await this._transactionsService.getTransactions({
+			where: { poolAddress: In(poolAddresses) },
+			order: { date: "asc" }
+		});
+		const end = Date.now();
+		console.log(`Выполнено за ${end - start}ms`);
+
+		return transactions;
 	}
 }

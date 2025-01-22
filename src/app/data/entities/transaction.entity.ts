@@ -6,7 +6,7 @@ export class TransactionEntity extends BaseEntity implements ITransaction {
 	@Column()
 	poolAddress: string;
 
-	@Column("timestamptz")
+	@Column("timestamp with time zone")
 	date: Date;
 
 	@Column("decimal")
