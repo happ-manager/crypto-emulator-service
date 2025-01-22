@@ -15,6 +15,7 @@ jobs:
         run: |
           echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.ts
           echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.prod.ts
+          echo "${{ secrets.PROD_CA_CERTIFICATE_BASE64 }}" | base64 -d > ./ca-certificate.crt
 
       - name: Build Docker image
         run: docker build --build-arg NPM_TOKEN="${{ secrets.NPM_TOKEN }}" -t emulator-service .
