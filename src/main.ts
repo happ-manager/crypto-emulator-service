@@ -25,7 +25,7 @@ async function bootstrap() {
 bootstrap().then(() => {
 	const logger = new Logger("Bootstrap");
 
-	logger.log(`🚀 Trading service is running on: http://localhost:${environment.port}/${PREFIX}`);
+	logger.log(`🚀 Emulator service is running on: http://localhost:${environment.port}/${PREFIX}`);
 	logger.log(`🚀 Swagger is running on: http://localhost:${environment.port}/${PREFIX}/${SWAGGER}`);
 	logger.log(`🚀 Graphql is running on: http://localhost:${environment.port}/graphql`);
 });
