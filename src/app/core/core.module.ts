@@ -1,21 +1,12 @@
 import { Module } from "@nestjs/common";
 import { EventEmitterModule } from "@nestjs/event-emitter";
+import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { ExchangeModule } from "../exchange/exchange.module";
-import { HeliusModule } from "../shared/modules/helius";
-import { SolanaModule } from "../shared/modules/solana";
-import { TradingModule } from "../trading/trading.module";
-import { HELIUS_CONFIG } from "./configs/helius.config";
-import { CORE_SERVICES } from "./services";
+import { AnalyticsModule } from "../analytics/analytics.module";
+import { EmulatorModule } from "../emulator/emulator.module";
+import { TYPEORM_CONFIG } from "./configs/typeorm.config";
 
 @Module({
-	imports: [
-		HeliusModule.forRoot(HELIUS_CONFIG),
-		EventEmitterModule.forRoot(),
-		SolanaModule,
-		TradingModule,
-		ExchangeModule
-	],
-	providers: [...CORE_SERVICES]
+	imports: [TypeOrmModule.forRoot(TYPEORM_CONFIG), EventEmitterModule.forRoot(), AnalyticsModule, EmulatorModule]
 })
 export class CoreModule {}

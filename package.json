@@ -1,5 +1,5 @@
 {
-	"name": "trading-service",
+	"name": "@happ-manager/crypto-emulator-service",
 	"version": "0.0.1",
 	"description": "",
 	"author": "",
@@ -25,7 +25,7 @@
 	},
 	"dependencies": {
 		"@apollo/server": "^4.11.3",
-		"@happ-manager/crypto-api": "^0.0.6",
+		"@happ-manager/crypto-api": "^0.0.10",
 		"@nestjs/apollo": "^12.2.2",
 		"@nestjs/axios": "^4.0.0",
 		"@nestjs/common": "^10.4.15",

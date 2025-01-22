@@ -17,13 +17,13 @@ jobs:
           echo "${{ secrets.PROD_ENV_BASE64 }}" | base64 -d > ./src/environments/environment.prod.ts
 
       - name: Build Docker image
-        run: docker build --build-arg NPM_TOKEN="${{ secrets.NPM_TOKEN }}" -t trading-service .
+        run: docker build --build-arg NPM_TOKEN="${{ secrets.NPM_TOKEN }}" -t emulator-service .
 
       - name: Save Docker image
-        run: docker save -o trading-service.tar trading-service
+        run: docker save -o emulator-service.tar emulator-service
 
       - name: Set permissions for Docker image file
-        run: chmod 644 trading-service.tar
+        run: chmod 644 emulator-service.tar
 
       - name: Copy Docker image via SCP
         uses: appleboy/scp-action@master
@@ -32,7 +32,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           overwrite: true
-          source: "trading-service.tar"
+          source: "emulator-service.tar"
           target: "/home/docker-images"
 
   deploy:
@@ -48,6 +48,6 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             set -e
-            docker load -i /home/docker-images/trading-service.tar
+            docker load -i /home/docker-images/emulator-service.tar
             cd /home
-            docker-compose up -d --build --no-deps trading-service
+            docker-compose up -d --build --no-deps emulator-service

@@ -2,9 +2,12 @@ export const environment = {
 	production: true,
 	dev: false,
 	port: 0,
-	helius: {
-		apiKey: "",
-		stakedRpcUrl: "",
-		enhancedWebsocketUrl: ""
+	database: {
+		certificate: false,
+		host: "",
+		port: 0,
+		username: "",
+		password: "",
+		name: ""
 	}
 };
