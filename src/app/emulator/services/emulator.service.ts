@@ -22,6 +22,7 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 	for (let i = 0; i < array.length; i += chunkSize) {
 		chunks.push(array.slice(i, i + chunkSize));
 	}
+
 	return chunks;
 }
 
@@ -29,13 +30,10 @@ async function executeInParallel<T>(tasks: (() => Promise<T>)[], parallelLimit: 
 	const results: T[] = [];
 	const executing: Promise<void>[] = [];
 
-	for (const [index, task] of tasks.entries()) {
+	for (const [_, task] of tasks.entries()) {
 		// Обертываем выполнение задачи для логирования
 		const promise = (async () => {
-			const start = Date.now();
 			const result = await task(); // Выполняем задачу
-			const end = Date.now();
-			console.log(`Task ${index + 1} completed in ${end - start}ms`);
 			results.push(result); // Сохраняем результат
 		})();
 
@@ -238,20 +236,5 @@ export class EmulatorService {
 		const allResults = await executeInParallel(tasks, parallelLimit);
 
 		return allResults.flat();
-	}
-
-	async getTransactionsSimple(signals: ISignal[]): Promise<TransactionEntity[]> {
-		const poolAddresses = signals.map((signal) => signal.poolAddress);
-		console.log(`Запрашиваем данные для ${poolAddresses.length} адресов`);
-
-		const start = Date.now();
-		const transactions = await this._transactionsService.getTransactions({
-			where: { poolAddress: In(poolAddresses) },
-			order: { date: "asc" }
-		});
-		const end = Date.now();
-		console.log(`Выполнено за ${end - start}ms`);
-
-		return transactions;
 	}
 }
