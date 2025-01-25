@@ -6,7 +6,8 @@ module.exports = function (options, webpack) {
 		...options,
 		entry: {
 			main: "./src/main.ts", // Основной файл приложения
-			analyticsWorker: "./src/workers/analytics.worker.ts" // Файл воркера
+			checkedSignalsWorker: "./src/workers/checked-signals.worker.ts", // Файл воркера
+			transactionsWorker: "./src/workers/transactions.worker.ts" // Файл воркера
 		},
 		output: {
 			path: path.resolve(__dirname, "dist"),

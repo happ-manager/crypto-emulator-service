@@ -47,7 +47,7 @@ if (cluster.isPrimary) {
 		logger.log(`Primary process is running. Forking ${numCPUs} workers...`);
 	});
 } else {
-	import("./workers/analytics.worker").then(() => {
+	import("./workers/checked-signals.worker").then(() => {
 		// logger.log(`Worker process for tasks running (PID: ${process.pid})`);
 	});
 }
