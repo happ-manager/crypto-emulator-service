@@ -1,0 +1,7 @@
+version: "3.8"
+services:
+  emulator-service:
+    image: emulator-service:latest
+    container_name: emulator-service
+    expose:
+      - "3000:3000"

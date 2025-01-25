@@ -15,59 +15,15 @@ import { TransactionEntity } from "../../data/entities/transaction.entity";
 import { TransactionsService } from "../../data/services/transactions.service";
 import { findTransaction } from "../../shared/utils/find-transaction.util";
 import type { IEmulateBody } from "../interfaces/emulator-body.interface";
+import { chunkArray } from "../utils/chunk-array.util";
+import { executeInParallel } from "../utils/execute-in-parallel.util";
 import { getDelayedTransaction } from "../utils/get-delayed-transaction.util";
-
-function chunkArray<T>(array: T[], chunkSize: number): T[][] {
-	const chunks: T[][] = [];
-	for (let i = 0; i < array.length; i += chunkSize) {
-		chunks.push(array.slice(i, i + chunkSize));
-	}
-
-	return chunks;
-}
-
-async function executeInParallel<T>(tasks: (() => Promise<T>)[], parallelLimit: number): Promise<T[]> {
-	const results: T[] = [];
-	const executing: Promise<void>[] = [];
-
-	for (const [_, task] of tasks.entries()) {
-		// Обертываем выполнение задачи для логирования
-		const promise = (async () => {
-			const result = await task(); // Выполняем задачу
-			results.push(result); // Сохраняем результат
-		})();
-
-		// Добавляем задачу в список выполняющихся
-		executing.push(promise);
-
-		if (executing.length >= parallelLimit) {
-			// Дожидаемся завершения одной из выполняющихся задач
-			await Promise.race(executing);
-		}
-
-		// Убираем завершенные задачи из списка
-		// Это делается только после их завершения
-		executing.filter((p) => p !== promise);
-	}
-
-	// Дожидаемся выполнения всех оставшихся задач
-	await Promise.all(executing);
-	return results;
-}
 
 @Injectable()
 export class EmulatorService {
 	private readonly _loggerService = new Logger("EmulatorService");
 
 	constructor(private readonly _transactionsService: TransactionsService) {}
-
-	async onModuleInit() {
-		// const data = await this._transactionsService.getTransactions({
-		// 	take: 100
-		// });
-		//
-		// console.log(data);
-	}
 
 	async emulateBySignals(body: IEmulateBody) {
 		const { signals, strategies, delay } = body;
@@ -200,7 +156,7 @@ export class EmulatorService {
 						continue;
 					}
 
-					const delayedTransaction: any = getDelayedTransaction(transactions, checkedTransaction, delay);
+					const delayedTransaction = getDelayedTransaction(transactions, checkedTransaction, delay);
 
 					checkedTransactions.set(milestone.id, delayedTransaction);
 					checkedMilestones.push({ ...milestone, checkedTransaction, delayedTransaction });
@@ -215,7 +171,6 @@ export class EmulatorService {
 		return checkedStrategies;
 	}
 
-	// Обновленный `getTransactions`
 	async getTransactions(signals: ISignal[]): Promise<TransactionEntity[]> {
 		const chunkSize = 100; // Размер одного блока сигналов
 		const parallelLimit = 10; // Максимальное количество параллельных запросов
