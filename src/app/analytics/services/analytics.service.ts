@@ -1,8 +1,10 @@
 import { type ISignal, PredefinedStrategyEnum } from "@happ-manager/crypto-api";
+import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
 import { In } from "typeorm";
 import { Worker } from "worker_threads";
 
+import { environment } from "../../../environments/environment";
 import { TransactionEntity } from "../../data/entities/transaction.entity";
 import { SignalsService } from "../../data/services/signals.service";
 import { StrategiesService } from "../../data/services/strategies.service";
@@ -15,6 +17,7 @@ import { runWorker } from "../utils/run-worker.util";
 @Injectable()
 export class AnalyticsService {
 	constructor(
+		private readonly _httpClient: HttpService,
 		private readonly _signalsService: SignalsService,
 		private readonly _strategiesService: StrategiesService,
 		private readonly _transactionsService: TransactionsService
@@ -50,9 +53,39 @@ export class AnalyticsService {
 
 		console.log(`Results length: ${results.length} in ${(Date.now() - workersStart) / 1000}`);
 
-		return results.reduce((best, current) =>
+		const bestResult = results.reduce((best, current) =>
 			current.strategyResult?.totalProfit > best.strategyResult?.totalProfit ? current : best
 		);
+
+		const text = `
+*Лучшие параметры для ${signals.length} сигналов из ${allSettings.length} параметров:*
+
+*Параметры настройки:*
+- 🛒 *buyPercent*: ${bestResult.setting.buyPercent}
+- 📈 *sellHighPercent*: ${bestResult.setting.sellHighPercent}
+- 📉 *sellLowPercent*: ${bestResult.setting.sellLowPercent}
+- ⏳ *minTime*: ${bestResult.setting.minTime}
+- ⏱ *maxTime*: ${bestResult.setting.maxTime}
+
+*Результаты стратегии:*
+- ✅ *Win Count*: ${bestResult.strategyResult.winCount}
+- ❌ *Lose Count*: ${bestResult.strategyResult.loseCount}
+- 🤷‍♂️ *Ignore Count*: ${bestResult.strategyResult.ignoreCount}
+- 🔥 *Win Series*: ${bestResult.strategyResult.winSeries}
+- 💔 *Lose Series*: ${bestResult.strategyResult.loseSeries}
+- 💵 *Total Enter*: ${bestResult.strategyResult.totalEnter.toFixed(2)}
+- 💰 *Total Profit*: ${bestResult.strategyResult.totalProfit.toFixed(2)}
+- 🏦 *Total Exit*: ${bestResult.strategyResult.totalExit.toFixed(2)}
+`;
+
+		this._httpClient
+			.post(`https://api.telegram.org/bot${environment.apiToken}/sendMessage`, {
+				chat_id: 617_590_837,
+				text
+			})
+			.subscribe();
+
+		return bestResult;
 	}
 
 	async getTransactions(signals: ISignal[]) {
