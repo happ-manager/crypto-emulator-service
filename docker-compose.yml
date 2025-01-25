@@ -5,3 +5,8 @@ services:
     container_name: emulator-service
     ports:
       - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "128" # Использовать все 128 потоков
+          memory: "256G" # Использовать максимум доступной памяти

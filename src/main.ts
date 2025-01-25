@@ -10,6 +10,8 @@ import { swagger } from "./app/core/swagger";
 import { PREFIX, SWAGGER } from "./app/shared/constants/prefix.constant";
 import { environment } from "./environments/environment";
 
+let firstBootstrap = true;
+
 async function bootstrap() {
 	const app = await NestFactory.create(CoreModule);
 
@@ -23,6 +25,20 @@ async function bootstrap() {
 	swagger(app);
 
 	await app.listen(environment.port);
+
+	const logger = new Logger("Bootstrap");
+
+	if (firstBootstrap) {
+		logger.log(`🚀 Emulatore service running on: http://localhost:${environment.port}/${PREFIX}`);
+		logger.log(`🚀 Swagger is running on: http://localhost:${environment.port}/${PREFIX}/${SWAGGER}`);
+		logger.log(`🚀 Graphql is running on: http://localhost:${environment.port}/graphql`);
+
+		const numCPUs = cpus().length;
+
+		logger.log(`🚀 Primary process is running. Forking ${numCPUs} workers...`);
+
+		firstBootstrap = false;
+	}
 }
 
 if ((cluster as any).isPrimary) {
@@ -40,11 +56,5 @@ if ((cluster as any).isPrimary) {
 		(cluster as any).fork();
 	});
 } else {
-	bootstrap().then(() => {
-		const logger = new Logger("Bootstrap");
-
-		logger.log(`🚀 Worker ${process.pid} running emulator service on: http://localhost:${environment.port}/${PREFIX}`);
-		logger.log(`🚀 Swagger is running on: http://localhost:${environment.port}/${PREFIX}/${SWAGGER}`);
-		logger.log(`🚀 Graphql is running on: http://localhost:${environment.port}/graphql`);
-	});
+	bootstrap().then(() => {});
 }

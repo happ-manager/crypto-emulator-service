@@ -7,8 +7,6 @@ async function processSettings() {
 	const workerStartDate = Date.now();
 	const { index, strategy, signals, settings, transactionsMap } = workerData;
 
-	console.log(`Worker #${index + 1} started`);
-
 	const results = [];
 
 	for (const setting of settings) {

@@ -15,7 +15,7 @@ import type { ICheckedSignal } from "../interfaces/checked-signal.interface";
 
 const DELAY = 1000;
 
-export async function getCheckedSignals(
+export function getCheckedSignals(
 	strategy: IStrategy,
 	signals: ISignal[],
 	settings: IClownStrategyParmas,
