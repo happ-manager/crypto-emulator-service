@@ -49,12 +49,17 @@ export class AnalyticsService {
 			transactionsMap.set(transaction.poolAddress, [transaction]);
 		}
 
+		console.log(`Strated ${allSettings.length} settings`);
+
 		const checkedSignals = await this.getCheckedSignals(allSettings, filteredSignals, transactionsMap);
+
 		const bestResult = checkedSignals.reduce((best, current) =>
 			current.strategyResult?.totalProfit > best.strategyResult?.totalProfit ? current : best
 		);
 
 		await this.sendMessagesToTelegram(filteredSignals, allSettings, bestResult);
+
+		console.log(bestResult);
 
 		return bestResult;
 	}
@@ -66,7 +71,7 @@ export class AnalyticsService {
 		const workersStart = Date.now();
 		const transactions = (await Promise.all(workerPromises)).flat();
 
-		console.log(`Transactions length: ${transactions.length} in ${(Date.now() - workersStart) / 1000}`);
+		console.log(`Get ${transactions.length} transactions in ${(Date.now() - workersStart) / 1000}`);
 		return transactions as ITransaction[];
 	}
 
@@ -83,7 +88,7 @@ export class AnalyticsService {
 
 		const workersStart = Date.now();
 		const checkedSignales = (await Promise.all(workerPromises)).flat();
-		console.log(`Checked signals length: ${checkedSignales.length} in ${(Date.now() - workersStart) / 1000}`);
+		console.log(`Checked ${checkedSignales.length} signals in ${(Date.now() - workersStart) / 1000}`);
 
 		return checkedSignales;
 	}
@@ -110,11 +115,15 @@ export class AnalyticsService {
 - 🏦 *Total Exit*: ${bestResult.strategyResult.totalExit.toFixed(2)}
 `;
 
-		this._httpClient
-			.post(`https://api.telegram.org/bot${environment.apiToken}/sendMessage`, {
-				chat_id: 617_590_837,
-				text
-			})
-			.subscribe();
+		try {
+			this._httpClient
+				.post(`https://api.telegram.org/bot${environment.apiToken}/sendMessage`, {
+					chat_id: 617_590_837,
+					text
+				})
+				.subscribe();
+		} catch {
+			console.error("Error sending to telegram");
+		}
 	}
 }

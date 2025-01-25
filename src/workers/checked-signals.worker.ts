@@ -6,17 +6,19 @@ import { getStrategyResults } from "../app/analytics/utils/get-strategy-results.
 async function processAnalytics() {
 	const { strategy, signals, settings, transactionsMap } = workerData;
 
-	const results = [];
+	let bestResult = { strategyResult: { totalProfit: 0 }, setting: settings[0] };
 
 	for (const setting of settings) {
 		const checkedSignalsChunk = getCheckedSignals(strategy, signals, setting, transactionsMap);
 
 		const strategyResult = getStrategyResults(checkedSignalsChunk);
 
-		results.push({ setting, strategyResult });
+		if (strategyResult.totalProfit > bestResult.strategyResult.totalProfit) {
+			bestResult = { strategyResult, setting };
+		}
 	}
 
-	parentPort?.postMessage(results);
+	parentPort?.postMessage(bestResult);
 }
 
 processAnalytics().catch((error) => {
