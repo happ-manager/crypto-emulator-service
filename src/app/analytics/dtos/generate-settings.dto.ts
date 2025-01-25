@@ -7,6 +7,12 @@ export class GenerateSettingsDto {
 	@ApiPropertyOptional({ description: "Сколько сигналов берем", example: 5 })
 	signalsTake?: number;
 
+	@ApiPropertyOptional({ description: "Начало торгов", example: 14 })
+	startHour?: number;
+
+	@ApiPropertyOptional({ description: "Конец торгов", example: 20 })
+	endHour?: number;
+
 	@ApiPropertyOptional({ description: "Начальное значение процента покупки", example: -5 })
 	buyPercentStart?: number;
 

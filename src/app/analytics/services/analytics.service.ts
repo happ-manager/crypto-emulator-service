@@ -24,16 +24,22 @@ export class AnalyticsService {
 	) {}
 
 	async analyse(body?: IGenerateSettingsProps) {
-		const { signalsSkip = 0, signalsTake = 5 } = body;
+		const { signalsSkip = 0, signalsTake = 5, startHour = 14, endHour = 20 } = body;
 
 		const strategy = await this._strategiesService.getStrategy({
 			where: { predefinedStrategy: PredefinedStrategyEnum.CLOWN },
 			relations: ["milestones"]
 		});
-		const signals = await this._signalsService.getSignals({
+		const allSignals = await this._signalsService.getSignals({
 			skip: signalsSkip,
 			take: signalsTake
 		});
+		const signals = allSignals.filter((signal) => {
+			const date = new Date(signal.signaledAt); // Преобразование в объект Date
+			const hour = date.getUTCHours(); // Получение часов в формате UTC
+			return hour >= startHour && hour < endHour; // Проверка попадания в интервал
+		});
+
 		const allSettings = generateSettings(body);
 		const settingsChunks = chunkArray(allSettings, 500);
 
