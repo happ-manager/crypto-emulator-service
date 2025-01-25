@@ -3,5 +3,5 @@ services:
   emulator-service:
     image: emulator-service:latest
     container_name: emulator-service
-    expose:
+    ports:
       - "3000:3000"

@@ -1,6 +1,9 @@
+import * as cluster from "node:cluster";
+
 import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import * as bodyParser from "body-parser";
+import { cpus } from "os";
 
 import { CoreModule } from "./app/core/core.module";
 import { swagger } from "./app/core/swagger";
@@ -22,10 +25,26 @@ async function bootstrap() {
 	await app.listen(environment.port);
 }
 
-bootstrap().then(() => {
-	const logger = new Logger("Bootstrap");
+if ((cluster as any).isPrimary) {
+	const numCPUs = cpus().length;
+	const logger = new Logger("Cluster");
 
-	logger.log(`🚀 Emulator service is running on: http://localhost:${environment.port}/${PREFIX}`);
-	logger.log(`🚀 Swagger is running on: http://localhost:${environment.port}/${PREFIX}/${SWAGGER}`);
-	logger.log(`🚀 Graphql is running on: http://localhost:${environment.port}/graphql`);
-});
+	logger.log(`🚀 Primary process is running. Forking ${numCPUs} workers...`);
+
+	for (let i = 0; i < numCPUs; i++) {
+		(cluster as any).fork();
+	}
+
+	(cluster as any).on("exit", (worker) => {
+		logger.warn(`⚠️ Worker ${worker.process.pid} died. Restarting...`);
+		(cluster as any).fork();
+	});
+} else {
+	bootstrap().then(() => {
+		const logger = new Logger("Bootstrap");
+
+		logger.log(`🚀 Worker ${process.pid} running emulator service on: http://localhost:${environment.port}/${PREFIX}`);
+		logger.log(`🚀 Swagger is running on: http://localhost:${environment.port}/${PREFIX}/${SWAGGER}`);
+		logger.log(`🚀 Graphql is running on: http://localhost:${environment.port}/graphql`);
+	});
+}
