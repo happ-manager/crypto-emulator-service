@@ -32,6 +32,8 @@ export class AnalyticsService {
 			return hour >= startHour && hour < endHour; // Проверка попадания в интервал
 		});
 
+		console.log(`Started ${filteredSignals} signals`);
+
 		const allSettings = generateSettings(body);
 
 		const transactions = await this.getTransactions(filteredSignals);
