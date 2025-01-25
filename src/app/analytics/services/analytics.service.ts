@@ -32,7 +32,7 @@ export class AnalyticsService {
 			return hour >= startHour && hour < endHour; // Проверка попадания в интервал
 		});
 
-		console.log(`Started ${filteredSignals} signals`);
+		console.log(`Started ${filteredSignals.length} signals`);
 
 		const allSettings = generateSettings(body);
 
