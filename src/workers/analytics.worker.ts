@@ -10,7 +10,7 @@ async function processSettings() {
 	const results = [];
 
 	for (const setting of settings) {
-		const checkedSignalsChunk = await getCheckedSignals(strategy, signals, setting, transactionsMap);
+		const checkedSignalsChunk = getCheckedSignals(strategy, signals, setting, transactionsMap);
 
 		const strategyResult = getStrategyResults(checkedSignalsChunk);
 
