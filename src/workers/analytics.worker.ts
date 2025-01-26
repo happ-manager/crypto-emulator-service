@@ -7,6 +7,10 @@ import { getDelayedTransaction } from "../app/emulator/utils/get-delayed-transac
 import { findTransaction } from "../app/shared/utils/find-transaction.util";
 
 async function processAnalytics() {
+	if (!workerData) {
+		return;
+	}
+
 	const {
 		index,
 		strategy,
@@ -25,6 +29,21 @@ async function processAnalytics() {
 
 	// Восстанавливаем массив числовых данных
 	const sharedTransactions = new Float64Array(transactionsBuffer);
+
+	if (sharedTransactions.length < transactionsLength * 5) {
+		throw new Error(
+			`Shared transactions buffer is too small: expected ${transactionsLength * 5}, got ${sharedTransactions.length}`
+		);
+	}
+
+	if (!transactionsData["poolAddress"] || transactionsData["poolAddress"].length !== transactionsLength) {
+		throw new Error(`Transactions data structure mismatch`);
+	}
+
+	if (!transactionsData["poolAddress"] || transactionsData["poolAddress"].length !== transactionsLength) {
+		throw new Error(`Transactions data structure mismatch`);
+	}
+
 	const transactionsMap = new Map<string, ITransaction[]>();
 
 	for (let i = 0; i < transactionsLength; i++) {
@@ -194,5 +213,6 @@ async function processAnalytics() {
 }
 
 processAnalytics().catch((error) => {
+	console.error(error);
 	parentPort?.postMessage({ error: error.message });
 });

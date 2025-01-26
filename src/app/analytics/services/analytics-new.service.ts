@@ -154,6 +154,10 @@ export class AnalyticsNewService {
 		// Объединяем данные из всех воркеров
 		let offset = 0;
 		for (const { buffer, length } of workerResults) {
+			if (length * 8 > buffer.byteLength) {
+				throw new Error(`Buffer length mismatch: expected ${length * 8}, got ${buffer.byteLength}`);
+			}
+
 			const view = new DataView(buffer);
 			for (let i = 0; i < length; i++) {
 				if (offset >= totalLength) {
@@ -163,6 +167,7 @@ export class AnalyticsNewService {
 				offset++;
 			}
 		}
+		g;
 
 		// Объединение transactionsData
 		const combinedData = workerResults.reduce((acc, { stringData }) => {
