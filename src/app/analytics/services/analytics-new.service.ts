@@ -130,7 +130,7 @@ export class AnalyticsNewService {
 		console.log("Starting getTransactions...");
 
 		// Разделяем сигналы на чанки по количеству CPU
-		const signalsChunks = chunkArray(signals, cpus().length);
+		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 100));
 
 		// console.log(
 		// 	"Signals chunks created:",
