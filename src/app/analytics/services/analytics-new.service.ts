@@ -51,7 +51,7 @@ export class AnalyticsNewService {
 
 		const workerSettings = generateWorkerSettings(props, cpus().length);
 
-		console.log(workerSettings);
+		// console.log(workerSettings);
 
 		const workerPromises = workerSettings.map((workerSettings, index) =>
 			runWorker("analyticsWorker.js", {
