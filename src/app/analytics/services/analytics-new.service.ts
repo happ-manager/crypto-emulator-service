@@ -24,10 +24,7 @@ export class AnalyticsNewService {
 		private readonly _strategiesService: StrategiesService,
 		private readonly _signalsService: SignalsService
 	) {
-		this.redisClient = new Redis({
-			host: "redis", // Хост вашего Redis-сервера
-			port: 6379 // Порт вашего Redis-сервера
-		});
+		this.redisClient = new Redis(environment.redis);
 	}
 
 	async analyse(props: GenerateSettingsDto) {
