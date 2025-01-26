@@ -7,6 +7,7 @@ import { findTransaction } from "../app/shared/utils/find-transaction.util";
 
 async function processAnalytics() {
 	const {
+		index,
 		settingsBuffer,
 		settingsIndexes,
 		transactionsBuffer,
@@ -20,6 +21,8 @@ async function processAnalytics() {
 		investment,
 		delay
 	} = workerData;
+	const date = Date.now();
+	console.log(`Analytics worker ${index + 1} started`);
 
 	// Восстанавливаем settings из буфера
 	const sharedSettings = new Float64Array(settingsBuffer);
@@ -194,6 +197,8 @@ async function processAnalytics() {
 			bestSetting = setting;
 		}
 	}
+
+	console.log(`Analytics worker ${index + 1} finished in ${(Date.now() - date) / 1000} seconds`);
 
 	parentPort.postMessage({ settingResult: bestSettingResult, setting: bestSetting });
 }

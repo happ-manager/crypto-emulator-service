@@ -7,7 +7,10 @@ import { TransactionEntity } from "../app/data/entities/transaction.entity";
 import { environment } from "../environments/environment";
 
 async function processTransactions() {
-	const { signalsBuffer, signalsData, signalsLength } = workerData;
+	const { index, signalsBuffer, signalsData, signalsLength } = workerData;
+
+	const date = Date.now();
+	console.log(`Transactions worker ${index + 1} started`);
 
 	// Восстанавливаем сигналы из буфера
 	const sharedSignals = new Float64Array(signalsBuffer);
@@ -43,6 +46,8 @@ async function processTransactions() {
 			poolAddress: In(poolAddresses)
 		}
 	});
+
+	console.log(`Transactions worker ${index + 1} finished in ${(Date.now() - date) / 1000} seconds`);
 
 	parentPort?.postMessage(allTransactions);
 }
