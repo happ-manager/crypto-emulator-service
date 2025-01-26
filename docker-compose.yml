@@ -10,21 +10,4 @@ services:
         limits:
           cpus: "128" # Использовать все 128 потоков
           memory: "1536G" # Использовать максимум доступной памяти
-    networks:
-      - network
-  redis:
-    image: redis:latest
-    container_name: redis
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
-    networks:
-      - network
-volumes:
-  redis-data:
 
-networks:
-  network:
-    driver: bridge

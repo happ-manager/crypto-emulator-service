@@ -1,13 +1,13 @@
 import { ISignal, MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manager/crypto-api";
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
-import { chunkArray } from "@raydium-io/raydium-sdk";
 import { cpus } from "os";
 import { Worker } from "worker_threads";
 
 import { environment } from "../../../environments/environment";
 import { SignalsService } from "../../data/services/signals.service";
 import { StrategiesService } from "../../data/services/strategies.service";
+import { chunkArray } from "../../emulator/utils/chunk-array.util";
 import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
 import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.util";
 import { generateWorkerSettings } from "../utils/generate-worker-settings.util";
@@ -131,6 +131,7 @@ export class AnalyticsNewService {
 
 		// Разделяем сигналы на чанки по количеству CPU
 		const signalsChunks = chunkArray(signals, cpus().length);
+
 		// console.log(
 		// 	"Signals chunks created:",
 		// 	signalsChunks.map((chunk) => chunk.length)
