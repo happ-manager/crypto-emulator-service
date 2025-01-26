@@ -55,9 +55,13 @@ export class AnalyticsNewService {
 			settingsChunks: settingsChunks.length
 		});
 
+		const getDate = Date.now();
 		const transactions = await this.getTransactions(signals);
-		const transactionsMap = new Map<string, ITransaction[]>();
 
+		console.log(`Get ${transactions.length} transactions in ${(Date.now() - getDate) / 1000}`);
+
+		const setDate = Date.now();
+		const transactionsMap = new Map<string, ITransaction[]>();
 		for (const transaction of transactions) {
 			if (transactionsMap.has(transaction.poolAddress)) {
 				transactionsMap.get(transaction.poolAddress).push(transaction);
@@ -66,6 +70,8 @@ export class AnalyticsNewService {
 
 			transactionsMap.set(transaction.poolAddress, [transaction]);
 		}
+
+		console.log(`Set ${transactions.length} transactions in ${(Date.now() - setDate) / 1000}`);
 
 		let bestSettingResult = { totalProfit: 0 };
 		let bestSetting = null;
@@ -83,7 +89,10 @@ export class AnalyticsNewService {
 			})
 		);
 
+		const settingsDate = new Date();
 		const results = await Promise.all(workerPromises);
+
+		console.log(`Get ${results.length} result in ${(Date.now() - settingsDate) / 1000}`);
 
 		for (const { settingResult, setting } of results) {
 			if (settingResult.totalProfit > bestSettingResult.totalProfit) {
