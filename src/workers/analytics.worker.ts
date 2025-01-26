@@ -42,6 +42,7 @@ async function processAnalytics() {
 		const offset = i * 3;
 		const poolAddress = transactionsData[sharedTransactions[offset + 2]]; // Индекс poolAddress
 		const transaction: any = {
+			poolAddress,
 			date: new Date(sharedTransactions[offset]), // Дата
 			price: sharedTransactions[offset + 1] // Цена
 		};
@@ -101,6 +102,12 @@ async function processAnalytics() {
 
 		for (const signal of filteredSignals) {
 			const transactions = transactionsMap.get(signal.poolAddress);
+
+			if (!transactions) {
+				console.error(`Cannot find transactions for ${signal.poolAddress}`);
+				return;
+			}
+
 			const signalTransaction = findTransaction(transactions, new Date(signal.signaledAt));
 
 			if (!signalTransaction) {

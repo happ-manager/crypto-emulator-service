@@ -1,7 +1,14 @@
-export function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+export function chunkArray<T>(array: T[], numChunks: number): T[][] {
 	const chunks: T[][] = [];
-	for (let i = 0; i < array.length; i += chunkSize) {
-		chunks.push(array.slice(i, i + chunkSize));
+	const chunkSize = Math.ceil(array.length / numChunks);
+
+	for (let i = 0; i < numChunks; i++) {
+		const start = i * chunkSize;
+		const end = Math.min(start + chunkSize, array.length); // Убедимся, что end не превышает длину массива
+		if (start < end) {
+			// Исключаем пустые чанки
+			chunks.push(array.slice(start, end));
+		}
 	}
 
 	return chunks;

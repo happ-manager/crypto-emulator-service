@@ -131,9 +131,8 @@ export class AnalyticsNewService {
 	}
 
 	async getTransactions(signals: ISignal[]) {
-		const signalsChunks = chunkArray(signals, Math.ceil(signals.length / cpus().length));
+		const signalsChunks = chunkArray(signals, cpus().length);
 
-		// Запуск воркеров
 		const workerPromises = signalsChunks.map((_signals, index) =>
 			runWorker("transactionsWorker.js", { index, signals: _signals })
 		);
@@ -141,16 +140,20 @@ export class AnalyticsNewService {
 		console.log("Start getting transactions");
 		const workerResults = await Promise.all(workerPromises);
 
+		// Проверяем корректность данных воркеров
+		for (const [index, { buffer, stringData, length }] of workerResults.entries()) {
+			if (!buffer || !stringData || typeof length !== "number") {
+				throw new Error(`Worker ${index + 1} returned invalid data.`);
+			}
+		}
+
 		console.log("Start combining");
 
-		// Вычисляем общий размер буфера
 		const totalLength = workerResults.reduce((sum, { length }) => sum + length, 0);
 
-		// Создаем общий SharedArrayBuffer
 		const combinedBuffer = new SharedArrayBuffer(totalLength * 8 * 3);
 		const combinedView = new DataView(combinedBuffer);
 
-		// Объединяем данные из всех воркеров
 		let offset = 0;
 		const combinedPoolAddresses: string[] = [];
 		for (const { buffer, stringData, length } of workerResults) {
@@ -170,8 +173,11 @@ export class AnalyticsNewService {
 			}
 		}
 
-		console.log("Return combined data");
+		if (offset !== totalLength * 3) {
+			throw new Error(`Data mismatch: combined length (${offset / 3}) does not match expected (${totalLength}).`);
+		}
 
+		console.log("Return combined data");
 		return { combinedBuffer, combinedPoolAddresses, totalLength };
 	}
 }

@@ -8,6 +8,10 @@ import { TransactionEntity } from "../app/data/entities/transaction.entity";
 import { environment } from "../environments/environment";
 
 async function processTransactions() {
+	if (!workerData) {
+		return;
+	}
+
 	const { index, signals } = workerData;
 
 	console.log(`Transactions worker ${index + 1} started`);
@@ -42,5 +46,6 @@ async function processTransactions() {
 }
 
 processTransactions().catch((error) => {
+	console.error(error);
 	parentPort?.postMessage({ error: error.message });
 });
