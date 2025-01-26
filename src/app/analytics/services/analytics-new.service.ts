@@ -151,8 +151,12 @@ export class AnalyticsNewService {
 	}
 
 	private async getCachedData(key: string): Promise<any> {
-		console.log(`Loaded from cache`);
 		const data = await this.redisClient.get(key);
+
+		if (data) {
+			console.log(`Loaded from cache`);
+		}
+
 		return data ? JSON.parse(data) : null;
 	}
 
