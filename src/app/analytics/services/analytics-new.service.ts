@@ -163,7 +163,9 @@ export class AnalyticsNewService {
 		}
 
 		const data = [];
-		for (let i = 0; i < Number.parseInt(count, 10); i++) {
+		const length = Number.parseInt(count, 10);
+		for (let i = 0; i < length; i++) {
+			console.log(`Loading ${i} from ${length} for ${key}`);
 			const chunk = await this.redisClient.get(`${key}:${i}`);
 			if (chunk) {
 				data.push(...JSON.parse(chunk));
