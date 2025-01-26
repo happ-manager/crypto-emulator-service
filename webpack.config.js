@@ -6,7 +6,8 @@ module.exports = function (options, webpack) {
 		...options,
 		entry: {
 			main: "./src/main.ts",
-			analyticsWorker: "./src/workers/analytics.worker.ts"
+			analyticsWorker: "./src/workers/analytics.worker.ts",
+			transactionsWorker: "./src/workers/transactions.worker.ts"
 		},
 		output: {
 			path: path.resolve(__dirname, "dist"),

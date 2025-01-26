@@ -1,15 +1,14 @@
-import { MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manager/crypto-api";
+import { ISignal, ITransaction, MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manager/crypto-api";
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
+import { chunkArray } from "@raydium-io/raydium-sdk";
 import Redis from "ioredis";
 import { cpus } from "os";
-import { In } from "typeorm";
 import { Worker } from "worker_threads";
 
 import { environment } from "../../../environments/environment";
 import { SignalsService } from "../../data/services/signals.service";
 import { StrategiesService } from "../../data/services/strategies.service";
-import { TransactionsService } from "../../data/services/transactions.service";
 import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
 import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.util";
 import { createSharedTransactionBuffer } from "../utils/create-shared-transaction-buffer.util";
@@ -23,11 +22,10 @@ export class AnalyticsNewService {
 	constructor(
 		private readonly _httpClient: HttpService,
 		private readonly _strategiesService: StrategiesService,
-		private readonly _signalsService: SignalsService,
-		private readonly _transactionsService: TransactionsService
+		private readonly _signalsService: SignalsService
 	) {
 		this.redisClient = new Redis({
-			host: "redis", // Хост вашего Redis-сервера
+			host: "localhost", // Хост вашего Redis-сервера
 			port: 6379 // Порт вашего Redis-сервера
 		});
 	}
@@ -55,13 +53,10 @@ export class AnalyticsNewService {
 		}
 		console.log(`${signals.length} signals loaded`);
 
-		let transactions = await this.getCachedLargeData("transactions");
+		const transactions = await this.getCachedLargeData("transactions");
 		if (!transactions) {
-			transactions = await this._transactionsService.getTransactions({
-				where: {
-					poolAddress: In(signals.map((signal) => signal.poolAddress))
-				}
-			});
+			const transactions = await this.getTransactions(signals);
+
 			await this.cacheLargeData("transactions", transactions, 10_000); // Кешируем данные на 1 час
 		}
 		console.log(`${transactions.length} transactions loaded`);
@@ -148,6 +143,17 @@ export class AnalyticsNewService {
 		} catch {
 			console.error("Error sending to telegram");
 		}
+	}
+
+	async getTransactions(signals: ISignal[]) {
+		const signalsChunks = chunkArray(signals, 1000);
+		const workerPromises = signalsChunks.map((_signals, index) =>
+			runWorker("transactionsWorker.js", { index, signals: _signals })
+		);
+
+		const transactions = (await Promise.all(workerPromises)).flat();
+
+		return transactions as ITransaction[];
 	}
 
 	private async getCachedLargeData(key: string): Promise<any[]> {

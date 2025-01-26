@@ -39,4 +39,4 @@ COPY --from=builder /app/ca-certificate.crt ./ca-certificate.crt
 EXPOSE 3000
 
 # Указываем команду запуска
-ENTRYPOINT ["node", "--max-old-space-size=32768", "./dist/main.js"]
+ENTRYPOINT ["node", "--max-old-space-size=150000", "./dist/main.js"]
