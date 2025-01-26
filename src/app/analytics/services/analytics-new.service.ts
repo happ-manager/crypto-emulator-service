@@ -71,7 +71,12 @@ export class AnalyticsNewService {
 		console.log(`Get ${settings.length} settings in ${(Date.now() - settingsDate) / 1000} seconds`);
 
 		const { buffer: settingsBuffer, length: settingsLength } = createSharedSettingsBuffer(settings);
+
+		console.log("Settings buffer created");
+
 		const settingsChunks = chunkArray([...new Array(settingsLength).keys()], settingsChunkSize);
+
+		console.log(`Created ${settingsChunks.length} settings chunks`);
 
 		const workerPromises = settingsChunks.map((settingIndexes, index) =>
 			runWorker("analyticsWorker.js", {
