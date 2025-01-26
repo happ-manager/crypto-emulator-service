@@ -129,15 +129,14 @@ export class AnalyticsNewService {
 	async getTransactions(signals: ISignal[]) {
 		console.log("Starting getTransactions...");
 
-		// Разделяем сигналы на чанки по количеству CPU
+		// Разделяем сигналы на чанки
 		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 100));
+		console.log(
+			"Signals chunks created:",
+			signalsChunks.map((chunk) => chunk.length)
+		);
 
-		// console.log(
-		// 	"Signals chunks created:",
-		// 	signalsChunks.map((chunk) => chunk.length)
-		// );
-
-		// Запускаем воркеры для обработки транзакций
+		// Запускаем воркеры
 		const workerPromises = signalsChunks.map((chunk, index) =>
 			runWorker("transactionsWorker.js", { index, signals: chunk })
 		);
@@ -145,77 +144,46 @@ export class AnalyticsNewService {
 		console.log("Starting workers...");
 		const workerResults = await Promise.all(workerPromises);
 
-		console.log("Worker results summary:");
-		// for (const [index, { length, stringData }] of workerResults.entries()) {
-		// 	console.log(`Worker ${index + 1}:`);
-		// 	console.log(`  Transactions length: ${length}`);
-		// 	console.log(`  Example poolAddresses: ${stringData.slice(0, 5).join(", ")}`);
-		// }
+		console.log(
+			"Worker results summary:",
+			workerResults.map(({ length }) => length)
+		);
 
-		// Проверяем, что каждый воркер вернул валидные данные
-		for (const [index, { buffer, stringData, length }] of workerResults.entries()) {
-			if (!buffer || !stringData || typeof length !== "number") {
-				throw new Error(`Worker ${index + 1} returned invalid data.`);
-			}
-			if (length === 0) {
-				console.warn(`Warning: Worker ${index + 1} returned no transactions.`);
-			}
+		// Проверяем результаты
+		if (!workerResults || workerResults.length === 0) {
+			throw new Error("No worker results found.");
 		}
 
-		console.log("All worker results validated.");
-
-		// Вычисляем общий размер буфера
+		// Объединяем данные
 		const totalLength = workerResults.reduce((sum, { length }) => sum + length, 0);
-		// console.log("Total transactions to combine:", totalLength);
+		console.log("Total transactions length:", totalLength);
 
-		// Создаем общий буфер для всех транзакций
 		const combinedBuffer = new SharedArrayBuffer(totalLength * 8 * 3);
 		const combinedView = new DataView(combinedBuffer);
 
-		// Объединяем данные
 		let offset = 0;
 		const combinedPoolAddresses: string[] = [];
 
 		for (const { buffer, stringData, length } of workerResults) {
-			// console.log("Combining data from worker:");
-			// console.log(`  Length: ${length}`);
-			// console.log(`  Buffer size: ${buffer.byteLength}`);
-			// console.log(`  Example poolAddresses: ${stringData.slice(0, 5).join(", ")}`);
-
-			// Проверка соответствия длины буфера
-			if (length * 3 * 8 > buffer.byteLength) {
-				throw new Error(`Buffer length mismatch: expected ${length * 3 * 8}, got ${buffer.byteLength}`);
-			}
+			console.log(`Processing worker result: Length=${length}`);
+			const view = new DataView(buffer);
 
 			combinedPoolAddresses.push(...stringData);
 
-			const view = new DataView(buffer);
 			for (let i = 0; i < length * 3; i++) {
 				if (offset >= totalLength * 3) {
-					throw new RangeError(`Offset (${offset}) exceeds total buffer size (${totalLength * 3}).`);
+					throw new Error(`Offset (${offset}) exceeds total buffer size (${totalLength * 3}).`);
 				}
 				combinedView.setFloat64(offset * 8, view.getFloat64(i * 8));
 				offset++;
 			}
 		}
 
-		// Проверяем, что все данные были объединены
+		console.log("Combining completed. Total offset:", offset);
+
 		if (offset !== totalLength * 3) {
-			throw new Error(
-				`Combined buffer length mismatch: expected ${totalLength * 3}, but got ${offset}. Possible data loss.`
-			);
+			throw new Error(`Combined buffer length mismatch: expected ${totalLength * 3}, got ${offset}`);
 		}
-
-		console.log("Combined data validated.");
-		// console.log("Final combined poolAddresses count:", combinedPoolAddresses.length);
-
-		// Проверка, что все poolAddress присутствуют
-		const examplePoolAddress = signals[0]?.poolAddress;
-		if (examplePoolAddress && !combinedPoolAddresses.includes(examplePoolAddress)) {
-			console.error(`Critical: Missing poolAddress ${examplePoolAddress} in combined data.`);
-		}
-
-		console.log("getTransactions completed successfully.");
 
 		return { combinedBuffer, combinedPoolAddresses, totalLength };
 	}
