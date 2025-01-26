@@ -167,7 +167,6 @@ export class AnalyticsNewService {
 				offset++;
 			}
 		}
-		g;
 
 		// Объединение transactionsData
 		const combinedData = workerResults.reduce((acc, { stringData }) => {
