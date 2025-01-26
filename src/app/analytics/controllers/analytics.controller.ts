@@ -15,4 +15,9 @@ export class AnalyticsController {
 	async analsye(@Body() body: GenerateSettingsDto) {
 		return this._analyticsService.analyse(body);
 	}
+
+	@Post(ANALYTCIS_ENDPOINTS.CLEAR_CACHE)
+	async clearCache() {
+		return this._analyticsService.clearCache();
+	}
 }

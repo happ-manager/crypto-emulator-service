@@ -1,6 +1,7 @@
 import { MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manager/crypto-api";
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
+import Redis from "ioredis";
 import { cpus } from "os";
 import { In } from "typeorm";
 import { Worker } from "worker_threads";
@@ -17,12 +18,19 @@ import { runWorker } from "../utils/run-worker.util";
 
 @Injectable()
 export class AnalyticsNewService {
+	private readonly redisClient: Redis;
+
 	constructor(
 		private readonly _httpClient: HttpService,
 		private readonly _strategiesService: StrategiesService,
 		private readonly _signalsService: SignalsService,
 		private readonly _transactionsService: TransactionsService
-	) {}
+	) {
+		this.redisClient = new Redis({
+			host: "localhost", // Хост вашего Redis-сервера
+			port: 6379 // Порт вашего Redis-сервера
+		});
+	}
 
 	async analyse(props: GenerateSettingsDto) {
 		const strategy = await this._strategiesService.getStrategy({
@@ -36,19 +44,26 @@ export class AnalyticsNewService {
 			return;
 		}
 
-		const signals = await this._signalsService.getSignals({
-			skip: props.signalsSkip,
-			take: props.signalsTake
-		});
-
+		// Попробуем загрузить из кеша
+		let signals = await this.getCachedData("signals");
+		if (!signals) {
+			signals = await this._signalsService.getSignals({
+				skip: props.signalsSkip,
+				take: props.signalsTake
+			});
+			await this.cacheData("signals", signals, 3600); // Кеш на 5 минут
+		}
 		console.log(`${signals.length} signals loaded`);
 
-		const transactions = await this._transactionsService.getTransactions({
-			where: {
-				poolAddress: In(signals.map((signal) => signal.poolAddress))
-			}
-		});
-
+		let transactions = await this.getCachedData("transactions");
+		if (!transactions) {
+			transactions = await this._transactionsService.getTransactions({
+				where: {
+					poolAddress: In(signals.map((signal) => signal.poolAddress))
+				}
+			});
+			await this.cacheData("transactions", transactions, 3600); // Кеш на 5 минут
+		}
 		console.log(`${transactions.length} transactions loaded`);
 
 		const { buffer: signalsBuffer, stringData: signalsData, length: signalsLength } = createSharedSignalBuffer(signals);
@@ -133,5 +148,20 @@ export class AnalyticsNewService {
 		} catch {
 			console.error("Error sending to telegram");
 		}
+	}
+
+	private async getCachedData(key: string): Promise<any> {
+		console.log(`Loaded from cache`);
+		const data = await this.redisClient.get(key);
+		return data ? JSON.parse(data) : null;
+	}
+
+	private async cacheData(key: string, value: any, ttl: number): Promise<void> {
+		console.log(`Data cached`);
+		await this.redisClient.set(key, JSON.stringify(value), "EX", ttl);
+	}
+
+	clearCache() {
+		this.redisClient.flushall();
 	}
 }
