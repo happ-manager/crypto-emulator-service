@@ -1,30 +1,80 @@
+import type { IClownStrategyParmas, ISignal, ITransaction } from "@happ-manager/crypto-api";
 import { getCheckedTransaction, MilestoneTypeEnum, percentOf } from "@happ-manager/crypto-api";
-import { DataSource } from "typeorm";
 import { parentPort, workerData } from "worker_threads";
 
-import { DATA_ENTITIES } from "../app/data/entities";
 import { getDelayedTransaction } from "../app/emulator/utils/get-delayed-transaction.util";
 import { findTransaction } from "../app/shared/utils/find-transaction.util";
-import { environment } from "../environments/environment";
 
 async function processAnalytics() {
-	const { index, settings, signals, transactionsMap, strategy, signalMilestone, investment, delay } = workerData;
+	const {
+		settingsBuffer,
+		settingsIndexes,
+		transactionsBuffer,
+		transactionsLength,
+		transactionsData,
+		signalsBuffer,
+		signalsData,
+		signalsLength,
+		strategy,
+		signalMilestone,
+		investment,
+		delay
+	} = workerData;
 
-	const date = Date.now();
-	console.log(`Analytics worker ${index + 1} started`);
+	// Восстанавливаем settings из буфера
+	const sharedSettings = new Float64Array(settingsBuffer);
+	const settings: (IClownStrategyParmas & { startHour: number; endHour: number })[] = [];
 
-	const datasource = new DataSource({
-		type: "postgres",
-		host: environment.database.host,
-		port: environment.database.port,
-		username: environment.database.username,
-		password: environment.database.password,
-		database: environment.database.name,
-		entities: [...DATA_ENTITIES],
-		synchronize: false
-	});
+	for (const settingIndex of settingsIndexes) {
+		const offset = settingIndex * 7;
+		settings.push({
+			maxTime: sharedSettings[offset],
+			minTime: sharedSettings[offset + 1],
+			buyPercent: sharedSettings[offset + 2],
+			sellHighPercent: sharedSettings[offset + 3],
+			sellLowPercent: sharedSettings[offset + 4],
+			startHour: sharedSettings[offset + 5],
+			endHour: sharedSettings[offset + 6]
+		});
+	}
 
-	await datasource.initialize();
+	// Восстанавливаем массив числовых данных
+	const sharedTransactions = new Float64Array(transactionsBuffer);
+	const transactionsMap = new Map<string, ITransaction[]>();
+
+	for (let i = 0; i < transactionsLength; i++) {
+		const offset = i * 5;
+		const poolAddress = transactionsData["poolAddress"][i];
+		const transaction: any = {
+			id: transactionsData["id"][i],
+			poolAddress,
+			signature: transactionsData["signature"][i],
+			author: transactionsData["author"][i],
+			date: new Date(sharedTransactions[offset]), // Восстанавливаем дату
+			price: sharedTransactions[offset + 1],
+			nextPrice: sharedTransactions[offset + 2]
+		};
+
+		if (transactionsMap.has(poolAddress)) {
+			transactionsMap.get(poolAddress).push(transaction);
+		} else {
+			transactionsMap.set(poolAddress, [transaction]);
+		}
+	}
+
+	// Восстанавливаем сигналы из буфера
+	const sharedSignals = new Float64Array(signalsBuffer);
+	const signals: ISignal[] = [];
+
+	for (let i = 0; i < signalsLength; i++) {
+		signals.push({
+			id: signalsData["id"][i],
+			source: signalsData["source"][i],
+			tokenAddress: signalsData["tokenAddress"][i],
+			poolAddress: signalsData["poolAddress"][i],
+			signaledAt: new Date(sharedSignals[i]) // Восстанавливаем дату
+		} as any);
+	}
 
 	let bestSettingResult = { totalProfit: 0 };
 	let bestSetting = null;
@@ -144,8 +194,6 @@ async function processAnalytics() {
 			bestSetting = setting;
 		}
 	}
-
-	console.log(`Analytics worker ${index + 1} finished in ${(Date.now() - date) / 1000}`);
 
 	parentPort.postMessage({ settingResult: bestSettingResult, setting: bestSetting });
 }

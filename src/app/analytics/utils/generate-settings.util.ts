@@ -7,7 +7,9 @@ export interface ISignalsParams {
 	endHour: number;
 }
 
-export function generateSettings(props?: IGenerateSettingsProps): IClownStrategyParmas[] {
+export function generateSettings(
+	props?: IGenerateSettingsProps
+): (IClownStrategyParmas & { startHour: number; endHour: number })[] {
 	const {
 		buyPercentStart = -5,
 		buyPercentEnd = -75,

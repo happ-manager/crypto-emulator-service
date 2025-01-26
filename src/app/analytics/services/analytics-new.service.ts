@@ -1,7 +1,6 @@
 import {
 	IClownStrategyParmas,
 	type ISignal,
-	ITransaction,
 	MilestoneTypeEnum,
 	PredefinedStrategyEnum
 } from "@happ-manager/crypto-api";
@@ -15,6 +14,9 @@ import { SignalsService } from "../../data/services/signals.service";
 import { StrategiesService } from "../../data/services/strategies.service";
 import { chunkArray } from "../../emulator/utils/chunk-array.util";
 import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
+import { createSharedSettingsBuffer } from "../utils/create-shared-settings-buffer.util";
+import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.util";
+import { createSharedTransactionBuffer } from "../utils/create-shared-transaction-buffer.util";
 import { generateSettings } from "../utils/generate-settings.util";
 import { runWorker } from "../utils/run-worker.util";
 
@@ -30,16 +32,28 @@ export class AnalyticsNewService {
 
 	async analyse(props: GenerateSettingsDto) {
 		const { investment = 1000, delay = 1000, signalsTake = 5, signalsSkip = 0 } = props;
-		const settings = generateSettings(props); // Генерация всех настроек
 		const signals = await this._signalsService.getSignals({
 			skip: signalsSkip,
 			take: signalsTake
 		});
+
+		console.log(`Get ${signals.length} signals`);
+
+		const { buffer: signalsBuffer, stringData: signalsData } = createSharedSignalBuffer(signals);
+		const signalsChunks = chunkArray(signals, Math.ceil(signals.length / MAX_WORKERS));
+		const transactionsPromises = signalsChunks.map((_signals, index) =>
+			runWorker("transactionsWorker.js", { index, signalsBuffer, signalsData, signalsLength: signals.length })
+		);
+
+		const transactionsDate = Date.now();
+		const transactions = (await Promise.all(transactionsPromises)).flat();
+		console.log(`Get ${transactions.length} transactions in ${(Date.now() - transactionsDate) / 1000} seconds`);
+		const { buffer: transactionsBuffer, stringData: transactionsData } = createSharedTransactionBuffer(transactions);
+
 		const strategy = await this._strategiesService.getStrategy({
 			where: { predefinedStrategy: PredefinedStrategyEnum.CLOWN },
 			relations: ["milestones"]
 		});
-
 		const signalMilestone = strategy.milestones.find((milestone) => milestone.type === MilestoneTypeEnum.SIGNAL);
 
 		if (!signalMilestone) {
@@ -47,41 +61,24 @@ export class AnalyticsNewService {
 			return;
 		}
 
-		const settingsChunks = chunkArray(settings, Math.ceil(settings.length / MAX_WORKERS));
+		const settingsDate = Date.now();
+		const settings = generateSettings(props);
+		console.log(`Get ${settings.length} settings in ${(Date.now() - settingsDate) / 1000} seconds`);
 
-		console.log({
-			settings: settings.length,
-			signals: signals.length,
-			settingsChunks: settingsChunks.length
-		});
+		const { buffer: settingsBuffer, length: settingsLength } = createSharedSettingsBuffer(settings);
+		const settingsChunks = chunkArray([...new Array(settingsLength).keys()], Math.ceil(settingsLength / MAX_WORKERS));
 
-		const getDate = Date.now();
-		const transactions = await this.getTransactions(signals);
-
-		console.log(`Get ${transactions.length} transactions in ${(Date.now() - getDate) / 1000}`);
-
-		const setDate = Date.now();
-		const transactionsMap = new Map<string, ITransaction[]>();
-		for (const transaction of transactions) {
-			if (transactionsMap.has(transaction.poolAddress)) {
-				transactionsMap.get(transaction.poolAddress).push(transaction);
-				continue;
-			}
-
-			transactionsMap.set(transaction.poolAddress, [transaction]);
-		}
-
-		console.log(`Set ${transactions.length} transactions in ${(Date.now() - setDate) / 1000}`);
-
-		let bestSettingResult = { totalProfit: 0 };
-		let bestSetting = null;
-
-		const workerPromises = settingsChunks.map((_settings, index) =>
+		const workerPromises = settingsChunks.map((settingIndexes, index) =>
 			runWorker("analyticsWorker.js", {
 				index,
-				settings: _settings,
-				signals,
-				transactionsMap,
+				settingsBuffer,
+				settingsIndexes: settingIndexes,
+				transactionsBuffer,
+				transactionsData,
+				transactionsLength: transactions.length,
+				signalsBuffer,
+				signalsData,
+				signalsLength: signals.length,
 				strategy,
 				signalMilestone,
 				investment,
@@ -89,10 +86,13 @@ export class AnalyticsNewService {
 			})
 		);
 
-		const settingsDate = Date.now();
+		const resultsDate = Date.now();
 		const results = await Promise.all(workerPromises);
 
-		console.log(`Get ${results.length} result in ${(Date.now() - settingsDate) / 1000}`);
+		console.log(`Get ${results.length} results in ${(Date.now() - resultsDate) / 1000} seconds`);
+
+		let bestSettingResult = { totalProfit: 0 };
+		let bestSetting = null;
 
 		for (const { settingResult, setting } of results) {
 			if (settingResult.totalProfit > bestSettingResult.totalProfit) {
@@ -101,22 +101,11 @@ export class AnalyticsNewService {
 			}
 		}
 
-		console.log({ bestSettingResult, bestSetting });
-
 		await this.sendMessagesToTelegram(signals, settings, bestSettingResult, bestSetting);
 
+		console.log({ bestSettingResult, bestSetting });
+
 		return { bestSettingResult, bestSetting };
-	}
-
-	async getTransactions(signals: ISignal[]) {
-		const signalsChunks = chunkArray(signals, Math.ceil(signals.length / MAX_WORKERS));
-		const workerPromises = signalsChunks.map((_signals, index) =>
-			runWorker("transactionsWorker.js", { index, signals: _signals })
-		);
-
-		const transactions = (await Promise.all(workerPromises)).flat();
-
-		return transactions as ITransaction[];
 	}
 
 	async sendMessagesToTelegram(

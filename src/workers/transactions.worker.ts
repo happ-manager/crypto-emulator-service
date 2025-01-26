@@ -7,11 +7,21 @@ import { TransactionEntity } from "../app/data/entities/transaction.entity";
 import { environment } from "../environments/environment";
 
 async function processTransactions() {
-	const { index, signals } = workerData;
+	const { signalsBuffer, signalsData, signalsLength } = workerData;
 
-	const date = Date.now();
+	// Восстанавливаем сигналы из буфера
+	const sharedSignals = new Float64Array(signalsBuffer);
+	const signals: ISignal[] = [];
 
-	console.log(`Transactions worker ${index + 1} started`);
+	for (let i = 0; i < signalsLength; i++) {
+		signals.push({
+			id: signalsData["id"][i],
+			source: signalsData["source"][i],
+			tokenAddress: signalsData["tokenAddress"][i],
+			poolAddress: signalsData["poolAddress"][i],
+			signaledAt: new Date(sharedSignals[i]) // Восстанавливаем дату
+		} as any);
+	}
 
 	const datasource = new DataSource({
 		type: "postgres",
@@ -33,8 +43,6 @@ async function processTransactions() {
 			poolAddress: In(poolAddresses)
 		}
 	});
-
-	console.log(`Transactions worker ${index + 1} finished in ${(Date.now() - date) / 1000}`);
 
 	parentPort?.postMessage(allTransactions);
 }
