@@ -129,7 +129,7 @@ export class AnalyticsNewService {
 	async getTransactions(signals: ISignal[]) {
 		console.log("Starting getTransactions...");
 
-		const signalsChunks = chunkArray(signals, cpus().length);
+		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 100));
 		console.log(
 			"Signals chunks created:",
 			signalsChunks.map((chunk) => chunk.length)
