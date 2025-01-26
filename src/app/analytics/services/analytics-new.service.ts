@@ -89,7 +89,7 @@ export class AnalyticsNewService {
 			})
 		);
 
-		const settingsDate = new Date();
+		const settingsDate = Date.now();
 		const results = await Promise.all(workerPromises);
 
 		console.log(`Get ${results.length} result in ${(Date.now() - settingsDate) / 1000}`);
