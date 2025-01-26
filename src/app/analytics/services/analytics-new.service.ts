@@ -36,7 +36,6 @@ export class AnalyticsNewService {
 			skip: signalsSkip,
 			take: signalsTake
 		});
-
 		console.log(`Get ${signals.length} signals`);
 
 		const { buffer: signalsBuffer, stringData: signalsData } = createSharedSignalBuffer(signals);
@@ -45,6 +44,7 @@ export class AnalyticsNewService {
 			runWorker("transactionsWorker.js", { index, signalsBuffer, signalsData, signalsLength: signals.length })
 		);
 
+		console.log(`Get transactions started`);
 		const transactionsDate = Date.now();
 		const transactions = (await Promise.all(transactionsPromises)).flat();
 		console.log(`Get ${transactions.length} transactions in ${(Date.now() - transactionsDate) / 1000} seconds`);
@@ -86,9 +86,9 @@ export class AnalyticsNewService {
 			})
 		);
 
+		console.log(`Get results started`);
 		const resultsDate = Date.now();
 		const results = await Promise.all(workerPromises);
-
 		console.log(`Get ${results.length} results in ${(Date.now() - resultsDate) / 1000} seconds`);
 
 		let bestSettingResult = { totalProfit: 0 };
