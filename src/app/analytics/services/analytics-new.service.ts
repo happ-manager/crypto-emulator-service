@@ -1,4 +1,4 @@
-import { ISignal, ITransaction, MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manager/crypto-api";
+import { ISignal, MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manager/crypto-api";
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
 import { chunkArray } from "@raydium-io/raydium-sdk";
@@ -11,7 +11,6 @@ import { SignalsService } from "../../data/services/signals.service";
 import { StrategiesService } from "../../data/services/strategies.service";
 import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
 import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.util";
-import { createSharedTransactionBuffer } from "../utils/create-shared-transaction-buffer.util";
 import { generateWorkerSettings } from "../utils/generate-worker-settings.util";
 import { runWorker } from "../utils/run-worker.util";
 
@@ -39,31 +38,20 @@ export class AnalyticsNewService {
 			return;
 		}
 
-		// Попробуем загрузить из кеша
-		let signals = await this.getCachedLargeData("signals");
-		if (!signals) {
-			signals = await this._signalsService.getSignals({
-				skip: props.signalsSkip,
-				take: props.signalsTake
-			});
-			await this.cacheLargeData("signals", signals, 10_000); // Кешируем данные на 1 час
-		}
+		console.log("STARTED");
+
+		const signals = await this._signalsService.getSignals({
+			skip: props.signalsSkip,
+			take: props.signalsTake
+		});
+		const { buffer: signalsBuffer, stringData: signalsData, length: signalsLength } = createSharedSignalBuffer(signals);
 		console.log(`${signals.length} signals loaded`);
 
-		const transactions = await this.getCachedLargeData("transactions");
-		if (!transactions) {
-			const transactions = await this.getTransactions(signals);
-
-			await this.cacheLargeData("transactions", transactions, 10_000); // Кешируем данные на 1 час
-		}
-		console.log(`${transactions.length} transactions loaded`);
-
-		const { buffer: signalsBuffer, stringData: signalsData, length: signalsLength } = createSharedSignalBuffer(signals);
 		const {
-			buffer: transactionsBuffer,
-			stringData: transactionsData,
-			length: transactionsLength
-		} = createSharedTransactionBuffer(transactions);
+			combinedData: transactionsData,
+			combinedBuffer: transactionsBuffer,
+			totalLength: transactionsLength
+		} = await this.getTransactions(signals);
 
 		const workerSettings = generateWorkerSettings(props, cpus().length);
 		const workerPromises = workerSettings.map((workerSettings, index) =>
@@ -143,53 +131,57 @@ export class AnalyticsNewService {
 	}
 
 	async getTransactions(signals: ISignal[]) {
-		const signalsChunks = chunkArray(signals, 1000);
+		const signalsChunks = chunkArray(signals, Math.ceil(signals.length / cpus().length));
+
+		// Запуск воркеров
 		const workerPromises = signalsChunks.map((_signals, index) =>
 			runWorker("transactionsWorker.js", { index, signals: _signals })
 		);
 
-		const transactions = (await Promise.all(workerPromises)).flat();
+		console.log("Start getting transactions");
+		// Ждем выполнения всех воркеров
+		const workerResults = await Promise.all(workerPromises);
 
-		return transactions as ITransaction[];
-	}
+		console.log("Start combining");
 
-	private async getCachedLargeData(key: string): Promise<any[]> {
-		const count = await this.redisClient.get(`${key}:count`);
-		if (!count) {
-			return null;
-		}
+		// Вычисляем общий размер буфера
+		const totalLength = workerResults.reduce((sum, { length }) => sum + length, 0);
 
-		const data = [];
-		const length = Number.parseInt(count, 10);
-		for (let i = 0; i < length; i++) {
-			console.log(`Loading ${i} from ${length} for ${key}`);
-			const chunk = await this.redisClient.get(`${key}:${i}`);
-			if (chunk) {
-				data.push(...JSON.parse(chunk));
+		// Создаем общий SharedArrayBuffer
+		const combinedBuffer = new SharedArrayBuffer(totalLength * 8);
+		const combinedView = new DataView(combinedBuffer);
+
+		// Объединяем данные из всех воркеров
+		let offset = 0;
+		for (const { buffer, length } of workerResults) {
+			const view = new DataView(buffer);
+			for (let i = 0; i < length; i++) {
+				if (offset >= totalLength) {
+					throw new RangeError(`Offset (${offset}) exceeds total buffer size (${totalLength}).`);
+				}
+				combinedView.setFloat64(offset * 8, view.getFloat64(i * 8));
+				offset++;
 			}
 		}
 
-		console.log(`Loaded ${data.length} items from cache for key: ${key}`);
-		return data;
-	}
+		// Объединение transactionsData
+		const combinedData = workerResults.reduce((acc, { stringData }) => {
+			// Убедитесь, что stringData — это объект
+			if (typeof stringData === "string") {
+				stringData = JSON.parse(stringData); // Преобразуем в объект, если это строка
+			}
+			for (const key in stringData) {
+				if (!acc[key]) {
+					acc[key] = [];
+				}
+				acc[key] = [...acc[key], ...stringData[key]];
+			}
+			return acc;
+		}, {});
 
-	private async cacheLargeData(key: string, data: any[], ttl: number): Promise<void> {
-		const chunkSize = 100_000; // Количество записей в одном чанке
-		const chunks = [];
+		console.log("Return combined data");
 
-		for (let i = 0; i < data.length; i += chunkSize) {
-			chunks.push(data.slice(i, i + chunkSize));
-		}
-
-		for (const [i, chunk] of chunks.entries()) {
-			await this.redisClient.set(`${key}:${i}`, JSON.stringify(chunk), "EX", ttl);
-		}
-
-		await this.redisClient.set(`${key}:count`, chunks.length, "EX", ttl);
-		console.log(`Cached ${data.length} items in ${chunks.length} chunks for key: ${key}`);
-	}
-
-	clearCache() {
-		this.redisClient.flushall();
+		// Возвращаем объединенные данные
+		return { combinedBuffer, combinedData, totalLength };
 	}
 }

@@ -2,6 +2,7 @@ import type { ISignal } from "@happ-manager/crypto-api";
 import { DataSource, In } from "typeorm";
 import { parentPort, workerData } from "worker_threads";
 
+import { createSharedTransactionBuffer } from "../app/analytics/utils/create-shared-transaction-buffer.util";
 import { DATA_ENTITIES } from "../app/data/entities";
 import { TransactionEntity } from "../app/data/entities/transaction.entity";
 import { environment } from "../environments/environment";
@@ -28,15 +29,17 @@ async function processTransactions() {
 
 	const poolAddresses = signals.map((signal: ISignal) => signal.poolAddress);
 
-	const allTransactions = await datasource.getRepository(TransactionEntity).find({
+	const transactions = await datasource.getRepository(TransactionEntity).find({
 		where: {
 			poolAddress: In(poolAddresses)
 		}
 	});
 
+	const { buffer, stringData, length } = createSharedTransactionBuffer(transactions);
+
 	console.log(`Transactions worker ${index + 1} finished in ${(Date.now() - date) / 1000}`);
 
-	parentPort?.postMessage(allTransactions);
+	parentPort?.postMessage({ buffer, stringData, length });
 }
 
 processTransactions().catch((error) => {

@@ -18,6 +18,6 @@ export class AnalyticsController {
 
 	@Post(ANALYTCIS_ENDPOINTS.CLEAR_CACHE)
 	async clearCache() {
-		return this._analyticsService.clearCache();
+		// return this._analyticsService.clearCache();
 	}
 }
