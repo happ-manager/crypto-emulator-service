@@ -27,7 +27,7 @@ export class AnalyticsNewService {
 		private readonly _transactionsService: TransactionsService
 	) {
 		this.redisClient = new Redis({
-			host: "redis", // Хост вашего Redis-сервера
+			host: "localhost", // Хост вашего Redis-сервера
 			port: 6379 // Порт вашего Redis-сервера
 		});
 	}
@@ -45,24 +45,24 @@ export class AnalyticsNewService {
 		}
 
 		// Попробуем загрузить из кеша
-		let signals = await this.getCachedData("signals");
+		let signals = await this.getCachedLargeData("signals");
 		if (!signals) {
 			signals = await this._signalsService.getSignals({
 				skip: props.signalsSkip,
 				take: props.signalsTake
 			});
-			await this.cacheData("signals", signals, 3600); // Кеш на 5 минут
+			await this.cacheLargeData("signals", signals, 10_000); // Кешируем данные на 1 час
 		}
 		console.log(`${signals.length} signals loaded`);
 
-		let transactions = await this.getCachedData("transactions");
+		let transactions = await this.getCachedLargeData("transactions");
 		if (!transactions) {
 			transactions = await this._transactionsService.getTransactions({
 				where: {
 					poolAddress: In(signals.map((signal) => signal.poolAddress))
 				}
 			});
-			await this.cacheData("transactions", transactions, 3600); // Кеш на 5 минут
+			await this.cacheLargeData("transactions", transactions, 10_000); // Кешируем данные на 1 час
 		}
 		console.log(`${transactions.length} transactions loaded`);
 
@@ -150,19 +150,38 @@ export class AnalyticsNewService {
 		}
 	}
 
-	private async getCachedData(key: string): Promise<any> {
-		const data = await this.redisClient.get(key);
-
-		if (data) {
-			console.log(`Loaded from cache`);
+	private async getCachedLargeData(key: string): Promise<any[]> {
+		const count = await this.redisClient.get(`${key}:count`);
+		if (!count) {
+			return null;
 		}
 
-		return data ? JSON.parse(data) : null;
+		const data = [];
+		for (let i = 0; i < Number.parseInt(count, 10); i++) {
+			const chunk = await this.redisClient.get(`${key}:${i}`);
+			if (chunk) {
+				data.push(...JSON.parse(chunk));
+			}
+		}
+
+		console.log(`Loaded ${data.length} items from cache for key: ${key}`);
+		return data;
 	}
 
-	private async cacheData(key: string, value: any, ttl: number): Promise<void> {
-		console.log(`Data cached`);
-		await this.redisClient.set(key, JSON.stringify(value), "EX", ttl);
+	private async cacheLargeData(key: string, data: any[], ttl: number): Promise<void> {
+		const chunkSize = 100_000; // Количество записей в одном чанке
+		const chunks = [];
+
+		for (let i = 0; i < data.length; i += chunkSize) {
+			chunks.push(data.slice(i, i + chunkSize));
+		}
+
+		for (const [i, chunk] of chunks.entries()) {
+			await this.redisClient.set(`${key}:${i}`, JSON.stringify(chunk), "EX", ttl);
+		}
+
+		await this.redisClient.set(`${key}:count`, chunks.length, "EX", ttl);
+		console.log(`Cached ${data.length} items in ${chunks.length} chunks for key: ${key}`);
 	}
 
 	clearCache() {
