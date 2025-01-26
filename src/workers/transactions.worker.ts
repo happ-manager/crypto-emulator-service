@@ -41,6 +41,8 @@ async function processTransactions() {
 
 	const poolAddresses = signals.map((signal: ISignal) => signal.poolAddress);
 
+	console.log("Requesting db...");
+
 	const allTransactions = await datasource.getRepository(TransactionEntity).find({
 		where: {
 			poolAddress: In(poolAddresses)
