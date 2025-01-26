@@ -7,6 +7,7 @@ import {
 } from "@happ-manager/crypto-api";
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
+import { cpus } from "os";
 import { Worker } from "worker_threads";
 
 import { environment } from "../../../environments/environment";
@@ -17,7 +18,7 @@ import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
 import { generateSettings } from "../utils/generate-settings.util";
 import { runWorker } from "../utils/run-worker.util";
 
-const MAX_WORKERS = 10; // Количество воркеров, можно адаптировать под доступные ресурсы.
+const MAX_WORKERS = cpus().length; // Количество воркеров, можно адаптировать под доступные ресурсы.
 
 @Injectable()
 export class AnalyticsNewService {
