@@ -109,7 +109,7 @@ export class AnalyticsNewService {
 			bestSetting
 		});
 
-		await this.sendMessagesToTelegram(bestSettingResult, bestSetting);
+		await this.sendMessagesToTelegram(signals, bestSettingResult, bestSetting);
 
 		return { bestSettingResult, bestSetting };
 	}
