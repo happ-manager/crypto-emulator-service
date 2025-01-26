@@ -50,6 +50,9 @@ export class AnalyticsNewService {
 		} = await this.getTransactions(signals);
 
 		const workerSettings = generateWorkerSettings(props, cpus().length);
+
+		console.log(workerSettings);
+
 		const workerPromises = workerSettings.map((workerSettings, index) =>
 			runWorker("analyticsWorker.js", {
 				index,
@@ -128,8 +131,7 @@ export class AnalyticsNewService {
 
 	async getTransactions(signals: ISignal[]) {
 		console.log("Starting getTransactions...");
-
-		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 100));
+		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 1));
 		// console.log(
 		// 	"Signals chunks created:",
 		// 	signalsChunks.map((chunk) => chunk.length)

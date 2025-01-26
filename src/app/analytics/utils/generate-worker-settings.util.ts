@@ -1,27 +1,19 @@
 import type { IGenerateSettingsProps } from "../interfaces/generate-settings.interface";
 
-function splitRangeWithStep(
-	start: number,
-	end: number,
-	step: number,
-	chunks: number
-): { start: number; end: number }[] {
+function splitRangeUniformly(start: number, end: number, chunks: number): { start: number; end: number }[] {
 	const ranges = [];
-	const totalSteps = Math.floor((end - start) / step); // Общее количество шагов
-	const stepsPerChunk = Math.floor(totalSteps / chunks); // Шагов в каждом диапазоне
-	const remainingSteps = totalSteps % chunks; // Оставшиеся шаги
+	const totalRange = end - start;
+	const chunkSize = Math.floor(totalRange / chunks); // Размер диапазона для каждого куска
+	const remaining = totalRange % chunks; // Остаток, если диапазон не делится равномерно
 
 	let currentStart = start;
 
 	for (let i = 0; i < chunks; i++) {
-		const additionalStep = i < remainingSteps ? step : 0; // Распределяем оставшиеся шаги
-		const currentEnd = currentStart + stepsPerChunk * step + additionalStep;
-
+		const currentEnd = currentStart + chunkSize + (i < remaining ? 1 : 0); // Распределяем остаток равномерно
 		ranges.push({
 			start: currentStart,
 			end: currentEnd
 		});
-
 		currentStart = currentEnd;
 	}
 
@@ -48,12 +40,12 @@ export function generateWorkerSettings(props: IGenerateSettingsProps, workerCoun
 		...rest
 	} = props;
 
-	// Разделяем диапазоны с учетом шага
-	const buyPercentRanges = splitRangeWithStep(buyPercentStart, buyPercentEnd, buyPercentStep, workerCount);
-	const sellHighRanges = splitRangeWithStep(sellHighStart, sellHighEnd, sellHighStep, workerCount);
-	const sellLowRanges = splitRangeWithStep(sellLowStart, sellLowEnd, sellLowStep, workerCount);
-	const minTimeRanges = splitRangeWithStep(minTimeStart, minTimeEnd, minTimeStep, workerCount);
-	const maxTimeRanges = splitRangeWithStep(maxTimeStart, maxTimeEnd, maxTimeStep, workerCount);
+	// Разделяем диапазоны равномерно
+	const buyPercentRanges = splitRangeUniformly(buyPercentStart, buyPercentEnd, workerCount);
+	const sellHighRanges = splitRangeUniformly(sellHighStart, sellHighEnd, workerCount);
+	const sellLowRanges = splitRangeUniformly(sellLowStart, sellLowEnd, workerCount);
+	const minTimeRanges = splitRangeUniformly(minTimeStart, minTimeEnd, workerCount);
+	const maxTimeRanges = splitRangeUniformly(maxTimeStart, maxTimeEnd, workerCount);
 
 	// Генерируем настройки для каждого воркера
 	const workerSettings: IGenerateSettingsProps[] = [];
