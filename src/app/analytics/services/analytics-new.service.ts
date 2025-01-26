@@ -1,60 +1,23 @@
-import {
-	IClownStrategyParmas,
-	type ISignal,
-	MilestoneTypeEnum,
-	PredefinedStrategyEnum
-} from "@happ-manager/crypto-api";
+import { MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manager/crypto-api";
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
+import { cpus } from "os";
 import { Worker } from "worker_threads";
 
 import { environment } from "../../../environments/environment";
-import { SignalsService } from "../../data/services/signals.service";
 import { StrategiesService } from "../../data/services/strategies.service";
-import { chunkArray } from "../../emulator/utils/chunk-array.util";
 import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
-import { createSharedSettingsBuffer } from "../utils/create-shared-settings-buffer.util";
-import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.util";
-import { createSharedTransactionBuffer } from "../utils/create-shared-transaction-buffer.util";
-import { generateSettings } from "../utils/generate-settings.util";
+import { generateWorkerSettings } from "../utils/generate-worker-settings.util";
 import { runWorker } from "../utils/run-worker.util";
 
 @Injectable()
 export class AnalyticsNewService {
 	constructor(
 		private readonly _httpClient: HttpService,
-		private readonly _signalsService: SignalsService,
 		private readonly _strategiesService: StrategiesService
 	) {}
 
 	async analyse(props: GenerateSettingsDto) {
-		const {
-			investment = 1000,
-			delay = 1000,
-			signalsTake = 5,
-			signalsSkip = 0,
-			signalsChunkSize,
-			settingsChunkSize
-		} = props;
-
-		const signals = await this._signalsService.getSignals({
-			skip: signalsSkip,
-			take: signalsTake
-		});
-		console.log(`Get ${signals.length} signals`);
-
-		const { buffer: signalsBuffer, stringData: signalsData } = createSharedSignalBuffer(signals);
-		const signalsChunks = chunkArray(signals, signalsChunkSize);
-		const transactionsPromises = signalsChunks.map((_signals, index) =>
-			runWorker("transactionsWorker.js", { index, signalsBuffer, signalsData, signalsLength: signals.length })
-		);
-
-		console.log(`Get transactions started`);
-		const transactionsDate = Date.now();
-		const transactions = (await Promise.all(transactionsPromises)).flat();
-		console.log(`Get ${transactions.length} transactions in ${(Date.now() - transactionsDate) / 1000} seconds`);
-		const { buffer: transactionsBuffer, stringData: transactionsData } = createSharedTransactionBuffer(transactions);
-
 		const strategy = await this._strategiesService.getStrategy({
 			where: { predefinedStrategy: PredefinedStrategyEnum.CLOWN },
 			relations: ["milestones"]
@@ -66,34 +29,10 @@ export class AnalyticsNewService {
 			return;
 		}
 
-		const settingsDate = Date.now();
-		const settings = generateSettings(props);
-		console.log(`Get ${settings.length} settings in ${(Date.now() - settingsDate) / 1000} seconds`);
+		const workerSettings = generateWorkerSettings(props, cpus().length);
 
-		const { buffer: settingsBuffer, length: settingsLength } = createSharedSettingsBuffer(settings);
-
-		console.log("Settings buffer created");
-
-		const settingsChunks = chunkArray([...new Array(settingsLength).keys()], settingsChunkSize);
-
-		console.log(`Created ${settingsChunks.length} settings chunks`);
-
-		const workerPromises = settingsChunks.map((settingIndexes, index) =>
-			runWorker("analyticsWorker.js", {
-				index,
-				settingsBuffer,
-				settingsIndexes: settingIndexes,
-				transactionsBuffer,
-				transactionsData,
-				transactionsLength: transactions.length,
-				signalsBuffer,
-				signalsData,
-				signalsLength: signals.length,
-				strategy,
-				signalMilestone,
-				investment,
-				delay
-			})
+		const workerPromises = workerSettings.map((workerSettings, index) =>
+			runWorker("analyticsWorker.js", { index, workerSettings, strategy, signalMilestone })
 		);
 
 		console.log(`Get results started`);
@@ -111,21 +50,14 @@ export class AnalyticsNewService {
 			}
 		}
 
-		await this.sendMessagesToTelegram(signals, settings, bestSettingResult, bestSetting);
-
-		console.log({ bestSettingResult, bestSetting });
+		await this.sendMessagesToTelegram(bestSettingResult, bestSetting);
 
 		return { bestSettingResult, bestSetting };
 	}
 
-	async sendMessagesToTelegram(
-		allSignals: ISignal[],
-		allSettings: IClownStrategyParmas[],
-		bestSettingResult: any,
-		bestSetting: any
-	) {
+	async sendMessagesToTelegram(bestSettingResult: any, bestSetting: any) {
 		const text = `
-*Лучшие параметры для ${allSignals.length} сигналов из ${allSettings.length}:*
+*Лучшие параметры:*
 
 *Параметры настройки:*
 - 🛒 *buyPercent*: ${bestSetting.buyPercent}
@@ -133,8 +65,8 @@ export class AnalyticsNewService {
 - 📉 *sellLowPercent*: ${bestSetting.sellLowPercent}
 - ⏳ *minTime*: ${bestSetting.minTime}
 - ⏱ *maxTime*: ${bestSetting.maxTime}
-- ⏱ *maxTime*: ${bestSetting.maxTime}
-- ⏱ *maxTime*: ${bestSetting.maxTime}
+- ⏱ *startHour*: ${bestSetting.startHour}
+- ⏱ *endHour*: ${bestSetting.endHour}
 
 *Результаты стратегии:*
 - ✅ *Win Count*: ${bestSettingResult.winCount}

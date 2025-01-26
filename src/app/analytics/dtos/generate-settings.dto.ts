@@ -1,12 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class GenerateSettingsDto {
-	@ApiPropertyOptional({ description: "Размер чанков для сигналов", example: 1000 })
-	signalsChunkSize: number;
-
-	@ApiPropertyOptional({ description: "Размер чанков для настроек", example: 100_000 })
-	settingsChunkSize: number;
-
 	@ApiPropertyOptional({ description: "Время начало", example: 0 })
 	hourRangeStart: number;
 
