@@ -35,11 +35,17 @@ async function processAnalytics() {
 		skip: signalsSkip,
 		take: signalsTake
 	});
+
+	console.log(`Analytics worker ${index + 1} loaded ${signals.length} signals`);
+
 	const transactions = await datasource.getRepository(TransactionEntity).find({
 		where: {
 			poolAddress: In(signals.map((signal) => signal.poolAddress))
 		}
 	});
+
+	console.log(`Analytics worker ${index + 1} loaded ${transactions.length} signals`);
+
 	const transactionsMap = new Map<string, ITransaction[]>();
 
 	for (const transaction of transactions) {
@@ -51,6 +57,8 @@ async function processAnalytics() {
 	}
 
 	const settings = generateSettings(workerSettings);
+
+	console.log(`Analytics worker ${index + 1} loaded ${settings.length} signals`);
 
 	let bestSettingResult = { totalProfit: 0 };
 	let bestSetting = null;
