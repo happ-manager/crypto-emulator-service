@@ -1,28 +1,23 @@
 import type { ITransaction } from "@happ-manager/crypto-api";
 
 export function createSharedTransactionBuffer(transactions: ITransaction[]) {
-	// Определяем фиксированный размер для каждого поля
-	const BYTES_PER_TRANSACTION = 5 * Float64Array.BYTES_PER_ELEMENT; // Дата, цена, nextPrice (числа)
-	const STRING_FIELDS = ["id", "poolAddress", "signature", "author"]; // Поля строк
-	const buffer = new SharedArrayBuffer(transactions.length * BYTES_PER_TRANSACTION);
+	// Определяем фиксированный размер для каждого поля (3 числа: date, price, poolAddress index)
+	const BYTES_PER_TRANSACTION = 3 * Float64Array.BYTES_PER_ELEMENT;
 
-	// Общий буфер для числовых данных
+	// Создаем общий буфер для числовых данных
+	const buffer = new SharedArrayBuffer(transactions.length * BYTES_PER_TRANSACTION);
 	const sharedTransactions = new Float64Array(buffer);
 
-	// Создаем отдельные маппинги для строк
-	const stringData: Record<string, string[]> = {};
-	for (const field of STRING_FIELDS) {
-		stringData[field] = transactions.map((tx) => tx[field]);
-	}
+	// Сохраняем poolAddress как отдельный массив строк
+	const poolAddresses: string[] = transactions.map((tx) => tx.poolAddress);
 
-	// Записываем числовые данные
+	// Заполняем числовые данные
 	for (const [index, transaction] of transactions.entries()) {
-		const offset = index * 5;
-		sharedTransactions[offset] = new Date(transaction.date).getTime(); // UNIX timestamp
-		sharedTransactions[offset + 1] = transaction.price;
-		sharedTransactions[offset + 2] = transaction.nextPrice;
-		sharedTransactions[offset + 3] = index; // Ссылка на строковые маппинги
+		const offset = index * 3;
+		sharedTransactions[offset] = new Date(transaction.date).getTime(); // Дата в формате UNIX timestamp
+		sharedTransactions[offset + 1] = transaction.price; // Цена
+		sharedTransactions[offset + 2] = index; // Индекс строки poolAddress
 	}
 
-	return { buffer, stringData, length: transactions.length };
+	return { buffer, poolAddresses, length: transactions.length };
 }

@@ -48,8 +48,8 @@ export class AnalyticsNewService {
 		console.log(`${signals.length} signals loaded`);
 
 		const {
-			combinedData: transactionsData,
 			combinedBuffer: transactionsBuffer,
+			combinedPoolAddresses: transactionsData,
 			totalLength: transactionsLength
 		} = await this.getTransactions(signals);
 
@@ -139,7 +139,6 @@ export class AnalyticsNewService {
 		);
 
 		console.log("Start getting transactions");
-		// Ждем выполнения всех воркеров
 		const workerResults = await Promise.all(workerPromises);
 
 		console.log("Start combining");
@@ -148,44 +147,31 @@ export class AnalyticsNewService {
 		const totalLength = workerResults.reduce((sum, { length }) => sum + length, 0);
 
 		// Создаем общий SharedArrayBuffer
-		const combinedBuffer = new SharedArrayBuffer(totalLength * 8);
+		const combinedBuffer = new SharedArrayBuffer(totalLength * 8 * 3);
 		const combinedView = new DataView(combinedBuffer);
 
 		// Объединяем данные из всех воркеров
 		let offset = 0;
-		for (const { buffer, length } of workerResults) {
-			if (length * 8 > buffer.byteLength) {
-				throw new Error(`Buffer length mismatch: expected ${length * 8}, got ${buffer.byteLength}`);
+		const combinedPoolAddresses: string[] = [];
+		for (const { buffer, stringData, length } of workerResults) {
+			if (length * 3 * 8 > buffer.byteLength) {
+				throw new Error(`Buffer length mismatch: expected ${length * 3 * 8}, got ${buffer.byteLength}`);
 			}
 
+			combinedPoolAddresses.push(...stringData);
+
 			const view = new DataView(buffer);
-			for (let i = 0; i < length; i++) {
-				if (offset >= totalLength) {
-					throw new RangeError(`Offset (${offset}) exceeds total buffer size (${totalLength}).`);
+			for (let i = 0; i < length * 3; i++) {
+				if (offset >= totalLength * 3) {
+					throw new RangeError(`Offset (${offset}) exceeds total buffer size (${totalLength * 3}).`);
 				}
 				combinedView.setFloat64(offset * 8, view.getFloat64(i * 8));
 				offset++;
 			}
 		}
 
-		// Объединение transactionsData
-		const combinedData = workerResults.reduce((acc, { stringData }) => {
-			// Убедитесь, что stringData — это объект
-			if (typeof stringData === "string") {
-				stringData = JSON.parse(stringData); // Преобразуем в объект, если это строка
-			}
-			for (const key in stringData) {
-				if (!acc[key]) {
-					acc[key] = [];
-				}
-				acc[key] = [...acc[key], ...stringData[key]];
-			}
-			return acc;
-		}, {});
-
 		console.log("Return combined data");
 
-		// Возвращаем объединенные данные
-		return { combinedBuffer, combinedData, totalLength };
+		return { combinedBuffer, combinedPoolAddresses, totalLength };
 	}
 }

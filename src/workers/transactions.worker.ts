@@ -10,8 +10,6 @@ import { environment } from "../environments/environment";
 async function processTransactions() {
 	const { index, signals } = workerData;
 
-	const date = Date.now();
-
 	console.log(`Transactions worker ${index + 1} started`);
 
 	const datasource = new DataSource({
@@ -32,12 +30,13 @@ async function processTransactions() {
 	const transactions = await datasource.getRepository(TransactionEntity).find({
 		where: {
 			poolAddress: In(poolAddresses)
-		}
+		},
+		select: ["poolAddress", "price", "date"] // Оставляем только нужные поля
 	});
 
-	const { buffer, stringData, length } = createSharedTransactionBuffer(transactions);
+	const { buffer, poolAddresses: stringData, length } = createSharedTransactionBuffer(transactions);
 
-	console.log(`Transactions worker ${index + 1} finished in ${(Date.now() - date) / 1000}`);
+	console.log(`Transactions worker ${index + 1} finished`);
 
 	parentPort?.postMessage({ buffer, stringData, length });
 }

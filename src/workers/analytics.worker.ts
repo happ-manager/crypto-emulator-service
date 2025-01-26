@@ -1,4 +1,4 @@
-import type { ISignal, ITransaction } from "@happ-manager/crypto-api";
+import type { IBaseTransaction, ISignal } from "@happ-manager/crypto-api";
 import { getCheckedTransaction, MilestoneTypeEnum, percentOf } from "@happ-manager/crypto-api";
 import { parentPort, workerData } from "worker_threads";
 
@@ -27,36 +27,23 @@ async function processAnalytics() {
 	const date = Date.now();
 	console.log(`Analytics worker ${index + 1} started`);
 
-	// Восстанавливаем массив числовых данных
+	// Восстанавливаем числовые данные транзакций
 	const sharedTransactions = new Float64Array(transactionsBuffer);
 
-	if (sharedTransactions.length < transactionsLength * 5) {
+	if (sharedTransactions.length < transactionsLength * 3) {
 		throw new Error(
-			`Shared transactions buffer is too small: expected ${transactionsLength * 5}, got ${sharedTransactions.length}`
+			`Shared transactions buffer is too small: expected ${transactionsLength * 3}, got ${sharedTransactions.length}`
 		);
 	}
 
-	if (!transactionsData["poolAddress"] || transactionsData["poolAddress"].length !== transactionsLength) {
-		throw new Error(`Transactions data structure mismatch`);
-	}
-
-	if (!transactionsData["poolAddress"] || transactionsData["poolAddress"].length !== transactionsLength) {
-		throw new Error(`Transactions data structure mismatch`);
-	}
-
-	const transactionsMap = new Map<string, ITransaction[]>();
+	const transactionsMap = new Map<string, IBaseTransaction[]>();
 
 	for (let i = 0; i < transactionsLength; i++) {
-		const offset = i * 5;
-		const poolAddress = transactionsData["poolAddress"][i];
+		const offset = i * 3;
+		const poolAddress = transactionsData[sharedTransactions[offset + 2]]; // Индекс poolAddress
 		const transaction: any = {
-			id: transactionsData["id"][i],
-			poolAddress,
-			signature: transactionsData["signature"][i],
-			author: transactionsData["author"][i],
-			date: new Date(sharedTransactions[offset]), // Восстанавливаем дату
-			price: sharedTransactions[offset + 1],
-			nextPrice: sharedTransactions[offset + 2]
+			date: new Date(sharedTransactions[offset]), // Дата
+			price: sharedTransactions[offset + 1] // Цена
 		};
 
 		if (transactionsMap.has(poolAddress)) {
