@@ -2,6 +2,7 @@ import type { ISignal, ITransaction } from "@happ-manager/crypto-api";
 import { getCheckedTransaction, MilestoneTypeEnum, percentOf } from "@happ-manager/crypto-api";
 import { parentPort, workerData } from "worker_threads";
 
+import { generateSettings } from "../app/analytics/utils/generate-settings.util";
 import { getDelayedTransaction } from "../app/emulator/utils/get-delayed-transaction.util";
 import { findTransaction } from "../app/shared/utils/find-transaction.util";
 
@@ -12,6 +13,7 @@ async function processAnalytics() {
 
 	const {
 		index,
+		workersCount,
 		strategy,
 		signalMilestone,
 		workerSettings,
@@ -20,9 +22,7 @@ async function processAnalytics() {
 		signalsLength,
 		transactionsBuffer,
 		transactionsLength,
-		transactionsData,
-		settingsBuffer,
-		settingsLength
+		transactionsData
 	} = workerData;
 
 	const date = Date.now();
@@ -80,21 +80,14 @@ async function processAnalytics() {
 
 	// console.log(`Analytics worker ${index + 1} finished signals and transactions processing.`);
 
-	// Восстановление настроек
-	const sharedSettings = new Float64Array(settingsBuffer);
-	const settings = [];
-	for (let i = 0; i < settingsLength; i++) {
-		const offset = i * 7; // 7 параметров в настройках
-		settings.push({
-			buyPercent: sharedSettings[offset],
-			sellHighPercent: sharedSettings[offset + 1],
-			sellLowPercent: sharedSettings[offset + 2],
-			minTime: sharedSettings[offset + 3],
-			maxTime: sharedSettings[offset + 4],
-			startHour: sharedSettings[offset + 5],
-			endHour: sharedSettings[offset + 6]
-		});
-	}
+	const allSettings = generateSettings(workerSettings);
+	const [startIndex, endIndex] = [
+		Math.floor((index / workersCount) * allSettings.length),
+		Math.floor(((index + 1) / workersCount) * allSettings.length)
+	];
+
+	const settings = allSettings.slice(startIndex, endIndex); // Возвращаем только нужную часть
+
 	console.log(`Analytics worker ${index + 1} loaded ${settings.length} settings`);
 
 	let bestSettingResult = { totalProfit: 0 };
