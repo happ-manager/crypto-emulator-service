@@ -77,7 +77,7 @@ async function processAnalytics() {
 
 	// console.log(`Signals`, signals);
 
-	console.log(`Analytics worker ${index + 1} finished signals and transactions processing.`);
+	// console.log(`Analytics worker ${index + 1} finished signals and transactions processing.`);
 
 	const settings = generateSettings(workerSettings);
 

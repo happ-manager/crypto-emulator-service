@@ -130,10 +130,10 @@ export class AnalyticsNewService {
 		console.log("Starting getTransactions...");
 
 		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 100));
-		console.log(
-			"Signals chunks created:",
-			signalsChunks.map((chunk) => chunk.length)
-		);
+		// console.log(
+		// 	"Signals chunks created:",
+		// 	signalsChunks.map((chunk) => chunk.length)
+		// );
 
 		const workerPromises = signalsChunks.map((chunk, index) =>
 			runWorker("transactionsWorker.js", { index, signals: chunk })
@@ -142,10 +142,10 @@ export class AnalyticsNewService {
 		console.log("Starting workers...");
 		const workerResults = await Promise.all(workerPromises);
 
-		console.log(
-			"Worker results summary:",
-			workerResults.map(({ length }) => length)
-		);
+		// console.log(
+		// 	"Worker results summary:",
+		// 	workerResults.map(({ length }) => length)
+		// );
 
 		const totalLength = workerResults.reduce((sum, { length }) => sum + length, 0);
 		console.log("Total transactions length:", totalLength);
@@ -157,7 +157,7 @@ export class AnalyticsNewService {
 		let combinedPoolAddresses: string[] = [];
 
 		for (const { buffer, stringData, length } of workerResults) {
-			console.log(`Processing worker result: Length=${length}`);
+			// console.log(`Processing worker result: Length=${length}`);
 			const view = new DataView(buffer);
 
 			// Используем concat вместо spread для объединения массивов
