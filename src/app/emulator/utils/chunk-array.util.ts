@@ -4,9 +4,8 @@ export function chunkArray<T>(array: T[], numChunks: number): T[][] {
 
 	for (let i = 0; i < numChunks; i++) {
 		const start = i * chunkSize;
-		const end = Math.min(start + chunkSize, array.length); // Убедимся, что end не превышает длину массива
+		const end = Math.min(start + chunkSize, array.length);
 		if (start < end) {
-			// Исключаем пустые чанки
 			chunks.push(array.slice(start, end));
 		}
 	}

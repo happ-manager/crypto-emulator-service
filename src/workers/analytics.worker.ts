@@ -1,4 +1,4 @@
-import type { IBaseTransaction, ISignal } from "@happ-manager/crypto-api";
+import type { ISignal, ITransaction } from "@happ-manager/crypto-api";
 import { getCheckedTransaction, MilestoneTypeEnum, percentOf } from "@happ-manager/crypto-api";
 import { parentPort, workerData } from "worker_threads";
 
@@ -27,8 +27,9 @@ async function processAnalytics() {
 	const date = Date.now();
 	console.log(`Analytics worker ${index + 1} started`);
 
-	// Восстанавливаем числовые данные транзакций
 	const sharedTransactions = new Float64Array(transactionsBuffer);
+	// console.log("Shared transactions buffer length:", sharedTransactions.length);
+	// console.log("Transactions length expected:", transactionsLength);
 
 	if (sharedTransactions.length < transactionsLength * 3) {
 		throw new Error(
@@ -36,41 +37,47 @@ async function processAnalytics() {
 		);
 	}
 
-	const transactionsMap = new Map<string, IBaseTransaction[]>();
-
+	// Формирование transactionsMap
+	const transactionsMap = new Map<string, ITransaction[]>();
 	for (let i = 0; i < transactionsLength; i++) {
 		const offset = i * 3;
-		const poolAddress = transactionsData[sharedTransactions[offset + 2]]; // Индекс poolAddress
-		const transaction: any = {
+		const poolAddress = transactionsData[i];
+		const transaction: ITransaction = {
 			poolAddress,
-			date: new Date(sharedTransactions[offset]), // Дата
-			price: sharedTransactions[offset + 1] // Цена
-		};
+			date: new Date(sharedTransactions[offset]),
+			price: sharedTransactions[offset + 1]
+		} as any;
 
-		if (transactionsMap.has(poolAddress)) {
-			transactionsMap.get(poolAddress).push(transaction);
-		} else {
-			transactionsMap.set(poolAddress, [transaction]);
+		if (!transactionsMap.has(poolAddress)) {
+			transactionsMap.set(poolAddress, []);
 		}
+		transactionsMap.get(poolAddress).push(transaction);
 	}
 
-	console.log(`Analytics worker ${index + 1} loaded transactions`);
+	// console.log("TransactionsMap keys example:", [...transactionsMap.keys()].slice(0, 10));
+	if (!transactionsMap.has("4czPJqpeQkeznkoRkF8G44U7HQqMvw8SeRr3rHYsckDV")) {
+		console.error("TransactionsMap does not contain poolAddress 4czPJqpeQkeznkoRkF8G44U7HQqMvw8SeRr3rHYsckDV");
+	}
 
-	// Восстанавливаем сигналы из буфера
+	// Проверяем сигналы
 	const sharedSignals = new Float64Array(signalsBuffer);
 	const signals: ISignal[] = [];
 
-	for (let i = 0; i < signalsLength; i++) {
-		signals.push({
-			id: signalsData["id"][i],
-			source: signalsData["source"][i],
-			tokenAddress: signalsData["tokenAddress"][i],
-			poolAddress: signalsData["poolAddress"][i],
-			signaledAt: new Date(sharedSignals[i]) // Восстанавливаем дату
-		} as any);
+	// Проверяем, что signalsData имеет правильную структуру
+	if (!signalsData || !Array.isArray(signalsData["poolAddress"])) {
+		throw new Error("Invalid signalsData structure: Missing 'poolAddress'");
 	}
 
-	console.log(`Analytics worker ${index + 1} loaded signals`);
+	for (let i = 0; i < signalsLength; i++) {
+		signals.push({
+			poolAddress: signalsData["poolAddress"][i], // Доступ через ключ "poolAddress"
+			signaledAt: new Date(sharedSignals[i]) // Преобразование UNIX timestamp в Date
+		} as ISignal);
+	}
+
+	// console.log(`Signals`, signals);
+
+	console.log(`Analytics worker ${index + 1} finished signals and transactions processing.`);
 
 	const settings = generateSettings(workerSettings);
 

@@ -2,7 +2,6 @@ import { ISignal, MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manage
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
 import { chunkArray } from "@raydium-io/raydium-sdk";
-import Redis from "ioredis";
 import { cpus } from "os";
 import { Worker } from "worker_threads";
 
@@ -16,15 +15,11 @@ import { runWorker } from "../utils/run-worker.util";
 
 @Injectable()
 export class AnalyticsNewService {
-	private readonly redisClient: Redis;
-
 	constructor(
 		private readonly _httpClient: HttpService,
 		private readonly _strategiesService: StrategiesService,
 		private readonly _signalsService: SignalsService
-	) {
-		this.redisClient = new Redis(environment.redis);
-	}
+	) {}
 
 	async analyse(props: GenerateSettingsDto) {
 		const strategy = await this._strategiesService.getStrategy({
@@ -42,7 +37,8 @@ export class AnalyticsNewService {
 
 		const signals = await this._signalsService.getSignals({
 			skip: props.signalsSkip,
-			take: props.signalsTake
+			take: props.signalsTake,
+			select: ["poolAddress", "signaledAt"]
 		});
 		const { buffer: signalsBuffer, stringData: signalsData, length: signalsLength } = createSharedSignalBuffer(signals);
 		console.log(`${signals.length} signals loaded`);
@@ -131,32 +127,61 @@ export class AnalyticsNewService {
 	}
 
 	async getTransactions(signals: ISignal[]) {
-		const signalsChunks = chunkArray(signals, cpus().length);
+		console.log("Starting getTransactions...");
 
-		const workerPromises = signalsChunks.map((_signals, index) =>
-			runWorker("transactionsWorker.js", { index, signals: _signals })
+		// Разделяем сигналы на чанки по количеству CPU
+		const signalsChunks = chunkArray(signals, cpus().length);
+		// console.log(
+		// 	"Signals chunks created:",
+		// 	signalsChunks.map((chunk) => chunk.length)
+		// );
+
+		// Запускаем воркеры для обработки транзакций
+		const workerPromises = signalsChunks.map((chunk, index) =>
+			runWorker("transactionsWorker.js", { index, signals: chunk })
 		);
 
-		console.log("Start getting transactions");
+		console.log("Starting workers...");
 		const workerResults = await Promise.all(workerPromises);
 
-		// Проверяем корректность данных воркеров
+		console.log("Worker results summary:");
+		// for (const [index, { length, stringData }] of workerResults.entries()) {
+		// 	console.log(`Worker ${index + 1}:`);
+		// 	console.log(`  Transactions length: ${length}`);
+		// 	console.log(`  Example poolAddresses: ${stringData.slice(0, 5).join(", ")}`);
+		// }
+
+		// Проверяем, что каждый воркер вернул валидные данные
 		for (const [index, { buffer, stringData, length }] of workerResults.entries()) {
 			if (!buffer || !stringData || typeof length !== "number") {
 				throw new Error(`Worker ${index + 1} returned invalid data.`);
 			}
+			if (length === 0) {
+				console.warn(`Warning: Worker ${index + 1} returned no transactions.`);
+			}
 		}
 
-		console.log("Start combining");
+		console.log("All worker results validated.");
 
+		// Вычисляем общий размер буфера
 		const totalLength = workerResults.reduce((sum, { length }) => sum + length, 0);
+		// console.log("Total transactions to combine:", totalLength);
 
+		// Создаем общий буфер для всех транзакций
 		const combinedBuffer = new SharedArrayBuffer(totalLength * 8 * 3);
 		const combinedView = new DataView(combinedBuffer);
 
+		// Объединяем данные
 		let offset = 0;
 		const combinedPoolAddresses: string[] = [];
+
 		for (const { buffer, stringData, length } of workerResults) {
+			// console.log("Combining data from worker:");
+			// console.log(`  Length: ${length}`);
+			// console.log(`  Buffer size: ${buffer.byteLength}`);
+			// console.log(`  Example poolAddresses: ${stringData.slice(0, 5).join(", ")}`);
+
+			// Проверка соответствия длины буфера
 			if (length * 3 * 8 > buffer.byteLength) {
 				throw new Error(`Buffer length mismatch: expected ${length * 3 * 8}, got ${buffer.byteLength}`);
 			}
@@ -173,11 +198,24 @@ export class AnalyticsNewService {
 			}
 		}
 
+		// Проверяем, что все данные были объединены
 		if (offset !== totalLength * 3) {
-			throw new Error(`Data mismatch: combined length (${offset / 3}) does not match expected (${totalLength}).`);
+			throw new Error(
+				`Combined buffer length mismatch: expected ${totalLength * 3}, but got ${offset}. Possible data loss.`
+			);
 		}
 
-		console.log("Return combined data");
+		console.log("Combined data validated.");
+		// console.log("Final combined poolAddresses count:", combinedPoolAddresses.length);
+
+		// Проверка, что все poolAddress присутствуют
+		const examplePoolAddress = signals[0]?.poolAddress;
+		if (examplePoolAddress && !combinedPoolAddresses.includes(examplePoolAddress)) {
+			console.error(`Critical: Missing poolAddress ${examplePoolAddress} in combined data.`);
+		}
+
+		console.log("getTransactions completed successfully.");
+
 		return { combinedBuffer, combinedPoolAddresses, totalLength };
 	}
 }
