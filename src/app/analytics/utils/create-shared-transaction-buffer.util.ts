@@ -24,5 +24,5 @@ export function createSharedTransactionBuffer(transactions: ITransaction[]) {
 		sharedTransactions[offset + 3] = index; // Ссылка на строковые маппинги
 	}
 
-	return { buffer, stringData };
+	return { buffer, stringData, length: transactions.length };
 }

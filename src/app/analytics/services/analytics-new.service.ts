@@ -2,11 +2,16 @@ import { MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manager/crypto-
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
 import { cpus } from "os";
+import { In } from "typeorm";
 import { Worker } from "worker_threads";
 
 import { environment } from "../../../environments/environment";
+import { SignalsService } from "../../data/services/signals.service";
 import { StrategiesService } from "../../data/services/strategies.service";
+import { TransactionsService } from "../../data/services/transactions.service";
 import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
+import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.util";
+import { createSharedTransactionBuffer } from "../utils/create-shared-transaction-buffer.util";
 import { generateWorkerSettings } from "../utils/generate-worker-settings.util";
 import { runWorker } from "../utils/run-worker.util";
 
@@ -14,7 +19,9 @@ import { runWorker } from "../utils/run-worker.util";
 export class AnalyticsNewService {
 	constructor(
 		private readonly _httpClient: HttpService,
-		private readonly _strategiesService: StrategiesService
+		private readonly _strategiesService: StrategiesService,
+		private readonly _signalsService: SignalsService,
+		private readonly _transactionsService: TransactionsService
 	) {}
 
 	async analyse(props: GenerateSettingsDto) {
@@ -29,10 +36,42 @@ export class AnalyticsNewService {
 			return;
 		}
 
-		const workerSettings = generateWorkerSettings(props, cpus().length);
+		const signals = await this._signalsService.getSignals({
+			skip: props.signalsSkip,
+			take: props.signalsTake
+		});
 
+		console.log(`${signals.length} signals loaded`);
+
+		const transactions = await this._transactionsService.getTransactions({
+			where: {
+				poolAddress: In(signals.map((signal) => signal.poolAddress))
+			}
+		});
+
+		console.log(`${transactions.length} transactions loaded`);
+
+		const { buffer: signalsBuffer, stringData: signalsData, length: signalsLength } = createSharedSignalBuffer(signals);
+		const {
+			buffer: transactionsBuffer,
+			stringData: transactionsData,
+			length: transactionsLength
+		} = createSharedTransactionBuffer(transactions);
+
+		const workerSettings = generateWorkerSettings(props, cpus().length);
 		const workerPromises = workerSettings.map((workerSettings, index) =>
-			runWorker("analyticsWorker.js", { index, workerSettings, strategy, signalMilestone })
+			runWorker("analyticsWorker.js", {
+				index,
+				workerSettings,
+				strategy,
+				signalMilestone,
+				signalsBuffer,
+				signalsData,
+				signalsLength,
+				transactionsBuffer,
+				transactionsData,
+				transactionsLength
+			})
 		);
 
 		console.log(`Get results started`);
@@ -49,6 +88,11 @@ export class AnalyticsNewService {
 				bestSetting = setting;
 			}
 		}
+
+		console.log({
+			bestSettingResult,
+			bestSetting
+		});
 
 		await this.sendMessagesToTelegram(bestSettingResult, bestSetting);
 

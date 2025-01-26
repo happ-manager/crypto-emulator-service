@@ -1,64 +1,73 @@
-import type { ITransaction } from "@happ-manager/crypto-api";
+import type { ISignal, ITransaction } from "@happ-manager/crypto-api";
 import { getCheckedTransaction, MilestoneTypeEnum, percentOf } from "@happ-manager/crypto-api";
-import { DataSource, In } from "typeorm";
 import { parentPort, workerData } from "worker_threads";
 
 import { generateSettings } from "../app/analytics/utils/generate-settings.util";
-import { DATA_ENTITIES } from "../app/data/entities";
-import { SignalEntity } from "../app/data/entities/signal.entity";
-import { TransactionEntity } from "../app/data/entities/transaction.entity";
 import { getDelayedTransaction } from "../app/emulator/utils/get-delayed-transaction.util";
 import { findTransaction } from "../app/shared/utils/find-transaction.util";
-import { environment } from "../environments/environment";
 
 async function processAnalytics() {
-	const { index, strategy, signalMilestone, workerSettings } = workerData;
-	const { signalsTake = 5, signalsSkip = 0 } = workerSettings;
+	const {
+		index,
+		strategy,
+		signalMilestone,
+		workerSettings,
+		signalsBuffer,
+		signalsData,
+		signalsLength,
+		transactionsBuffer,
+		transactionsLength,
+		transactionsData
+	} = workerData;
 
 	const date = Date.now();
 	console.log(`Analytics worker ${index + 1} started`);
 
-	const datasource = new DataSource({
-		type: "postgres",
-		host: environment.database.host,
-		port: environment.database.port,
-		username: environment.database.username,
-		password: environment.database.password,
-		database: environment.database.name,
-		entities: [...DATA_ENTITIES],
-		synchronize: false
-	});
-
-	await datasource.initialize();
-
-	const signals = await datasource.getRepository(SignalEntity).find({
-		skip: signalsSkip,
-		take: signalsTake
-	});
-
-	console.log(`Analytics worker ${index + 1} loaded ${signals.length} signals`);
-
-	const transactions = await datasource.getRepository(TransactionEntity).find({
-		where: {
-			poolAddress: In(signals.map((signal) => signal.poolAddress))
-		}
-	});
-
-	console.log(`Analytics worker ${index + 1} loaded ${transactions.length} signals`);
-
+	// Восстанавливаем массив числовых данных
+	const sharedTransactions = new Float64Array(transactionsBuffer);
 	const transactionsMap = new Map<string, ITransaction[]>();
 
-	for (const transaction of transactions) {
-		if (transactionsMap.has(transaction.poolAddress)) {
-			transactionsMap.get(transaction.poolAddress).push(transaction);
+	for (let i = 0; i < transactionsLength; i++) {
+		const offset = i * 5;
+		const poolAddress = transactionsData["poolAddress"][i];
+		const transaction: any = {
+			id: transactionsData["id"][i],
+			poolAddress,
+			signature: transactionsData["signature"][i],
+			author: transactionsData["author"][i],
+			date: new Date(sharedTransactions[offset]), // Восстанавливаем дату
+			price: sharedTransactions[offset + 1],
+			nextPrice: sharedTransactions[offset + 2]
+		};
+
+		if (transactionsMap.has(poolAddress)) {
+			transactionsMap.get(poolAddress).push(transaction);
 		} else {
-			transactionsMap.set(transaction.poolAddress, [transaction]);
+			transactionsMap.set(poolAddress, [transaction]);
 		}
 	}
 
+	console.log(`Analytics worker ${index + 1} loaded transactions`);
+
+	// Восстанавливаем сигналы из буфера
+	const sharedSignals = new Float64Array(signalsBuffer);
+	const signals: ISignal[] = [];
+
+	for (let i = 0; i < signalsLength; i++) {
+		signals.push({
+			id: signalsData["id"][i],
+			source: signalsData["source"][i],
+			tokenAddress: signalsData["tokenAddress"][i],
+			poolAddress: signalsData["poolAddress"][i],
+			signaledAt: new Date(sharedSignals[i]) // Восстанавливаем дату
+		} as any);
+	}
+
+	console.log(`Analytics worker ${index + 1} loaded signals`);
+
 	const settings = generateSettings(workerSettings);
 
-	console.log(`Analytics worker ${index + 1} loaded ${settings.length} signals`);
+	console.log(`Analytics worker ${index + 1} loaded ${settings.length} settings`);
 
 	let bestSettingResult = { totalProfit: 0 };
 	let bestSetting = null;

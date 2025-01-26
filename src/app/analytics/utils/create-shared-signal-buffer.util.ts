@@ -21,5 +21,5 @@ export function createSharedSignalBuffer(signals: ISignal[]) {
 		sharedSignals[index] = new Date(signal.signaledAt).getTime(); // UNIX timestamp
 	}
 
-	return { buffer, stringData };
+	return { buffer, stringData, length: signals.length };
 }
