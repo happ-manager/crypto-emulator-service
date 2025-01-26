@@ -10,7 +10,7 @@ import { StrategiesService } from "../../data/services/strategies.service";
 import { chunkArray } from "../../emulator/utils/chunk-array.util";
 import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
 import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.util";
-import { generateWorkerSettings } from "../utils/generate-worker-settings.util";
+import { generateSettings } from "../utils/generate-settings.util";
 import { runWorker } from "../utils/run-worker.util";
 
 @Injectable()
@@ -49,14 +49,16 @@ export class AnalyticsNewService {
 			totalLength: transactionsLength
 		} = await this.getTransactions(signals);
 
-		const workerSettings = generateWorkerSettings(props, cpus().length);
+		// Генерация `SharedArrayBuffer` для передачи настроек в воркеры
+		const workerSettingsBuffers = this.createWorkerSettingsBuffers(props, cpus().length);
 
-		// console.log(workerSettings);
+		console.log("Get buffered settings");
 
-		const workerPromises = workerSettings.map((workerSettings, index) =>
+		const workerPromises = workerSettingsBuffers.map((settingsBuffer, index) =>
 			runWorker("analyticsWorker.js", {
 				index,
-				workerSettings,
+				settingsBuffer,
+				settingsLength: settingsBuffer.byteLength / (7 * Float64Array.BYTES_PER_ELEMENT), // 7 параметров на настройку
 				strategy,
 				signalMilestone,
 				signalsBuffer,
@@ -91,6 +93,34 @@ export class AnalyticsNewService {
 		await this.sendMessagesToTelegram(signals, bestSettingResult, bestSetting);
 
 		return { bestSettingResult, bestSetting };
+	}
+
+	/**
+	 * Генерирует буферы для настроек для каждого воркера
+	 */
+	private createWorkerSettingsBuffers(props: GenerateSettingsDto, workerCount: number) {
+		console.log("Start generating settings");
+		const settings = generateSettings(props);
+		console.log(`Generated ${settings.length} settings`);
+		const chunkSize = Math.ceil(settings.length / workerCount);
+		const chunks = chunkArray(settings, chunkSize);
+
+		return chunks.map((chunk) => {
+			const buffer = new SharedArrayBuffer(chunk.length * 7 * Float64Array.BYTES_PER_ELEMENT);
+			const view = new Float64Array(buffer);
+
+			let offset = 0;
+			for (const setting of chunk) {
+				view[offset++] = setting.buyPercent;
+				view[offset++] = setting.sellHighPercent;
+				view[offset++] = setting.sellLowPercent;
+				view[offset++] = setting.minTime;
+				view[offset++] = setting.maxTime;
+				view[offset++] = setting.startHour;
+				view[offset++] = setting.endHour;
+			}
+			return buffer;
+		});
 	}
 
 	async sendMessagesToTelegram(signals: any, bestSettingResult: any, bestSetting: any) {
