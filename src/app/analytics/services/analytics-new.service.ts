@@ -6,7 +6,6 @@ import {
 } from "@happ-manager/crypto-api";
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
-import { cpus } from "os";
 import { Worker } from "worker_threads";
 
 import { environment } from "../../../environments/environment";
@@ -20,8 +19,6 @@ import { createSharedTransactionBuffer } from "../utils/create-shared-transactio
 import { generateSettings } from "../utils/generate-settings.util";
 import { runWorker } from "../utils/run-worker.util";
 
-const MAX_WORKERS = cpus().length; // Количество воркеров, можно адаптировать под доступные ресурсы.
-
 @Injectable()
 export class AnalyticsNewService {
 	constructor(
@@ -31,7 +28,15 @@ export class AnalyticsNewService {
 	) {}
 
 	async analyse(props: GenerateSettingsDto) {
-		const { investment = 1000, delay = 1000, signalsTake = 5, signalsSkip = 0 } = props;
+		const {
+			investment = 1000,
+			delay = 1000,
+			signalsTake = 5,
+			signalsSkip = 0,
+			signalsChunkSize,
+			settingsChunkSize
+		} = props;
+
 		const signals = await this._signalsService.getSignals({
 			skip: signalsSkip,
 			take: signalsTake
@@ -39,7 +44,7 @@ export class AnalyticsNewService {
 		console.log(`Get ${signals.length} signals`);
 
 		const { buffer: signalsBuffer, stringData: signalsData } = createSharedSignalBuffer(signals);
-		const signalsChunks = chunkArray(signals, 500);
+		const signalsChunks = chunkArray(signals, signalsChunkSize);
 		const transactionsPromises = signalsChunks.map((_signals, index) =>
 			runWorker("transactionsWorker.js", { index, signalsBuffer, signalsData, signalsLength: signals.length })
 		);
@@ -66,7 +71,7 @@ export class AnalyticsNewService {
 		console.log(`Get ${settings.length} settings in ${(Date.now() - settingsDate) / 1000} seconds`);
 
 		const { buffer: settingsBuffer, length: settingsLength } = createSharedSettingsBuffer(settings);
-		const settingsChunks = chunkArray([...new Array(settingsLength).keys()], Math.ceil(settingsLength / MAX_WORKERS));
+		const settingsChunks = chunkArray([...new Array(settingsLength).keys()], settingsChunkSize);
 
 		const workerPromises = settingsChunks.map((settingIndexes, index) =>
 			runWorker("analyticsWorker.js", {
