@@ -40,7 +40,7 @@ export class AnalyticsNewService {
 		console.log(`Get ${signals.length} signals`);
 
 		const { buffer: signalsBuffer, stringData: signalsData } = createSharedSignalBuffer(signals);
-		const signalsChunks = chunkArray(signals, Math.ceil(signals.length / MAX_WORKERS));
+		const signalsChunks = chunkArray(signals, 500);
 		const transactionsPromises = signalsChunks.map((_signals, index) =>
 			runWorker("transactionsWorker.js", { index, signalsBuffer, signalsData, signalsLength: signals.length })
 		);
