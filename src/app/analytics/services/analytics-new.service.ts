@@ -114,9 +114,9 @@ export class AnalyticsNewService {
 		return { bestSettingResult, bestSetting };
 	}
 
-	async sendMessagesToTelegram(bestSettingResult: any, bestSetting: any) {
+	async sendMessagesToTelegram(signals: any, bestSettingResult: any, bestSetting: any) {
 		const text = `
-*Лучшие параметры:*
+*Лучшие параметры для ${signals.length} сигналов:*
 
 *Параметры настройки:*
 - 🛒 *buyPercent*: ${bestSetting.buyPercent}
