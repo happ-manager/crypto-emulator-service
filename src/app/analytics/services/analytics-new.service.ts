@@ -25,7 +25,7 @@ export class AnalyticsNewService {
 		private readonly _signalsService: SignalsService
 	) {
 		this.redisClient = new Redis({
-			host: "localhost", // Хост вашего Redis-сервера
+			host: "redis", // Хост вашего Redis-сервера
 			port: 6379 // Порт вашего Redis-сервера
 		});
 	}
