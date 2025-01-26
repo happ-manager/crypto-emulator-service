@@ -129,14 +129,12 @@ export class AnalyticsNewService {
 	async getTransactions(signals: ISignal[]) {
 		console.log("Starting getTransactions...");
 
-		// Разделяем сигналы на чанки
-		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 100));
+		const signalsChunks = chunkArray(signals, cpus().length);
 		console.log(
 			"Signals chunks created:",
 			signalsChunks.map((chunk) => chunk.length)
 		);
 
-		// Запускаем воркеры
 		const workerPromises = signalsChunks.map((chunk, index) =>
 			runWorker("transactionsWorker.js", { index, signals: chunk })
 		);
@@ -149,12 +147,6 @@ export class AnalyticsNewService {
 			workerResults.map(({ length }) => length)
 		);
 
-		// Проверяем результаты
-		if (!workerResults || workerResults.length === 0) {
-			throw new Error("No worker results found.");
-		}
-
-		// Объединяем данные
 		const totalLength = workerResults.reduce((sum, { length }) => sum + length, 0);
 		console.log("Total transactions length:", totalLength);
 
@@ -162,17 +154,20 @@ export class AnalyticsNewService {
 		const combinedView = new DataView(combinedBuffer);
 
 		let offset = 0;
-		const combinedPoolAddresses: string[] = [];
+		let combinedPoolAddresses: string[] = [];
 
 		for (const { buffer, stringData, length } of workerResults) {
 			console.log(`Processing worker result: Length=${length}`);
 			const view = new DataView(buffer);
 
-			combinedPoolAddresses.push(...stringData);
+			// Используем concat вместо spread для объединения массивов
+			// eslint-disable-next-line unicorn/prefer-spread
+			combinedPoolAddresses = combinedPoolAddresses.concat(stringData);
 
+			// Объединение данных в общий буфер
 			for (let i = 0; i < length * 3; i++) {
 				if (offset >= totalLength * 3) {
-					throw new Error(`Offset (${offset}) exceeds total buffer size (${totalLength * 3}).`);
+					throw new RangeError(`Offset (${offset}) exceeds total buffer size (${totalLength * 3}).`);
 				}
 				combinedView.setFloat64(offset * 8, view.getFloat64(i * 8));
 				offset++;
@@ -185,6 +180,7 @@ export class AnalyticsNewService {
 			throw new Error(`Combined buffer length mismatch: expected ${totalLength * 3}, got ${offset}`);
 		}
 
+		console.log("Return combined data");
 		return { combinedBuffer, combinedPoolAddresses, totalLength };
 	}
 }
