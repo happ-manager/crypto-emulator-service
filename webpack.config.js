@@ -5,9 +5,9 @@ module.exports = function (options, webpack) {
 	return {
 		...options,
 		entry: {
-			main: "./src/main.ts", // Основной файл приложения
-			checkedSignalsWorker: "./src/workers/checked-signals.worker.ts", // Файл воркера
-			transactionsWorker: "./src/workers/transactions.worker.ts" // Файл воркера
+			main: "./src/main.ts",
+			analyticsWorker: "./src/workers/analytics.worker.ts",
+			transactionsWorker: "./src/workers/transactions.worker.ts"
 		},
 		output: {
 			path: path.resolve(__dirname, "dist"),

@@ -5,8 +5,13 @@ import { parentPort, workerData } from "worker_threads";
 import { DATA_ENTITIES } from "../app/data/entities";
 import { TransactionEntity } from "../app/data/entities/transaction.entity";
 import { environment } from "../environments/environment";
+
 async function processTransactions() {
-	const { signals } = workerData;
+	const { index, signals } = workerData;
+
+	const date = Date.now();
+
+	console.log(`Transactions worker ${index + 1} started`);
 
 	const datasource = new DataSource({
 		type: "postgres",
@@ -28,6 +33,8 @@ async function processTransactions() {
 			poolAddress: In(poolAddresses)
 		}
 	});
+
+	console.log(`Transactions worker ${index + 1} finished in ${(Date.now() - date) / 1000}`);
 
 	parentPort?.postMessage(allTransactions);
 }

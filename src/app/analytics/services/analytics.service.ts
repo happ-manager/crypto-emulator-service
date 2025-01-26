@@ -1,7 +1,6 @@
 import { IClownStrategyParmas, type ISignal, ITransaction, PredefinedStrategyEnum } from "@happ-manager/crypto-api";
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
-import { Worker } from "worker_threads";
 
 import { environment } from "../../../environments/environment";
 import { SignalsService } from "../../data/services/signals.service";
@@ -20,7 +19,7 @@ export class AnalyticsService {
 	) {}
 
 	async analyse(body?: IGenerateSettingsProps) {
-		const { signalsSkip = 0, signalsTake = 5, startHour = 14, endHour = 20 } = body;
+		const { signalsSkip = 0, signalsTake = 5 } = body;
 
 		const allSignals = await this._signalsService.getSignals({
 			skip: signalsSkip,
@@ -29,7 +28,7 @@ export class AnalyticsService {
 		const filteredSignals = allSignals.filter((signal) => {
 			const date = new Date(signal.signaledAt); // Преобразование в объект Date
 			const hour = date.getUTCHours(); // Получение часов в формате UTC
-			return hour >= startHour && hour < endHour; // Проверка попадания в интервал
+			return hour >= 8 && hour < 24; // Проверка попадания в интервал
 		});
 
 		console.log(`Started ${filteredSignals.length} signals`);
@@ -81,7 +80,7 @@ export class AnalyticsService {
 			relations: ["milestones"]
 		});
 
-		const settingsChunks = chunkArray(allSettings, 500);
+		const settingsChunks = chunkArray(allSettings, 10_000);
 		const workerPromises = settingsChunks.map((settings, index) =>
 			runWorker("checkedSignalsWorker.js", { index, strategy, signals, settings, transactionsMap })
 		);
@@ -102,6 +101,8 @@ export class AnalyticsService {
 - 📈 *sellHighPercent*: ${bestResult.setting.sellHighPercent}
 - 📉 *sellLowPercent*: ${bestResult.setting.sellLowPercent}
 - ⏳ *minTime*: ${bestResult.setting.minTime}
+- ⏱ *maxTime*: ${bestResult.setting.maxTime}
+- ⏱ *maxTime*: ${bestResult.setting.maxTime}
 - ⏱ *maxTime*: ${bestResult.setting.maxTime}
 
 *Результаты стратегии:*

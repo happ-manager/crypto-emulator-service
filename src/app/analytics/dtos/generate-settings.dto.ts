@@ -1,17 +1,26 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class GenerateSettingsDto {
+	@ApiPropertyOptional({ description: "Время начало", example: 0 })
+	hourRangeStart: number;
+
+	@ApiPropertyOptional({ description: "Время конец", example: 24 })
+	hourRangeEnd: number;
+
+	@ApiPropertyOptional({ description: "Шаг времени", example: 8 })
+	hourRangeStep: number;
+
+	@ApiPropertyOptional({ description: "Инвестиция", example: 100 })
+	investment?: number;
+
+	@ApiPropertyOptional({ description: "Задержка", example: 1000 })
+	delay?: number;
+
 	@ApiPropertyOptional({ description: "Сколько сигналов пропускаем", example: 0 })
 	signalsSkip?: number;
 
 	@ApiPropertyOptional({ description: "Сколько сигналов берем", example: 5 })
 	signalsTake?: number;
-
-	@ApiPropertyOptional({ description: "Начало торгов", example: 14 })
-	startHour?: number;
-
-	@ApiPropertyOptional({ description: "Конец торгов", example: 20 })
-	endHour?: number;
 
 	@ApiPropertyOptional({ description: "Начальное значение процента покупки", example: -5 })
 	buyPercentStart?: number;

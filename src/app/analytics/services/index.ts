@@ -1,3 +1,3 @@
-import { AnalyticsService } from "./analytics.service";
+import { AnalyticsNewService } from "./analytics-new.service";
 
-export const ANALYTICS_SERVICES = [AnalyticsService];
+export const ANALYTICS_SERVICES = [AnalyticsNewService];

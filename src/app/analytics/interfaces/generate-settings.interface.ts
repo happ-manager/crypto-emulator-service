@@ -1,6 +1,7 @@
 export interface IGenerateSettingsProps {
-	startHour?: number;
-	endHour?: number;
+	hourRangeStart: number;
+	hourRangeEnd: number;
+	hourRangeStep: number;
 	buyPercentStep?: number;
 	sellHighStep?: number;
 	sellLowStep?: number;

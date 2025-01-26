@@ -4,12 +4,12 @@ import { ApiTags } from "@nestjs/swagger";
 import { ANALYTCIS } from "../constants/analytics.constant";
 import { ANALYTCIS_ENDPOINTS } from "../constants/analytics-endpoints.constant";
 import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
-import { AnalyticsService } from "../services/analytics.service";
+import { AnalyticsNewService } from "../services/analytics-new.service";
 
 @ApiTags(ANALYTCIS)
 @Controller(ANALYTCIS_ENDPOINTS.BASE)
 export class AnalyticsController {
-	constructor(private readonly _analyticsService: AnalyticsService) {}
+	constructor(private readonly _analyticsService: AnalyticsNewService) {}
 
 	@Post(ANALYTCIS_ENDPOINTS.BASE)
 	async analsye(@Body() body: GenerateSettingsDto) {
