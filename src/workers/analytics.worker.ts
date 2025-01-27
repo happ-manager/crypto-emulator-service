@@ -57,11 +57,6 @@ async function processAnalytics() {
 		transactionsMap.get(poolAddress).push(transaction);
 	}
 
-	// console.log("TransactionsMap keys example:", [...transactionsMap.keys()].slice(0, 10));
-	if (!transactionsMap.has("4czPJqpeQkeznkoRkF8G44U7HQqMvw8SeRr3rHYsckDV")) {
-		console.error("TransactionsMap does not contain poolAddress 4czPJqpeQkeznkoRkF8G44U7HQqMvw8SeRr3rHYsckDV");
-	}
-
 	// Проверяем сигналы
 	const sharedSignals = new Float64Array(signalsBuffer);
 	const signals: ISignal[] = [];
@@ -91,8 +86,8 @@ async function processAnalytics() {
 	let bestSettingResult = { totalProfit: 0 };
 	let bestSetting = {};
 
-	for (const setting of settings) {
-		for (const [startHour, endHour] of timeIntervals) {
+	for (const [startHour, endHour] of timeIntervals) {
+		for (const setting of settings) {
 			const filteredSignals = signals.filter((signal) => {
 				const date = new Date(signal.signaledAt); // Преобразование в объект Date
 				const hour = date.getUTCHours(); // Получение часов в формате UTC
@@ -124,6 +119,7 @@ async function processAnalytics() {
 				const signalTransaction = findTransaction(transactions, new Date(signal.signaledAt));
 
 				if (!signalTransaction) {
+					console.log(`Cannot find signal transaction`);
 					continue;
 				}
 

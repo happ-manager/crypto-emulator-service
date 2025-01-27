@@ -1,6 +1,9 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class GenerateSettingsDto {
+	@ApiPropertyOptional({ description: "Макс. кол-во воркеров", example: 100 })
+	maxWorkers: number;
+
 	@ApiPropertyOptional({ description: "Время начало", example: 0 })
 	hourRangeStart: number;
 

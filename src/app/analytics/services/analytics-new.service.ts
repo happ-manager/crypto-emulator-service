@@ -2,7 +2,6 @@ import { ISignal, MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manage
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
 import { cpus } from "os";
-import { Worker } from "worker_threads";
 
 import { environment } from "../../../environments/environment";
 import { SignalsService } from "../../data/services/signals.service";
@@ -56,7 +55,7 @@ export class AnalyticsNewService {
 			maxTime: { start: props.maxTimeStart, end: props.maxTimeEnd, step: props.maxTimeStep }
 		};
 
-		const workersCount = cpus().length;
+		const workersCount = Math.min(cpus().length, props.maxWorkers);
 		const workerPromises = new Array(workersCount).fill(null).map((_, index) =>
 			runWorker("analyticsWorker.js", {
 				index,
