@@ -11,7 +11,8 @@ module.exports = function (options, webpack) {
 		},
 		output: {
 			path: path.resolve(__dirname, "dist"),
-			filename: "[name].js" // Создаёт main.js и analyticsWorker.js
+			filename: "[name].js", // Создаёт main.js и analyticsWorker.js
+			libraryTarget: "commonjs2" // Для поддержки module.exports
 		},
 		target: "node",
 		plugins: [

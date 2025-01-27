@@ -7,7 +7,7 @@ import { DATA_ENTITIES } from "../app/data/entities";
 import { TransactionEntity } from "../app/data/entities/transaction.entity";
 import { environment } from "../environments/environment";
 
-async function processTransactions(data?: any) {
+export async function processTransactions(data?: any) {
 	if (!workerData && !data) {
 		return;
 	}
@@ -46,9 +46,10 @@ async function processTransactions(data?: any) {
 	return { buffer, stringData, length };
 }
 
-processTransactions().catch((error) => {
-	// console.error(error);
-	parentPort?.postMessage({ error: error.message });
-});
+// processTransactions().catch((error) => {
+// 	// console.error(error);
+// 	parentPort?.postMessage({ error: error.message });
+// });
 
+// export default processTransactions;
 export default processTransactions;

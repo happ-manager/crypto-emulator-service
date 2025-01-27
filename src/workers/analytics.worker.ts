@@ -1,4 +1,5 @@
 import type { ISignal, ITransaction } from "@happ-manager/crypto-api";
+import { sleep } from "@happ-manager/crypto-api";
 import { getCheckedTransaction, MilestoneTypeEnum, percentOf } from "@happ-manager/crypto-api";
 import { parentPort, workerData } from "worker_threads";
 
@@ -27,12 +28,16 @@ async function processAnalytics(data?: any) {
 		transactionsData
 	} = workerData || data;
 
+	await sleep(index * 30_000);
+
 	const date = Date.now();
 	console.log(`Analytics worker ${index + 1} started`);
 
 	const sharedTransactions = new Float64Array(transactionsBuffer);
 	// console.log("Shared transactions buffer length:", sharedTransactions.length);
-	// console.log("Transactions length expected:", transactionsLength);
+	// console.log("Transactions length expected:", transactionsLength)
+	//
+	// ;
 
 	if (sharedTransactions.length < transactionsLength * 3) {
 		throw new Error(
@@ -57,9 +62,13 @@ async function processAnalytics(data?: any) {
 		transactionsMap.get(poolAddress).push(transaction);
 	}
 
+	console.log(`Analytics worker ${index + 1} transactions set`);
+
 	// Проверяем сигналы
 	const sharedSignals = new Float64Array(signalsBuffer);
 	const signals: ISignal[] = [];
+
+	console.log(`Analytics worker ${index + 1} signals set`);
 
 	// Проверяем, что signalsData имеет правильную структуру
 	if (!signalsData || !Array.isArray(signalsData["poolAddress"])) {
@@ -77,7 +86,6 @@ async function processAnalytics(data?: any) {
 
 	// console.log(`Analytics worker ${index + 1} finished signals and transactions processing.`);
 
-	console.log(`Analytics worker ${index + 1} start generating settings`);
 	const settings = newGenerateSettings(settingsParams, index, workersCount);
 	console.log(`Analytics worker ${index + 1} loaded ${settings.length} settings`);
 	const timeIntervals = generateTimeIntervals(props.hourRangeStart, props.hourRangeEnd, props.hourRangeStep);
@@ -222,9 +230,9 @@ async function processAnalytics(data?: any) {
 	return { settingResult: bestSettingResult, setting: bestSetting };
 }
 
-processAnalytics().catch((error) => {
-	console.error(error);
-	parentPort?.postMessage({ error: error.message });
-});
+// processAnalytics().catch((error) => {
+// 	console.error(error);
+// 	parentPort?.postMessage({ error: error.message });
+// });
 
 export default processAnalytics;
