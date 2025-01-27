@@ -16,7 +16,7 @@ import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.u
 
 const piscinaTransactions = new (Piscina as any)({
 	filename: resolve(__dirname, "transactionsWorker.js"), // Путь к воркеру
-	maxThreads: Math.min(cpus().length, 80) // Лимитируем потоки для транзакций
+	maxThreads: Math.min(cpus().length, 60) // Лимитируем потоки для транзакций
 });
 
 @Injectable()
