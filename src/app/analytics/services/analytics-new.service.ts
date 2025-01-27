@@ -2,6 +2,8 @@ import { ISignal, MilestoneTypeEnum, PredefinedStrategyEnum } from "@happ-manage
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
 import { cpus } from "os";
+import { resolve } from "path";
+import * as Piscina from "piscina";
 
 import { environment } from "../../../environments/environment";
 import { SignalsService } from "../../data/services/signals.service";
@@ -9,7 +11,17 @@ import { StrategiesService } from "../../data/services/strategies.service";
 import { chunkArray } from "../../emulator/utils/chunk-array.util";
 import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
 import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.util";
-import { runWorker } from "../utils/run-worker.util";
+
+// Создаем пул воркеров с использованием Piscina
+const piscinaAnalytics = new (Piscina as any)({
+	filename: resolve(__dirname, "analyticsWorker.js"), // Путь к воркеру
+	maxThreads: cpus().length // Ограничиваем количество потоков по количеству ядер
+});
+
+const piscinaTransactions = new (Piscina as any)({
+	filename: resolve(__dirname, "transactionsWorker.js"), // Путь к воркеру
+	maxThreads: Math.min(cpus().length, 95) // Лимитируем потоки для транзакций
+});
 
 @Injectable()
 export class AnalyticsNewService {
@@ -56,8 +68,8 @@ export class AnalyticsNewService {
 		};
 
 		const workersCount = Math.min(cpus().length, props.maxWorkers);
-		const workerPromises = new Array(workersCount).fill(null).map((_, index) =>
-			runWorker("analyticsWorker.js", {
+		const workerPromises = Array.from({ length: workersCount }, (_, index) =>
+			piscinaAnalytics.run({
 				index,
 				props,
 				workersCount,
@@ -101,22 +113,13 @@ export class AnalyticsNewService {
 	async getTransactions(signals: ISignal[]) {
 		console.log("Starting getTransactions...");
 		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 95));
-		// console.log(
-		// 	"Signals chunks created:",
-		// 	signalsChunks.map((chunk) => chunk.length)
-		// );
 
-		const workerPromises = signalsChunks.map((chunk, index) =>
-			runWorker("transactionsWorker.js", { index, signals: chunk })
-		);
+		const workerPromises = signalsChunks.map((chunk, index) => piscinaTransactions.run({ index, signals: chunk }));
 
 		console.log("Starting workers...");
 		const workerResults = await Promise.all(workerPromises);
 
-		// console.log(
-		// 	"Worker results summary:",
-		// 	workerResults.map(({ length }) => length)
-		// );
+		console.log(workerResults);
 
 		const totalLength = workerResults.reduce((sum, { length }) => sum + length, 0);
 		console.log("Total transactions length:", totalLength);
@@ -128,14 +131,11 @@ export class AnalyticsNewService {
 		let combinedPoolAddresses: string[] = [];
 
 		for (const { buffer, stringData, length } of workerResults) {
-			// console.log(`Processing worker result: Length=${length}`);
 			const view = new DataView(buffer);
 
-			// Используем concat вместо spread для объединения массивов
 			// eslint-disable-next-line unicorn/prefer-spread
 			combinedPoolAddresses = combinedPoolAddresses.concat(stringData);
 
-			// Объединение данных в общий буфер
 			for (let i = 0; i < length * 3; i++) {
 				if (offset >= totalLength * 3) {
 					throw new RangeError(`Offset (${offset}) exceeds total buffer size (${totalLength * 3}).`);

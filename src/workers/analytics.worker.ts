@@ -7,8 +7,8 @@ import { newGenerateSettings } from "../app/analytics/utils/new-generate-setting
 import { getDelayedTransaction } from "../app/emulator/utils/get-delayed-transaction.util";
 import { findTransaction } from "../app/shared/utils/find-transaction.util";
 
-async function processAnalytics() {
-	if (!workerData) {
+async function processAnalytics(data?: any) {
+	if (!workerData && !data) {
 		return;
 	}
 
@@ -25,7 +25,7 @@ async function processAnalytics() {
 		transactionsBuffer,
 		transactionsLength,
 		transactionsData
-	} = workerData;
+	} = workerData || data;
 
 	const date = Date.now();
 	console.log(`Analytics worker ${index + 1} started`);
@@ -219,9 +219,12 @@ async function processAnalytics() {
 	console.log(`Analytics worker ${index + 1} finished in ${(Date.now() - date) / 1000} seconds`);
 
 	parentPort.postMessage({ settingResult: bestSettingResult, setting: bestSetting });
+	return { settingResult: bestSettingResult, setting: bestSetting };
 }
 
 processAnalytics().catch((error) => {
 	console.error(error);
 	parentPort?.postMessage({ error: error.message });
 });
+
+export default processAnalytics;
