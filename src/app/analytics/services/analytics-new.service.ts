@@ -10,7 +10,6 @@ import { StrategiesService } from "../../data/services/strategies.service";
 import { chunkArray } from "../../emulator/utils/chunk-array.util";
 import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
 import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.util";
-import { generateSettings } from "../utils/generate-settings.util";
 import { runWorker } from "../utils/run-worker.util";
 
 @Injectable()
@@ -49,16 +48,21 @@ export class AnalyticsNewService {
 			totalLength: transactionsLength
 		} = await this.getTransactions(signals);
 
-		// Генерация `SharedArrayBuffer` для передачи настроек в воркеры
-		const workerSettingsBuffers = this.createWorkerSettingsBuffers(props, cpus().length);
+		const settingsParams = {
+			buyPercent: { start: props.buyPercentStart, end: props.buyPercentEnd, step: props.buyPercentStep },
+			sellHighPercent: { start: props.sellHighStart, end: props.sellHighEnd, step: props.sellHighStep },
+			sellLowPercent: { start: props.sellLowStart, end: props.sellLowEnd, step: props.sellLowStep },
+			minTime: { start: props.minTimeStart, end: props.minTimeEnd, step: props.minTimeStep },
+			maxTime: { start: props.maxTimeStart, end: props.maxTimeEnd, step: props.maxTimeStep }
+		};
 
-		console.log("Get buffered settings");
-
-		const workerPromises = workerSettingsBuffers.map((settingsBuffer, index) =>
+		const workersCount = 1;
+		const workerPromises = new Array(workersCount).fill(null).map((_, index) =>
 			runWorker("analyticsWorker.js", {
 				index,
-				settingsBuffer,
-				settingsLength: settingsBuffer.byteLength / (7 * Float64Array.BYTES_PER_ELEMENT), // 7 параметров на настройку
+				props,
+				workersCount,
+				settingsParams,
 				strategy,
 				signalMilestone,
 				signalsBuffer,
@@ -93,70 +97,6 @@ export class AnalyticsNewService {
 		await this.sendMessagesToTelegram(signals, bestSettingResult, bestSetting);
 
 		return { bestSettingResult, bestSetting };
-	}
-
-	/**
-	 * Генерирует буферы для настроек для каждого воркера
-	 */
-	private createWorkerSettingsBuffers(props: GenerateSettingsDto, workerCount: number) {
-		console.log("Start generating settings");
-		const settings = generateSettings(props);
-		console.log(`Generated ${settings.length} settings`);
-		const chunkSize = Math.ceil(settings.length / workerCount);
-		const chunks = chunkArray(settings, chunkSize);
-
-		return chunks.map((chunk) => {
-			const buffer = new SharedArrayBuffer(chunk.length * 7 * Float64Array.BYTES_PER_ELEMENT);
-			const view = new Float64Array(buffer);
-
-			let offset = 0;
-			for (const setting of chunk) {
-				view[offset++] = setting.buyPercent;
-				view[offset++] = setting.sellHighPercent;
-				view[offset++] = setting.sellLowPercent;
-				view[offset++] = setting.minTime;
-				view[offset++] = setting.maxTime;
-				view[offset++] = setting.startHour;
-				view[offset++] = setting.endHour;
-			}
-			return buffer;
-		});
-	}
-
-	async sendMessagesToTelegram(signals: any, bestSettingResult: any, bestSetting: any) {
-		const text = `
-*Лучшие параметры для ${signals.length} сигналов:*
-
-*Параметры настройки:*
-- 🛒 *buyPercent*: ${bestSetting.buyPercent}
-- 📈 *sellHighPercent*: ${bestSetting.sellHighPercent}
-- 📉 *sellLowPercent*: ${bestSetting.sellLowPercent}
-- ⏳ *minTime*: ${bestSetting.minTime}
-- ⏱ *maxTime*: ${bestSetting.maxTime}
-- ⏱ *startHour*: ${bestSetting.startHour}
-- ⏱ *endHour*: ${bestSetting.endHour}
-
-*Результаты стратегии:*
-- ✅ *Win Count*: ${bestSettingResult.winCount}
-- ❌ *Lose Count*: ${bestSettingResult.loseCount}
-- 🤷‍♂️ *Ignore Count*: ${bestSettingResult.ignoreCount}
-- 🔥 *Win Series*: ${bestSettingResult.winSeries}
-- 💔 *Lose Series*: ${bestSettingResult.loseSeries}
-- 💵 *Total Enter*: ${bestSettingResult.totalEnter.toFixed(2)}
-- 💰 *Total Profit*: ${bestSettingResult.totalProfit.toFixed(2)}
-- 🏦 *Total Exit*: ${bestSettingResult.totalExit.toFixed(2)}
-`;
-
-		try {
-			this._httpClient
-				.post(`https://api.telegram.org/bot${environment.apiToken}/sendMessage`, {
-					chat_id: 617_590_837,
-					text
-				})
-				.subscribe();
-		} catch {
-			console.error("Error sending to telegram");
-		}
 	}
 
 	async getTransactions(signals: ISignal[]) {
@@ -214,5 +154,41 @@ export class AnalyticsNewService {
 
 		console.log("Return combined data");
 		return { combinedBuffer, combinedPoolAddresses, totalLength };
+	}
+
+	async sendMessagesToTelegram(signals: any, bestSettingResult: any, bestSetting: any) {
+		const text = `
+*Лучшие параметры для ${signals.length} сигналов:*
+
+*Параметры настройки:*
+- 🛒 *buyPercent*: ${bestSetting.buyPercent}
+- 📈 *sellHighPercent*: ${bestSetting.sellHighPercent}
+- 📉 *sellLowPercent*: ${bestSetting.sellLowPercent}
+- ⏳ *minTime*: ${bestSetting.minTime}
+- ⏱ *maxTime*: ${bestSetting.maxTime}
+- ⏱ *startHour*: ${bestSetting.startHour}
+- ⏱ *endHour*: ${bestSetting.endHour}
+
+*Результаты стратегии:*
+- ✅ *Win Count*: ${bestSettingResult.winCount}
+- ❌ *Lose Count*: ${bestSettingResult.loseCount}
+- 🤷‍♂️ *Ignore Count*: ${bestSettingResult.ignoreCount}
+- 🔥 *Win Series*: ${bestSettingResult.winSeries}
+- 💔 *Lose Series*: ${bestSettingResult.loseSeries}
+- 💵 *Total Enter*: ${bestSettingResult.totalEnter.toFixed(2)}
+- 💰 *Total Profit*: ${bestSettingResult.totalProfit.toFixed(2)}
+- 🏦 *Total Exit*: ${bestSettingResult.totalExit.toFixed(2)}
+`;
+
+		try {
+			this._httpClient
+				.post(`https://api.telegram.org/bot${environment.apiToken}/sendMessage`, {
+					chat_id: 617_590_837,
+					text
+				})
+				.subscribe();
+		} catch {
+			console.error("Error sending to telegram");
+		}
 	}
 }
