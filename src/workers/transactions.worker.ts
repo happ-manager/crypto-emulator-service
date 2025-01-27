@@ -47,7 +47,7 @@ async function processTransactions(data?: any) {
 }
 
 processTransactions().catch((error) => {
-	console.error(error);
+	// console.error(error);
 	parentPort?.postMessage({ error: error.message });
 });
 

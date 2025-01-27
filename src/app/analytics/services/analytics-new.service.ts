@@ -13,10 +13,6 @@ import { GenerateSettingsDto } from "../dtos/generate-settings.dto";
 import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.util";
 
 // Создаем пул воркеров с использованием Piscina
-const piscinaAnalytics = new (Piscina as any)({
-	filename: resolve(__dirname, "analyticsWorker.js"), // Путь к воркеру
-	maxThreads: cpus().length // Ограничиваем количество потоков по количеству ядер
-});
 
 const piscinaTransactions = new (Piscina as any)({
 	filename: resolve(__dirname, "transactionsWorker.js"), // Путь к воркеру
@@ -68,6 +64,11 @@ export class AnalyticsNewService {
 		};
 
 		const workersCount = Math.min(cpus().length, props.maxWorkers);
+		const piscinaAnalytics = new (Piscina as any)({
+			filename: resolve(__dirname, "analyticsWorker.js"), // Путь к воркеру
+			maxThreads: workersCount // Ограничиваем количество потоков по количеству ядер
+		});
+
 		const workerPromises = Array.from({ length: workersCount }, (_, index) =>
 			piscinaAnalytics.run({
 				index,
@@ -118,8 +119,6 @@ export class AnalyticsNewService {
 
 		console.log("Starting workers...");
 		const workerResults = await Promise.all(workerPromises);
-
-		console.log(workerResults);
 
 		const totalLength = workerResults.reduce((sum, { length }) => sum + length, 0);
 		console.log("Total transactions length:", totalLength);
