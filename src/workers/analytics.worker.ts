@@ -1,5 +1,4 @@
 import type { ISignal, ITransaction } from "@happ-manager/crypto-api";
-import { sleep } from "@happ-manager/crypto-api";
 import { getCheckedTransaction, MilestoneTypeEnum, percentOf } from "@happ-manager/crypto-api";
 import { parentPort, workerData } from "worker_threads";
 
@@ -28,7 +27,7 @@ async function processAnalytics(data?: any) {
 		transactionsData
 	} = workerData || data;
 
-	await sleep(index * 10_000);
+	// await sleep(index * 10_000);
 
 	const date = Date.now();
 	console.log(`Analytics worker ${index + 1} started`);
