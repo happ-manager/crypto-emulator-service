@@ -56,7 +56,7 @@ export class AnalyticsNewService {
 			maxTime: { start: props.maxTimeStart, end: props.maxTimeEnd, step: props.maxTimeStep }
 		};
 
-		const workersCount = 1;
+		const workersCount = cpus().length;
 		const workerPromises = new Array(workersCount).fill(null).map((_, index) =>
 			runWorker("analyticsWorker.js", {
 				index,
