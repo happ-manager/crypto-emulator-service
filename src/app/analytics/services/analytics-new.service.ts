@@ -16,7 +16,7 @@ import { createSharedSignalBuffer } from "../utils/create-shared-signal-buffer.u
 
 const piscinaTransactions = new (Piscina as any)({
 	filename: resolve(__dirname, "transactionsWorker.js"), // Путь к воркеру
-	maxThreads: Math.min(cpus().length, 50) // Лимитируем потоки для транзакций
+	maxThreads: Math.min(cpus().length, 95) // Лимитируем потоки для транзакций
 });
 
 @Injectable()
@@ -115,7 +115,7 @@ export class AnalyticsNewService {
 
 	async getTransactions(signals: ISignal[]) {
 		console.log("Starting getTransactions...");
-		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 50));
+		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 95));
 		const workerPromises = signalsChunks.map((chunk, index) => piscinaTransactions.run({ index, signals: chunk }));
 
 		console.log("Starting workers...");
