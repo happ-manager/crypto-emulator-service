@@ -28,7 +28,7 @@ async function processAnalytics(data?: any) {
 		transactionsData
 	} = workerData || data;
 
-	await sleep(index * 30_000);
+	await sleep(index * 10_000);
 
 	const date = Date.now();
 	console.log(`Analytics worker ${index + 1} started`);
