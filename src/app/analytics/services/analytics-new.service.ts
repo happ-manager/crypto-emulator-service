@@ -115,8 +115,7 @@ export class AnalyticsNewService {
 
 	async getTransactions(signals: ISignal[]) {
 		console.log("Starting getTransactions...");
-		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 95));
-
+		const signalsChunks = chunkArray(signals, Math.min(cpus().length, 50));
 		const workerPromises = signalsChunks.map((chunk, index) => piscinaTransactions.run({ index, signals: chunk }));
 
 		console.log("Starting workers...");
