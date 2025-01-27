@@ -93,8 +93,6 @@ async function processAnalytics() {
 
 	for (const setting of settings) {
 		for (const [startHour, endHour] of timeIntervals) {
-			setting["startHour"] = startHour;
-			setting["endHour"] = endHour;
 			const filteredSignals = signals.filter((signal) => {
 				const date = new Date(signal.signaledAt); // Преобразование в объект Date
 				const hour = date.getUTCHours(); // Получение часов в формате UTC
@@ -211,7 +209,13 @@ async function processAnalytics() {
 
 			if (settingResult.totalProfit > bestSettingResult.totalProfit) {
 				bestSettingResult = settingResult;
-				bestSetting = setting;
+				bestSetting = {
+					...setting,
+					delay: props.delay,
+					investment: props.investment,
+					startHour,
+					endHour
+				};
 			}
 		}
 	}

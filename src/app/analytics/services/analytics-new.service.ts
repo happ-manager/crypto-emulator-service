@@ -166,8 +166,10 @@ export class AnalyticsNewService {
 - 📉 *sellLowPercent*: ${bestSetting.sellLowPercent}
 - ⏳ *minTime*: ${bestSetting.minTime}
 - ⏱ *maxTime*: ${bestSetting.maxTime}
-- ⏱ *startHour*: ${bestSetting.startHour}
-- ⏱ *endHour*: ${bestSetting.endHour}
+- 🕒 *Start Hour*: ${bestSetting.startHour}
+- 🕔 *End Hour*: ${bestSetting.endHour}
+- ⌛ *Delay*: ${bestSetting.delay}
+- 💵 *Investment*: ${bestSetting.investment}
 
 *Результаты стратегии:*
 - ✅ *Win Count*: ${bestSettingResult.winCount}
@@ -184,7 +186,8 @@ export class AnalyticsNewService {
 			this._httpClient
 				.post(`https://api.telegram.org/bot${environment.apiToken}/sendMessage`, {
 					chat_id: 617_590_837,
-					text
+					text,
+					parse_mode: "Markdown"
 				})
 				.subscribe();
 		} catch {
