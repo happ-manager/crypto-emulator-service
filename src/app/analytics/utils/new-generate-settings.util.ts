@@ -11,14 +11,16 @@ export function newGenerateSettings(params: ParameterConfig, workerIndex: number
 	const ranges = keys.map((key) => {
 		const { start, end, step } = params[key];
 		const values = [];
+
 		if (step === 0) {
-			throw new Error(`Step cannot be zero for parameter: ${key}`);
-		}
-		if (start < end && step > 0) {
+			values.push(end);
+		} else if (start < end && step > 0) {
+			// Генерация значений при положительном step
 			for (let i = start; i <= end; i += step) {
 				values.push(i);
 			}
 		} else if (start > end && step < 0) {
+			// Генерация значений при отрицательном step
 			for (let i = start; i >= end; i += step) {
 				values.push(i);
 			}
