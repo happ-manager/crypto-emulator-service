@@ -26,28 +26,29 @@ async function bootstrap() {
 	await app.listen(environment.port);
 }
 
-const cluster: any = cluster1;
+const cluster = cluster1 as any;
 
 if (cluster.isPrimary) {
-	const numCPUs = cpus().length;
+	if (environment.runWokers) {
+		runWorkers();
+	}
 
-	for (let i = 0; i < numCPUs; i++) {
+	bootstrap().then(() => {
+		logger.log(`🚀 Emulator service running on: http://localhost:${environment.port}/${PREFIX}`);
+		logger.log(`🚀 Swagger is running on: http://localhost:${environment.port}/${PREFIX}/${SWAGGER}`);
+		logger.log(`🚀 Graphql is running on: http://localhost:${environment.port}/graphql`);
+	});
+}
+
+function runWorkers() {
+	logger.log(`Running ${cpus().length} workers...`);
+
+	for (let i = 0; i < cpus().length; i++) {
 		cluster.fork();
 	}
 
 	cluster.on("exit", (worker, code, signal) => {
 		logger.warn(`Worker ${worker.process.pid} exited with code ${code}, signal ${signal}. Restarting...`);
 		cluster.fork();
-	});
-
-	bootstrap().then(() => {
-		logger.log(`🚀 Emulator service running on: http://localhost:${environment.port}/${PREFIX}`);
-		logger.log(`🚀 Swagger is running on: http://localhost:${environment.port}/${PREFIX}/${SWAGGER}`);
-		logger.log(`🚀 Graphql is running on: http://localhost:${environment.port}/graphql`);
-		logger.log(`Primary process is running. Forking ${numCPUs} workers...`);
-	});
-} else {
-	import("./workers/analytics.worker").then(() => {
-		// logger.log(`Worker process for tasks running (PID: ${process.pid})`);
 	});
 }

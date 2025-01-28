@@ -28,20 +28,20 @@ export class AnalyticsNewService {
 	) {}
 
 	onModuleInit() {
-		// const timeIntervals = generateTimeIntervals(12, 20, 8);
+		// const timeIntervals = generateTimeIntervals(0, 24, 0);
 		// const settings = newGenerateSettings(
 		// 	{
 		// 		buyPercent: { start: -30, end: -30, step: 0 },
 		// 		sellHighPercent: { start: 10, end: 10, step: 0 },
 		// 		sellLowPercent: { start: 5, end: 5, step: 0 },
-		// 		minTime: { start: 0, end: 5000, step: 1000 },
-		// 		maxTime: { start: 0, end: 150_000, step: 0 }
+		// 		minTime: { start: 1000, end: 5000, step: 0 },
+		// 		maxTime: { start: 100_000, end: 150_000, step: 0 }
 		// 	},
 		// 	0,
 		// 	1
 		// );
 		// console.log(timeIntervals.length);
-		// console.log(settings);
+		// console.log(settings.length);
 	}
 
 	async analyse(props: GenerateSettingsDto) {
