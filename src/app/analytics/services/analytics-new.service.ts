@@ -27,6 +27,24 @@ export class AnalyticsNewService {
 		private readonly _signalsService: SignalsService
 	) {}
 
+	onModuleInit() {
+		// const timeIntervals = generateTimeIntervals(12, 20, 8);
+		// const settings = newGenerateSettings(
+		// 	{
+		// 		buyPercent: { start: -29, end: -30, step: -1 },
+		// 		sellHighPercent: { start: 9, end: 10, step: 1 },
+		// 		sellLowPercent: { start: 4, end: 5, step: 1 },
+		// 		minTime: { start: 0, end: 5000, step: 200 },
+		// 		maxTime: { start: 10_000, end: 150_000, step: 10_000 }
+		// 	},
+		// 	0,
+		// 	1
+		// );
+		//
+		// console.log(timeIntervals.length);
+		// console.log(settings.length);
+	}
+
 	async analyse(props: GenerateSettingsDto) {
 		const strategy = await this._strategiesService.getStrategy({
 			where: { predefinedStrategy: PredefinedStrategyEnum.CLOWN },
