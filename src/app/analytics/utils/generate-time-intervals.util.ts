@@ -11,8 +11,8 @@ export function generateTimeIntervals(start: number, end: number, range: number)
 		}
 	} else {
 		// Генерируем промежутки фиксированной длины range
-		for (let startHour = start; startHour < end; startHour++) {
-			const endHour = (startHour + range) % hoursInDay;
+		for (let startHour = start; startHour + range <= end; startHour++) {
+			const endHour = startHour + range;
 			timeIntervals.push([startHour, endHour]);
 		}
 	}

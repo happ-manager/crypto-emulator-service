@@ -27,8 +27,6 @@ export class AnalyticsNewService {
 		private readonly _signalsService: SignalsService
 	) {}
 
-	onModuleInit() {}
-
 	async analyse(props: GenerateSettingsDto) {
 		const strategy = await this._strategiesService.getStrategy({
 			where: { predefinedStrategy: PredefinedStrategyEnum.CLOWN },
