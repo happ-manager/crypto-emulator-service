@@ -1,8 +1,10 @@
 export const environment = {
 	production: true,
-	dev: false,
 	port: 0,
 	runWokers: false,
+	telegram: {
+		apiToken: ""
+	},
 	database: {
 		certificate: false,
 		host: "",

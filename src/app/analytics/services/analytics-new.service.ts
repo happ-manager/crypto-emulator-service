@@ -198,7 +198,7 @@ export class AnalyticsNewService {
 
 		try {
 			this._httpClient
-				.post(`https://api.telegram.org/bot${environment.apiToken}/sendMessage`, {
+				.post(`https://api.telegram.org/bot${environment.telegram.apiToken}/sendMessage`, {
 					chat_id: 617_590_837,
 					text,
 					parse_mode: "Markdown"

@@ -15,12 +15,6 @@ export const TYPEORM_CONFIG: TypeOrmModuleOptions = {
 	entities: [...DATA_ENTITIES],
 	synchronize: false,
 	subscribers: [],
-	extra: {
-		// Настройки пула соединений
-		connectionLimit: 10,
-		max: 10, // Максимальное количество соединений в пуле
-		min: 2 // Минимальное количество соединений в пуле
-	},
 	...(environment.database.certificate
 		? {
 				ssl: {

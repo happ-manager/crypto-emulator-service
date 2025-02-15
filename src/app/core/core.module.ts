@@ -7,6 +7,6 @@ import { EmulatorModule } from "../emulator/emulator.module";
 import { TYPEORM_CONFIG } from "./configs/typeorm.config";
 
 @Module({
-	imports: [TypeOrmModule.forRoot(TYPEORM_CONFIG), EventEmitterModule.forRoot(), AnalyticsModule, EmulatorModule]
+	imports: [EventEmitterModule.forRoot(), TypeOrmModule.forRoot(TYPEORM_CONFIG), AnalyticsModule, EmulatorModule]
 })
 export class CoreModule {}
